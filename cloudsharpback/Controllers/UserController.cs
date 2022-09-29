@@ -19,10 +19,62 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDto loginDto)
+        public IActionResult Login(LoginDto loginDto)
         {
+            if (!userService.TryLogin(loginDto, out var member)
+                || member is null)
+            {
+                return Unauthorized();
+            }
+            if (!jwtService.TryTokenCreate(member, out var token)
+                || token is null)
+            {
+                return StatusCode(500, "Fail to Create token");
+            }
+            return Ok(new {Token = token});
+        }
 
+        [HttpPost("register")]
+        public IActionResult Register(RegisterDto registerDto)
+        {
+            if (userService.IdCheck(registerDto.Id))
+            {
+                return StatusCode(400);
+            }
+            if (!userService.TryRegister(registerDto, 2))
+            {
+                return StatusCode(500, "Fail to Register");
+            }
+            return Ok();
+        }
 
+        [HttpPost("idcheck")]
+        public IActionResult IdCkeck(string id)
+        {
+            return Ok(new
+            {
+                exist = userService.IdCheck(id)
+            });
+        }
+
+        [HttpPost("register/admin")]
+        public IActionResult RegisterAdmin(RegisterDto registerDto, [FromHeader] string adminToken)
+        {
+            if (!jwtService.TryTokenValidation(adminToken, out var memberDto)
+                || memberDto is null
+                || memberDto.Role != 999)
+            {
+                return StatusCode(403);
+            }
+            if (userService.IdCheck(registerDto.Id))
+            {
+                return StatusCode(400);
+            }
+            if (!userService.TryRegister(registerDto, 999))
+            {
+                return StatusCode(500, "Fail to Register");
+
+            }
             return Ok();
         }
 

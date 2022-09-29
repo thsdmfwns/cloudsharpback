@@ -14,7 +14,7 @@ namespace cloudsharpback.Controllers
         private readonly IJWTService jwtService;
         private readonly IUserService userService;
 
-        public TestController(IJWTService jwtService, IUserService userService)
+        public TestController(IJWTService jwtService, IUserService userService, ILogger<TestController> logger)
         {
             this.jwtService = jwtService;
             this.userService = userService;
@@ -23,19 +23,20 @@ namespace cloudsharpback.Controllers
         [HttpPost("encrypt")]
         public string Encrypt(string password)
         {
-            return PasswordEncrypt.EncryptPassword(password);
+            return Utills.Encrypt.EncryptByBCrypt(password);
         }
 
         [HttpPost("tokenCreate")]
-        public string TokenCreate(MemberDto member)
+        public bool TokenCreate(MemberDto member)
         {
-            return jwtService.TokenCreate(member);
+            return jwtService.TryTokenCreate(member, out var token);
         }
 
         [HttpPost("tokenVal")]
-        public bool TokenVal(string token)
+        public IActionResult TokenVal(string token)
         {
-            return jwtService.TryTokenValidation(token, out var jwt);
+            jwtService.TryTokenValidation(token, out var member);
+            return Ok(member);
         }
 
         [HttpPost("Login")]
@@ -47,7 +48,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("Register")]
         public bool Register(RegisterDto dto)
         {
-            return userService.TryRegister(dto);
+            return userService.TryRegister(dto, 2);
         }
 
         [HttpPost("Idcheck1")]

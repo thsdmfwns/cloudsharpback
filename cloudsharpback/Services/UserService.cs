@@ -1,17 +1,23 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Utills;
 using Dapper;
+using System.Diagnostics.Metrics;
 
 namespace cloudsharpback.Services
 {
     public class UserService : IUserService
     {
         private readonly IDBConnService _connService;
+        private readonly ILogger _logger;
 
-        public UserService(IDBConnService connService)
+        public UserService(IDBConnService connService, ILogger<IUserService> logger)
         {
             _connService = connService;
+            _logger = logger;
         }
+
+        string EncryptPassword(string password) => Base64.Encode(Encrypt.EncryptByBCrypt(password));
+        bool VerifyPassword(string password, string hash) => Encrypt.VerifyBCrypt(password, Base64.Decode(hash));
 
         public bool IdCheck(string id, out string? passwordHash)
         {
@@ -29,34 +35,55 @@ namespace cloudsharpback.Services
 
         public bool TryLogin(LoginDto loginDto, out MemberDto? member)
         {
-            if (!IdCheck(loginDto.Id, out var passwordHash)
-                || !PasswordEncrypt.VerifyPassword(loginDto.Password, passwordHash))
+            try
             {
+                if (!IdCheck(loginDto.Id, out var passwordHash)
+                    || passwordHash is null
+                    || !VerifyPassword(loginDto.Password, passwordHash))
+                {
+                    member = null;
+                    return false;
+                }
+                var query = "SELECT member_id, role_id, email, nickname " +
+                    "FROM member " +
+                    "WHERE id = @Id";
+                using var conn = _connService.Connection;
+                member = conn.QuerySingleOrDefault<MemberDto?>(query, new { Id = loginDto.Id });
+                return member != null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
                 member = null;
                 return false;
             }
-            var query = "SELECT member_id, role_id, email, nickname " +
-                "FROM member " +
-                "WHERE id = @Id";
-            using var conn = _connService.Connection;
-            member = conn.QuerySingleOrDefault<MemberDto?>(query, new { Id = loginDto.Id });
-            return member != null;
+
         }
 
-        public bool TryRegister(RegisterDto registerDto)
+        public bool TryRegister(RegisterDto registerDto, ulong role)
         {
-            if (IdCheck(registerDto.Login.Id)) return false;
-            using var conn = _connService.Connection;
-            var query = "INSERT INTO member(id, password, nickname, role_id, email)" +
-                "VALUES(@Id, @Pw, @Nick, @Role, @Email)";
-            return conn.Execute(query, new
+            try
             {
-                Id = registerDto.Login.Id,
-                Pw = PasswordEncrypt.EncryptPassword(registerDto.Login.Password),
-                Nick = registerDto.Nickname,
-                Role = registerDto.Role,
-                Email = registerDto.Email,
-            }) != 0;
+                registerDto.Pw = EncryptPassword(registerDto.Pw);
+                using var conn = _connService.Connection;
+                var query = "INSERT INTO member(id, password, nickname, role_id, email)" +
+                    "VALUES(@Id, @Pw, @Nick, @Role, @Email)";
+                return conn.Execute(query, new
+                {
+                    Id = registerDto.Id,
+                    Pw = registerDto.Pw,
+                    Nick = registerDto.Nick,
+                    Role = role,
+                    Email = registerDto.Email,
+                }) != 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                return false;
+            }
         }
     }
 }

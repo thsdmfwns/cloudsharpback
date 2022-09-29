@@ -1,60 +1,73 @@
 ﻿using cloudsharpback.Models;
 using JsonWebToken;
+using Microsoft.Extensions.Logging;
 
 namespace cloudsharpback.Services
 {
     public class JWTService : IJWTService
     {
         private readonly SymmetricJwk jwtKey;
+        private readonly ILogger _logger;
 
-        public JWTService(IConfiguration configuration)
+        public JWTService(IConfiguration configuration, ILogger<IJWTService> logger)
         {
             jwtKey = new SymmetricJwk(configuration["JWT:key"], SignatureAlgorithm.HmacSha512);
+            _logger = logger;
         }
 
-        public string TokenCreate(MemberDto data)
+        public bool TryTokenCreate(MemberDto data, out string? token)
         {
-            var descriptor = new JwsDescriptor()
+            try
             {
-                Algorithm = SignatureAlgorithm.HmacSha512,
-                SigningKey = jwtKey,
-                IssuedAt = DateTime.UtcNow,
-                ExpirationTime = DateTime.UtcNow.AddDays(1),
-                Issuer = "https://son-server.com",
-                Audience = "https://son-server.com",
-            };
-            descriptor.AddClaim("NickName", data.Nickname);
-            descriptor.AddClaim("Email", data.Email);
-            descriptor.AddClaim("UserId", data.Id.ToString());
+                var descriptor = new JwsDescriptor()
+                {
+                    Algorithm = SignatureAlgorithm.HmacSha512,
+                    SigningKey = jwtKey,
+                    IssuedAt = DateTime.UtcNow,
+                    ExpirationTime = DateTime.UtcNow.AddDays(1),
+                };
+                descriptor.AddClaim("nickname", data.Nickname);
+                descriptor.AddClaim("email", data.Email);
+                descriptor.AddClaim("userId", data.Id.ToString());
+                descriptor.AddClaim("roleId", data.Role.ToString());
 
-            var writer = new JwtWriter();
-            var token = writer.WriteTokenString(descriptor);
+                token = new JwtWriter().WriteTokenString(descriptor);
 
-            return token;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                token = null;
+                return false;
+            }
         }
 
-        public bool TryTokenValidation(string token, out Jwt? jwt)
+        public bool TryTokenValidation(string token, out MemberDto? member)
         {
             try
             {
                 var policy = new TokenValidationPolicyBuilder()
                 .RequireSignature(jwtKey, SignatureAlgorithm.HmacSha512)
-                .RequireIssuer("https://son-server.com")
-                .RequireAudience("https://son-server.com")
+                .EnableLifetimeValidation()
                 .Build();
                 var reader = new JwtReader();
                 var result = reader.TryReadToken(token, policy);
-                if (result.Token == null)
+                if (result.Token == null 
+                    || result.Status != TokenValidationStatus.Success)
                 {
-                    jwt = null;
+                    member = null;
                     return false;
                 }
-                jwt = result.Token;
-                return result.Status == TokenValidationStatus.Success;
+                member = MemberDto.ParseToken(result.Token);
+                return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                jwt = null;
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                member = null;
                 return false;
             }
         }
