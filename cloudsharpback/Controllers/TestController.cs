@@ -13,11 +13,13 @@ namespace cloudsharpback.Controllers
     {
         private readonly IJWTService jwtService;
         private readonly IUserService userService;
+        private readonly IFileService fileService;
 
-        public TestController(IJWTService jwtService, IUserService userService, ILogger<TestController> logger)
+        public TestController(IJWTService jwtService, IUserService userService, ILogger<TestController> logger, IFileService fileService)
         {
             this.jwtService = jwtService;
             this.userService = userService;
+            this.fileService = fileService;
         }
 
         [HttpPost("encrypt")]
@@ -48,7 +50,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("Register")]
         public bool Register(RegisterDto dto)
         {
-            return userService.TryRegister(dto, 2);
+            return userService.TryRegister(dto, 2, out var dir);
         }
 
         [HttpPost("Idcheck1")]
@@ -61,6 +63,12 @@ namespace cloudsharpback.Controllers
         public bool Idcheck2(string id)
         {
             return userService.IdCheck(id);
+        }
+
+        [HttpPost("makeDir")]
+        public bool MakeDir(string id)
+        {
+            return fileService.TryMakeDirectory(id);
         }
     }
 }

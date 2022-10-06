@@ -11,11 +11,13 @@ namespace cloudsharpback.Controllers
     {
         private readonly IJWTService jwtService;
         private readonly IUserService userService;
+        private readonly IFileService fileService;
 
-        public UserController(IJWTService jwtService, IUserService userService)
+        public UserController(IJWTService jwtService, IUserService userService, IFileService fileService)
         {
             this.jwtService = jwtService;
             this.userService = userService;
+            this.fileService = fileService;
         }
 
         [HttpPost("login")]
@@ -31,7 +33,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(500, "Fail to Create token");
             }
-            return Ok(new {Token = token});
+            return Ok(new { Token = token });
         }
 
         [HttpPost("register")]
@@ -41,9 +43,14 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(400);
             }
-            if (!userService.TryRegister(registerDto, 2))
+            if (!userService.TryRegister(registerDto, 2, out var dir)
+                || dir is null)
             {
                 return StatusCode(500, "Fail to Register");
+            }
+            if (!fileService.TryMakeDirectory(dir))
+            {
+                return StatusCode(500, "Fail to Make Directory");
             }
             return Ok();
         }
@@ -70,10 +77,14 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(400);
             }
-            if (!userService.TryRegister(registerDto, 999))
+            if (!userService.TryRegister(registerDto, 999, out var dir)
+                || dir is null)
             {
                 return StatusCode(500, "Fail to Register");
-
+            }
+            if (!fileService.TryMakeDirectory(dir))
+            {
+                return StatusCode(500, "Fail to Make Directory");
             }
             return Ok();
         }

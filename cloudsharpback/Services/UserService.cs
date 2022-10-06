@@ -44,7 +44,7 @@ namespace cloudsharpback.Services
                     member = null;
                     return false;
                 }
-                var query = "SELECT member_id, role_id, email, nickname " +
+                var query = "SELECT member_id id, role_id role, email, nickname, BIN_TO_UUID(directory) directory " +
                     "FROM member " +
                     "WHERE id = @Id";
                 using var conn = _connService.Connection;
@@ -61,14 +61,15 @@ namespace cloudsharpback.Services
 
         }
 
-        public bool TryRegister(RegisterDto registerDto, ulong role)
+        public bool TryRegister(RegisterDto registerDto, ulong role, out string? directoryId)
         {
             try
             {
                 registerDto.Pw = EncryptPassword(registerDto.Pw);
+                directoryId = Guid.NewGuid().ToString();
                 using var conn = _connService.Connection;
-                var query = "INSERT INTO member(id, password, nickname, role_id, email)" +
-                    "VALUES(@Id, @Pw, @Nick, @Role, @Email)";
+                var query = "INSERT INTO member(id, password, nickname, role_id, email, directory) " +
+                    "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory))";
                 return conn.Execute(query, new
                 {
                     Id = registerDto.Id,
@@ -76,12 +77,14 @@ namespace cloudsharpback.Services
                     Nick = registerDto.Nick,
                     Role = role,
                     Email = registerDto.Email,
-                }) != 0;
+                    Directory = directoryId,
+                }) != 0 || directoryId != null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
+                directoryId = null;
                 return false;
             }
         }

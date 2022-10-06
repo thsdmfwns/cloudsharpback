@@ -30,6 +30,7 @@ namespace cloudsharpback.Services
                 descriptor.AddClaim("email", data.Email);
                 descriptor.AddClaim("userId", data.Id.ToString());
                 descriptor.AddClaim("roleId", data.Role.ToString());
+                descriptor.AddClaim("directory", data.Directory);
 
                 token = new JwtWriter().WriteTokenString(descriptor);
 
