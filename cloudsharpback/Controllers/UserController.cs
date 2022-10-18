@@ -48,7 +48,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(500, "Fail to Register");
             }
-            if (!fileService.TryMakeDirectory(dir))
+            if (!fileService.TryMakeTemplateDirectory(dir))
             {
                 return StatusCode(500, "Fail to Make Directory");
             }
@@ -82,7 +82,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(500, "Fail to Register");
             }
-            if (!fileService.TryMakeDirectory(dir))
+            if (!fileService.TryMakeTemplateDirectory(dir))
             {
                 return StatusCode(500, "Fail to Make Directory");
             }

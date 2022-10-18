@@ -64,11 +64,56 @@ namespace cloudsharpback.Controllers
         {
             return userService.IdCheck(id);
         }
-
+        
         [HttpPost("makeDir")]
         public bool MakeDir(string id)
         {
-            return fileService.TryMakeDirectory(id);
+            return fileService.TryMakeTemplateDirectory(id);
+        }
+
+        [HttpPost("getFiles")]
+        public List<FileDto> getFiles(string id, string path)
+        {
+            return fileService.GetFiles(id, path);
+        }
+
+        [HttpPost("teapot")]
+        public void teapot()
+        {
+            throw new HttpErrorException(new HttpErrorDetail()
+            {
+                ErrorCode = 418,
+                Message = "I'm a teapot"
+            });
+        }
+
+        [HttpPost("upload")]
+        public async Task<bool> Upload(IFormFile file, string? path, [FromHeader]string auth)
+        {
+            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return false;
+            }
+            return await fileService.UploadFile(file, memberDto, path); ;
+        }
+
+        [HttpPost("download")]
+        public IActionResult Download(string path, [FromHeader] string auth)
+        {
+            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403);
+            }
+            if (fileService.DownloadFile(memberDto, path, out var fileStream)
+                || fileStream is null)
+            {
+                return StatusCode(404);
+            }
+            return new FileStreamResult(fileStream, "application/octet-stream") {
+                FileDownloadName = Path.GetFileName(fileStream.Name), EnableRangeProcessing = true 
+            };
         }
     }
 }

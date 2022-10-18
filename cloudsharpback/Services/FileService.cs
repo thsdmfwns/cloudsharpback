@@ -1,25 +1,31 @@
-﻿using JsonWebToken;
+﻿using cloudsharpback.Models;
+using JsonWebToken;
+using Microsoft.AspNetCore.Http;
+using System.Diagnostics.Metrics;
 using System.IO;
+using static System.Net.WebRequestMethods;
 
 namespace cloudsharpback.Services
 {
     public class FileService : IFileService
     {
         private readonly ILogger _logger;
-        public string DirectoryPath { get; private set; }
+        private string DirectoryPath;
         public FileService(IConfiguration configuration, ILogger<IFileService> logger)
         {
             DirectoryPath = configuration["File:DirectoryPath"];
             _logger = logger;
         }
 
-        public bool TryMakeDirectory(string directoryId)
+        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
+
+        public bool TryMakeTemplateDirectory(string directoryId)
         {
             try
             {
-                string path = DirectoryPath + directoryId;
-                Directory.CreateDirectory(path);
+                string path = userPath(directoryId);
                 string subPath(string foldername) => Path.Combine(path, foldername);
+                Directory.CreateDirectory(path);
                 Directory.CreateDirectory(subPath("Download"));
                 Directory.CreateDirectory(subPath("Music"));
                 Directory.CreateDirectory(subPath("Video"));
@@ -33,6 +39,140 @@ namespace cloudsharpback.Services
                 return false;
             }
 
+        }
+
+        public List<FileDto> GetFiles(string id, string? path)
+        {
+            List<FileDto> fileDtos = new();
+            var dir = new DirectoryInfo(userPath(id) + path ?? string.Empty);
+            foreach (var fol in dir.GetDirectories())
+            {
+                fileDtos.Add(new()
+                {
+                    Name = fol.Name,
+                    FileType = FileType.FOLDER,
+                    LastWriteTime = fol.LastWriteTime.ToFileTimeUtc(),
+                });
+            }
+            foreach (var file in dir.GetFiles())
+            {
+                fileDtos.Add(new()
+                {
+                    Name = file.Name,
+                    FileType = FileType.FILE,
+                    Extention = file.Extension,
+                    LastWriteTime = file.LastWriteTime.ToFileTimeUtc(),
+                    Size = (ulong?)file.Length
+                });
+            }
+            return fileDtos;
+        }
+
+        public bool GetFile(MemberDto member, string path, out FileDto? fileDto)
+        {
+            var filepath = Path.Combine(userPath(member.Directory), path);
+            if (!FileExist(filepath))
+            {
+                fileDto = null;
+                return false;
+            }
+            var file = new FileInfo(filepath);
+            fileDto = new()
+            {
+                Name = file.Name,
+                FileType = FileType.FILE,
+                Extention = file.Extension,
+                LastWriteTime = file.LastWriteTime.ToFileTimeUtc(),
+                Size = (ulong?)file.Length
+            };
+            return true;
+        }
+
+        bool FileExist(string filePath) => System.IO.File.Exists(filePath);
+
+        public bool DeleteFile(MemberDto member, string path, out FileDto? fileDto)
+        {
+            try
+            {
+                var filepath = Path.Combine(userPath(member.Directory), path);
+                if (!FileExist(filepath))
+                {
+                    fileDto = null;
+                    return false;
+                }
+                var file = new FileInfo(filepath);
+                fileDto = new()
+                {
+                    Name = file.Name,
+                    FileType = FileType.FILE,
+                    Extention = file.Extension,
+                    LastWriteTime = file.LastWriteTime.ToFileTimeUtc(),
+                    Size = (ulong?)file.Length
+                };
+                System.IO.File.Delete(filepath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDetail
+                {
+                    ErrorCode = 500,
+                    Message = "fail to delete file",
+                });
+            }
+
+        }
+
+        public async Task<bool> UploadFile(IFormFile file, MemberDto member, string? path)
+        {
+            try
+            {
+                var filepath = Path.Combine(userPath(member.Directory), path ?? string.Empty, file.FileName);
+                if (FileExist(filepath))
+                {
+                    return false;
+                }
+                using var stream = System.IO.File.Create(filepath);
+                await file.CopyToAsync(stream);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDetail
+                {
+                    ErrorCode = 500,
+                    Message = "fail to upload file",
+                });
+            }
+        }
+
+        public bool DownloadFile(MemberDto member, string path, out FileStream? fileStream)
+        {
+            try
+            {
+                var filepath = Path.Combine(userPath(member.Directory), path);
+                if (!FileExist(filepath))
+                {
+                    fileStream = null;
+                    return false;
+                }
+                fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
+                return fileStream is null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDetail
+                {
+                    ErrorCode = 500,
+                    Message = "fail to download file",
+                });
+            }
         }
     }
 }
