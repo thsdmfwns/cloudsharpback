@@ -13,5 +13,6 @@
         public long? LastWriteTime { get; set; }
         public FileType? FileType { get; set; }
         public ulong? Size { get; set; }
+        public string? Path { get; set; }
     }
 }

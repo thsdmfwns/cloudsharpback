@@ -1,6 +1,6 @@
 ﻿using cloudsharpback.Models;
 
-namespace cloudsharpback.Services
+namespace cloudsharpback.Services.Interfaces
 {
     public interface IFileService
     {

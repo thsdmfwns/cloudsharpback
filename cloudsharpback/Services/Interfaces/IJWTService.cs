@@ -1,7 +1,7 @@
 ﻿using cloudsharpback.Models;
 using JsonWebToken;
 
-namespace cloudsharpback.Services
+namespace cloudsharpback.Services.Interfaces
 {
     public interface IJWTService
     {

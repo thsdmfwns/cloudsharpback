@@ -1,4 +1,5 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using Dapper;
 using System.Diagnostics.Metrics;
@@ -78,7 +79,7 @@ namespace cloudsharpback.Services
                     Role = role,
                     Email = registerDto.Email,
                     Directory = directoryId,
-                }) != 0 || directoryId != null;
+                }) != 0 || directoryId is not null;
             }
             catch (Exception ex)
             {

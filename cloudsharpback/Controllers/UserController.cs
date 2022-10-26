@@ -1,5 +1,5 @@
 ﻿using cloudsharpback.Models;
-using cloudsharpback.Services;
+using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,7 +26,7 @@ namespace cloudsharpback.Controllers
             if (!userService.TryLogin(loginDto, out var member)
                 || member is null)
             {
-                return Unauthorized();
+                return NotFound();
             }
             if (!jwtService.TryTokenCreate(member, out var token)
                 || token is null)
@@ -55,7 +55,7 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [HttpPost("idcheck")]
+        [HttpGet("idcheck")]
         public IActionResult IdCkeck(string id)
         {
             return Ok(new

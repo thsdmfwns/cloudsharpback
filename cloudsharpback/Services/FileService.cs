@@ -1,8 +1,15 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Services.Interfaces;
+using cloudsharpback.Utills;
+using Dapper;
 using JsonWebToken;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Asn1.X509;
 using System.Diagnostics.Metrics;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
+using System.Xml.Linq;
 using static System.Net.WebRequestMethods;
 
 namespace cloudsharpback.Services
@@ -11,6 +18,7 @@ namespace cloudsharpback.Services
     {
         private readonly ILogger _logger;
         private string DirectoryPath;
+
         public FileService(IConfiguration configuration, ILogger<IFileService> logger)
         {
             DirectoryPath = configuration["File:DirectoryPath"];
@@ -44,14 +52,14 @@ namespace cloudsharpback.Services
         public List<FileDto> GetFiles(string id, string? path)
         {
             List<FileDto> fileDtos = new();
-            var dir = new DirectoryInfo(userPath(id) + path ?? string.Empty);
+            var dir = new DirectoryInfo(Path.Combine(userPath(id),path ?? string.Empty));
             foreach (var fol in dir.GetDirectories())
             {
                 fileDtos.Add(new()
                 {
                     Name = fol.Name,
                     FileType = FileType.FOLDER,
-                    LastWriteTime = fol.LastWriteTime.ToFileTimeUtc(),
+                    Path = fol.FullName.Substring(userPath(id).Length + 1),
                 });
             }
             foreach (var file in dir.GetFiles())
@@ -61,8 +69,9 @@ namespace cloudsharpback.Services
                     Name = file.Name,
                     FileType = FileType.FILE,
                     Extention = file.Extension,
-                    LastWriteTime = file.LastWriteTime.ToFileTimeUtc(),
-                    Size = (ulong?)file.Length
+                    LastWriteTime = file.LastWriteTime.ToUniversalTime().Ticks,
+                    Size = (ulong?)file.Length,
+                    Path = file.FullName.Substring(userPath(id).Length + 1),
                 });
             }
             return fileDtos;
@@ -82,8 +91,9 @@ namespace cloudsharpback.Services
                 Name = file.Name,
                 FileType = FileType.FILE,
                 Extention = file.Extension,
-                LastWriteTime = file.LastWriteTime.ToFileTimeUtc(),
-                Size = (ulong?)file.Length
+                LastWriteTime = file.LastWriteTime.ToUniversalTime().Ticks,
+                Size = (ulong?)file.Length,
+                Path = file.FullName.Substring(userPath(member.Directory).Length + 1),
             };
             return true;
         }
@@ -174,5 +184,7 @@ namespace cloudsharpback.Services
                 });
             }
         }
+
+        
     }
 }

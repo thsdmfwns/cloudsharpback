@@ -1,7 +1,10 @@
 using cloudsharpback.Middleware;
 using cloudsharpback.Services;
+using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.DependencyInjection;
+using tusdotnet;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -14,9 +17,12 @@ builder.Services.AddSingleton<IJWTService, JWTService>();
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IFileService, FileService>();
+builder.Services.AddSingleton<IShareService, ShareService>();
+builder.Services.AddSingleton<ITusService, TusService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddCors();
 builder.Services.Configure<FormOptions>(x =>
 {
     x.ValueLengthLimit = int.MaxValue;
@@ -35,6 +41,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(x => x.AllowAnyMethod()
+                .AllowAnyHeader()
+                .SetIsOriginAllowed(origin => true) 
+                .AllowCredentials());
+app.UseTus(ctx => ctx.RequestServices.GetService<ITusService>().GetTusConfiguration());
 
 app.UseMiddleware<HttpErrorMiddleware>();
 

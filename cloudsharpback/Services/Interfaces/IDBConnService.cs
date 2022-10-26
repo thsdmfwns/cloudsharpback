@@ -1,6 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
 
-namespace cloudsharpback.Services
+namespace cloudsharpback.Services.Interfaces
 {
     public interface IDBConnService
     {
