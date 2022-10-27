@@ -3,7 +3,7 @@
     public class HttpErrorException : Exception
     {
         public int ErrorCode { get; set; }
-        public HttpErrorDetail ErrorDetail => new HttpErrorDetail()
+        public ServiceResult ErrorDetail => new ServiceResult()
         {
             ErrorCode = ErrorCode,
             Message = base.Message,
@@ -14,7 +14,7 @@
             ErrorCode = errorCode;
         }
 
-        public HttpErrorException(HttpErrorDetail httpErrorDetail) : base(httpErrorDetail.Message)
+        public HttpErrorException(ServiceResult httpErrorDetail) : base(httpErrorDetail.Message)
         {
             ErrorCode = httpErrorDetail.ErrorCode;
         }

@@ -27,7 +27,7 @@ namespace cloudsharpback.Services
 
         string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
 
-        public bool TryMakeTemplateDirectory(string directoryId)
+        public void TryMakeTemplateDirectory(string directoryId)
         {
             try
             {
@@ -38,13 +38,16 @@ namespace cloudsharpback.Services
                 Directory.CreateDirectory(subPath("Music"));
                 Directory.CreateDirectory(subPath("Video"));
                 Directory.CreateDirectory(subPath("Document"));
-                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                return false;
+                throw new HttpErrorException(new ServiceResult
+                {
+                    ErrorCode = 500,
+                    Message = "fail to make template directory",
+                });
             }
 
         }
@@ -126,7 +129,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDetail
+                throw new HttpErrorException(new ServiceResult
                 {
                     ErrorCode = 500,
                     Message = "fail to delete file",
@@ -152,7 +155,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDetail
+                throw new HttpErrorException(new ServiceResult
                 {
                     ErrorCode = 500,
                     Message = "fail to upload file",
@@ -177,7 +180,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDetail
+                throw new HttpErrorException(new ServiceResult
                 {
                     ErrorCode = 500,
                     Message = "fail to download file",

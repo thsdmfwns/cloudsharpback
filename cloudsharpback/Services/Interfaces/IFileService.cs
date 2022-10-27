@@ -4,7 +4,7 @@ namespace cloudsharpback.Services.Interfaces
 {
     public interface IFileService
     {
-        bool TryMakeTemplateDirectory(string directoryId);
+        void TryMakeTemplateDirectory(string directoryId);
         List<FileDto> GetFiles(string id, string? path);
         bool GetFile(MemberDto member, string path, out FileDto? fileDto);
         Task<bool> UploadFile(IFormFile file, MemberDto member, string? path);

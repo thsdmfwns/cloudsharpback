@@ -11,17 +11,19 @@ namespace cloudsharpback.Controllers
     {
         private readonly IFileService fileService;
         private readonly IJWTService jwtService;
+        private readonly IShareService shareService;
 
-        public FileController(IFileService fileService, IJWTService jwtService)
+        public FileController(IFileService fileService, IJWTService jwtService, IShareService shareService)
         {
             this.fileService = fileService;
             this.jwtService = jwtService;
+            this.shareService = shareService;
         }
 
         [HttpGet("files")]
         public IActionResult GetFiles(string? path, [FromHeader]string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -32,7 +34,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("file")]
         public IActionResult GetFile(string path, [FromHeader] string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -48,7 +50,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("download")]
         public IActionResult Download(string path, [FromHeader] string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -70,7 +72,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("upload")]
         public async Task<IActionResult> Upload(IFormFile file, string? path, [FromHeader] string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -83,9 +85,9 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpPost("delete")]
-        public IActionResult Delete(string path, [FromHeader] string auth)
+        public async Task<IActionResult> Delete(string path, [FromHeader] string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -94,6 +96,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(404);
             }
+            await shareService.DeleteShareAsync(path, memberDto);
             return Ok(fileDto);
         }
     }

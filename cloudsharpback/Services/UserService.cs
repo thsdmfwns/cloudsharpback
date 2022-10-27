@@ -20,58 +20,60 @@ namespace cloudsharpback.Services
         string EncryptPassword(string password) => Base64.Encode(Encrypt.EncryptByBCrypt(password));
         bool VerifyPassword(string password, string hash) => Encrypt.VerifyBCrypt(password, Base64.Decode(hash));
 
-        public bool IdCheck(string id, out string? passwordHash)
+        async Task<string?> GetPasswordHash(string id)
         {
             var query = "SELECT password FROM member WHERE id = @Id";
             using var conn = _connService.Connection;
-            passwordHash = conn.QuerySingleOrDefault<string?>(query, new { Id = id });
-            return passwordHash != null;  
+            return await conn.QuerySingleOrDefaultAsync<string?>(query, new { Id = id });
         }
-        public bool IdCheck(string id)
+        public async Task<bool> IdCheck(string id)
         {
             var query = "SELECT password FROM member WHERE id = @Id";
             using var conn = _connService.Connection;
-            return conn.Query(query, new { Id = id }).Any();
+            return (await conn.QueryAsync(query, new { Id = id })).Any();
         }
 
-        public bool TryLogin(LoginDto loginDto, out MemberDto? member)
+        public async Task<(ServiceResult response, MemberDto? result)> Login(LoginDto loginDto)
         {
             try
             {
-                if (!IdCheck(loginDto.Id, out var passwordHash)
-                    || passwordHash is null
+                var passwordHash = await GetPasswordHash(loginDto.Id);
+                if (passwordHash is null
                     || !VerifyPassword(loginDto.Password, passwordHash))
                 {
-                    member = null;
-                    return false;
+                    var res = new ServiceResult() { ErrorCode = 404 };
+                    return (res, null);
                 }
                 var query = "SELECT member_id id, role_id role, email, nickname, BIN_TO_UUID(directory) directory " +
                     "FROM member " +
                     "WHERE id = @Id";
                 using var conn = _connService.Connection;
-                member = conn.QuerySingleOrDefault<MemberDto?>(query, new { Id = loginDto.Id });
-                return member != null;
+                var result = await conn.QuerySingleAsync<MemberDto>(query, new { Id = loginDto.Id });
+                return (ServiceResult.Sucess, result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                member = null;
-                return false;
+                throw new HttpErrorException(new ServiceResult
+                {
+                    ErrorCode = 500,
+                    Message = "fail to login",
+                });
             }
 
         }
 
-        public bool TryRegister(RegisterDto registerDto, ulong role, out string? directoryId)
+        public async Task<(ServiceResult response, string? directoryId)> Register(RegisterDto registerDto, ulong role)
         {
             try
             {
                 registerDto.Pw = EncryptPassword(registerDto.Pw);
-                directoryId = Guid.NewGuid().ToString();
+                var directoryId = Guid.NewGuid().ToString();
                 using var conn = _connService.Connection;
                 var query = "INSERT INTO member(id, password, nickname, role_id, email, directory) " +
                     "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory))";
-                return conn.Execute(query, new
+                var result = await conn.ExecuteAsync(query, new
                 {
                     Id = registerDto.Id,
                     Pw = registerDto.Pw,
@@ -79,14 +81,23 @@ namespace cloudsharpback.Services
                     Role = role,
                     Email = registerDto.Email,
                     Directory = directoryId,
-                }) != 0 || directoryId is not null;
+                }) != 0;
+                if (!result)
+                {
+                    var res = new ServiceResult() { ErrorCode = 400 };
+                    return (res, null);
+                }
+                return (ServiceResult.Sucess, directoryId);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                directoryId = null;
-                return false;
+                throw new HttpErrorException(new ServiceResult
+                {
+                    ErrorCode = 500,
+                    Message = "fail to register",
+                });
             }
         }
     }

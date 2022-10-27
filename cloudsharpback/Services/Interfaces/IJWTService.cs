@@ -5,7 +5,7 @@ namespace cloudsharpback.Services.Interfaces
 {
     public interface IJWTService
     {
-        public bool TryTokenCreate(MemberDto data, out string? token);
-        public bool TryTokenValidation(string token, out MemberDto? member);
+        public string WriteToken(MemberDto data);
+        public bool TryValidateToken(string token, out MemberDto? member);
     }
 }

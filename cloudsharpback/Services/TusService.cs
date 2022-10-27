@@ -23,6 +23,7 @@ namespace cloudsharpback.Services
 
         public DefaultTusConfiguration GetTusConfiguration()
         {
+            if (!Directory.Exists(TusStorePath)) Directory.CreateDirectory(TusStorePath);
             return new DefaultTusConfiguration
             {
                 // This method is called on each request so different configurations can be returned per user, domain, path etc.
@@ -31,7 +32,7 @@ namespace cloudsharpback.Services
                 // c:\tusfiles is where to store files
                 Store = new TusDiskStore(TusStorePath),
                 // On what url should we listen for uploads?
-                UrlPath = "/tus",
+                UrlPath = "/api/tus",
                 Events = new Events
                 {
                     OnFileCompleteAsync = async eventContext =>

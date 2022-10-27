@@ -1,7 +1,7 @@
 ﻿using cloudsharpback.Models;
-using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using MySqlX.XDevAPI.Common;
 
 namespace cloudsharpback.Controllers
 {
@@ -21,19 +21,19 @@ namespace cloudsharpback.Controllers
         [HttpPost("share")]
         public async Task<IActionResult> Share(ShareRequestDto req, [FromHeader] string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
             }
-            var token = await shareService.Share(memberDto, req);
-            return Ok(token);
+            var result = await shareService.Share(memberDto, req);
+            return StatusCode(result.ErrorCode, result.Message);
         }
 
         [HttpGet("getList")]
         public async Task<IActionResult> GetShares([FromHeader] string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -50,7 +50,11 @@ namespace cloudsharpback.Controllers
                 return BadRequest();
             }
             var res = await shareService.GetShareAsync(token);
-            return Ok(res);
+            if (!res.response.IsSuccess || res.result is null)
+            {
+                return StatusCode(res.response.ErrorCode, res.response.Message);
+            }
+            return Ok(res.result);
         }
 
         [HttpGet("download")]
@@ -60,10 +64,14 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            var fs = await shareService.DownloadShareAsync(token, password);
-            return new FileStreamResult(fs, "application/octet-stream")
+            var result = await shareService.DownloadShareAsync(token, password);
+            if (!result.response.IsSuccess || result.result is null)
             {
-                FileDownloadName = Path.GetFileName(fs.Name),
+                return StatusCode(result.response.ErrorCode, result.response.Message);
+            }
+            return new FileStreamResult(result.result, "application/octet-stream")
+            {
+                FileDownloadName = Path.GetFileName(result.result.Name),
                 EnableRangeProcessing = true
             };
         }
@@ -71,13 +79,33 @@ namespace cloudsharpback.Controllers
         [HttpPost("close")]
         public async Task<IActionResult> CloseShare(string token, [FromHeader] string auth)
         {
-            if (!jwtService.TryTokenValidation(auth, out var memberDto)
+            if (!Guid.TryParse(token, out _))
+            {
+                return BadRequest();
+            }
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
             }
             var result = await shareService.CloseShareAsync(memberDto, token);
-            return result ? Ok() : BadRequest();
+            return result ? Ok() : NotFound();
+        }
+
+        [HttpPost("update")]
+        public async Task<IActionResult> UpadteShare(string token, [FromBody] ShareUpdateDto dto, [FromHeader] string auth)
+        {
+            if (!Guid.TryParse(token, out _))
+            {
+                return BadRequest();
+            }
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403);
+            }
+            var result = await shareService.UpdateShareAsync(dto, token, memberDto);
+            return result ? Ok() : NotFound();
         }
     }
 }

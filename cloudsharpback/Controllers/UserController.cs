@@ -21,71 +21,52 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login(LoginDto loginDto)
+        public async Task<IActionResult> Login(LoginDto loginDto)
         {
-            if (!userService.TryLogin(loginDto, out var member)
-                || member is null)
+            var res = await userService.Login(loginDto);
+            if (!res.response.IsSuccess || res.result is null)
             {
-                return NotFound();
+                return StatusCode(res.response.ErrorCode, res.response.Message);
             }
-            if (!jwtService.TryTokenCreate(member, out var token)
-                || token is null)
-            {
-                return StatusCode(500, "Fail to Create token");
-            }
-            return Ok(new { Token = token });
+            return Ok(new { Token = jwtService.WriteToken(res.result) });
         }
 
         [HttpPost("register")]
-        public IActionResult Register(RegisterDto registerDto)
+        public async Task<IActionResult> Register(RegisterDto registerDto)
         {
-            if (userService.IdCheck(registerDto.Id))
+            var res = await userService.Register(registerDto, 2);
+            if (!res.response.IsSuccess || res.directoryId is null)
             {
-                return StatusCode(400);
+                return StatusCode(res.response.ErrorCode, res.response.Message);
             }
-            if (!userService.TryRegister(registerDto, 2, out var dir)
-                || dir is null)
-            {
-                return StatusCode(500, "Fail to Register");
-            }
-            if (!fileService.TryMakeTemplateDirectory(dir))
-            {
-                return StatusCode(500, "Fail to Make Directory");
-            }
+            fileService.TryMakeTemplateDirectory(res.directoryId);
             return Ok();
         }
 
         [HttpGet("idcheck")]
-        public IActionResult IdCkeck(string id)
+        public async Task<IActionResult> IdCkeck(string id)
         {
             return Ok(new
             {
-                exist = userService.IdCheck(id)
+                exist = await userService.IdCheck(id)
             });
         }
 
         [HttpPost("register/admin")]
-        public IActionResult RegisterAdmin(RegisterDto registerDto, [FromHeader] string adminToken)
+        public async Task<IActionResult> RegisterAdmin(RegisterDto registerDto, [FromHeader] string adminToken)
         {
-            if (!jwtService.TryTokenValidation(adminToken, out var memberDto)
+            if (!jwtService.TryValidateToken(adminToken, out var memberDto)
                 || memberDto is null
                 || memberDto.Role != 999)
             {
                 return StatusCode(403);
             }
-            if (userService.IdCheck(registerDto.Id))
+            var res = await userService.Register(registerDto, 999);
+            if (!res.response.IsSuccess || res.directoryId is null)
             {
-                return StatusCode(400);
+                return StatusCode(res.response.ErrorCode, res.response.Message);
             }
-            if (!userService.TryRegister(registerDto, 999, out var dir)
-                || dir is null)
-            {
-                return StatusCode(500, "Fail to Register");
-            }
-            if (!fileService.TryMakeTemplateDirectory(dir))
-            {
-                return StatusCode(500, "Fail to Make Directory");
-            }
+            fileService.TryMakeTemplateDirectory(res.directoryId);
             return Ok();
         }
 

@@ -46,7 +46,7 @@ app.UseCors(x => x.AllowAnyMethod()
                 .AllowAnyHeader()
                 .SetIsOriginAllowed(origin => true) 
                 .AllowCredentials());
-app.UseTus(ctx => ctx.RequestServices.GetService<ITusService>().GetTusConfiguration());
+app.UseTus(ctx => ctx.RequestServices.GetService<ITusService>()!.GetTusConfiguration());
 
 app.UseMiddleware<HttpErrorMiddleware>();
 

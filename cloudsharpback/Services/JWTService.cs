@@ -16,7 +16,7 @@ namespace cloudsharpback.Services
             _logger = logger;
         }
 
-        public bool TryTokenCreate(MemberDto data, out string? token)
+        public string WriteToken(MemberDto data)
         {
             try
             {
@@ -32,21 +32,21 @@ namespace cloudsharpback.Services
                 descriptor.AddClaim("userId", data.Id.ToString());
                 descriptor.AddClaim("roleId", data.Role.ToString());
                 descriptor.AddClaim("directory", data.Directory);
-
-                token = new JwtWriter().WriteTokenString(descriptor);
-
-                return true;
+                return new JwtWriter().WriteTokenString(descriptor);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                token = null;
-                return false;
+                throw new HttpErrorException(new ServiceResult
+                {
+                    ErrorCode = 500,
+                    Message = "fail to write token",
+                });
             }
         }
 
-        public bool TryTokenValidation(string token, out MemberDto? member)
+        public bool TryValidateToken(string token, out MemberDto? member)
         {
             try
             {
@@ -69,8 +69,11 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                member = null;
-                return false;
+                throw new HttpErrorException(new ServiceResult
+                {
+                    ErrorCode = 500,
+                    Message = "fail to validate token",
+                });
             }
         }
     }

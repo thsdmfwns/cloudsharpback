@@ -4,9 +4,8 @@ namespace cloudsharpback.Services.Interfaces
 {
     public interface IUserService
     {
-        public bool IdCheck(string id, out string? passwordHash);
-        public bool IdCheck(string id);
-        public bool TryLogin(LoginDto loginDto, out MemberDto? member);
-        public bool TryRegister(RegisterDto registerDto, ulong role, out string? directoryId);
+        Task<bool> IdCheck(string id);
+        Task<(ServiceResult response, MemberDto? result)> Login(LoginDto loginDto);
+        Task<(ServiceResult response, string? directoryId)> Register(RegisterDto registerDto, ulong role);
     }
 }
