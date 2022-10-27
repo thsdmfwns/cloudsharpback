@@ -49,7 +49,7 @@ namespace cloudsharpback.Services
                     "WHERE id = @Id";
                 using var conn = _connService.Connection;
                 var result = await conn.QuerySingleAsync<MemberDto>(query, new { Id = loginDto.Id });
-                return (ServiceResult.Sucess, result);
+                return (ServiceResult.Success, result);
             }
             catch (Exception ex)
             {
@@ -87,7 +87,7 @@ namespace cloudsharpback.Services
                     var res = new ServiceResult() { ErrorCode = 400 };
                     return (res, null);
                 }
-                return (ServiceResult.Sucess, directoryId);
+                return (ServiceResult.Success, directoryId);
             }
             catch (Exception ex)
             {

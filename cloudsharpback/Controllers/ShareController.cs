@@ -52,7 +52,7 @@ namespace cloudsharpback.Controllers
             var res = await shareService.GetShareAsync(token);
             if (!res.response.IsSuccess || res.result is null)
             {
-                return StatusCode(res.response.ErrorCode, res.response.Message);
+                return StatusCode(res.response.ErrorCode, res);
             }
             return Ok(res.result);
         }
@@ -67,7 +67,7 @@ namespace cloudsharpback.Controllers
             var result = await shareService.DownloadShareAsync(token, password);
             if (!result.response.IsSuccess || result.result is null)
             {
-                return StatusCode(result.response.ErrorCode, result.response.Message);
+                return StatusCode(result.response.ErrorCode, result);
             }
             return new FileStreamResult(result.result, "application/octet-stream")
             {

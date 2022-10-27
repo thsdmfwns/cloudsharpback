@@ -63,7 +63,7 @@ namespace cloudsharpback.Services
                     Token = token,
                     FileSize = (ulong)fileinfo.Length,
                 });
-                return ServiceResult.Sucess;
+                return ServiceResult.Success;
             }
             catch (Exception ex)
             {
@@ -100,7 +100,7 @@ namespace cloudsharpback.Services
                     };
                     return (response, null);
                 }
-                return (ServiceResult.Sucess, result);
+                return (ServiceResult.Success, result);
             }
             catch (Exception ex)
             {
@@ -185,7 +185,7 @@ namespace cloudsharpback.Services
                         return (res, null);
                     }
                 }
-                return (ServiceResult.Sucess, new FileStream(filepath, FileMode.Open, FileAccess.Read));
+                return (ServiceResult.Success, new FileStream(filepath, FileMode.Open, FileAccess.Read));
             }
             catch (HttpErrorException) { throw; }
             catch (Exception ex)
