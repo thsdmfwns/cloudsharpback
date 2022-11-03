@@ -20,38 +20,47 @@ namespace cloudsharpback.Controllers
             this.fileService = fileService;
         }
 
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
             var res = await userService.Login(loginDto);
-            if (!res.response.IsSuccess || res.result is null)
+            if (res.err is not null || res.result is null)
             {
-                return StatusCode(res.response.ErrorCode, res.response.Message);
+                return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
-            return Ok(new { Token = jwtService.WriteToken(res.result) });
+            return Ok(jwtService.WriteToken(res.result));
         }
 
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {
             var res = await userService.Register(registerDto, 2);
-            if (!res.response.IsSuccess || res.directoryId is null)
+            if (res.err is not null || res.directoryId is null)
             {
-                return StatusCode(res.response.ErrorCode, res.response.Message);
+                return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
             fileService.TryMakeTemplateDirectory(res.directoryId);
             return Ok();
         }
 
+        [ProducesResponseType(200)]
         [HttpGet("idcheck")]
         public async Task<IActionResult> IdCkeck(string id)
         {
-            return Ok(new
-            {
-                exist = await userService.IdCheck(id)
-            });
+            return Ok(await userService.IdCheck(id));
         }
 
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(403)]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("register/admin")]
         public async Task<IActionResult> RegisterAdmin(RegisterDto registerDto, [FromHeader] string adminToken)
         {
@@ -62,9 +71,9 @@ namespace cloudsharpback.Controllers
                 return StatusCode(403);
             }
             var res = await userService.Register(registerDto, 999);
-            if (!res.response.IsSuccess || res.directoryId is null)
+            if (res.err is not null || res.directoryId is null)
             {
-                return StatusCode(res.response.ErrorCode, res.response.Message);
+                return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
             fileService.TryMakeTemplateDirectory(res.directoryId);
             return Ok();

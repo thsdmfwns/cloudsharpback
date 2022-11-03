@@ -38,7 +38,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to write token",
@@ -69,7 +69,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to validate token",

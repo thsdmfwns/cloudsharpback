@@ -2,6 +2,7 @@
 {
     public class ShareResponseDto
     {
+        //System.UInt64 ownerId, System.String ownerNick, System.UInt64 shareTime, System.UInt64 expireTime, System.String target, System.String shareName, System.String comment, System.String token, System.UInt64 filesize
         public ShareResponseDto(ulong ownerId, string ownerNick, ulong shareTime, ulong? expireTime,
             string target, string? shareName, string? comment, string token, string? password, ulong filesize)
         {

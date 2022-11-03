@@ -4,6 +4,7 @@ using cloudsharpback.Utills;
 using Dapper;
 using MySqlX.XDevAPI.Relational;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Ocsp;
 using System.Diagnostics.Metrics;
 using System.IO;
@@ -28,17 +29,25 @@ namespace cloudsharpback.Services
         bool VerifyPassword(string password, string hash) => Encrypt.VerifyBCrypt(password, Base64.Decode(hash));
         string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
-        public async Task<ServiceResult> Share(MemberDto member, ShareRequestDto req)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="member"></param>
+        /// <param name="req"></param>
+        /// <returns>404 : no file for share</returns>
+        /// <exception cref="HttpErrorException"></exception>
+        public async Task<HttpErrorDto?> Share(MemberDto member, ShareRequestDto req)
         {
             try
             {
                 var filepath = Path.Combine(userPath(member.Directory), req.Target);
                 if (!FileExist(filepath))
                 {
-                    return new ServiceResult
+                    return new HttpErrorDto
                     {
                         ErrorCode = 404,
-                        Message = $"Fail to Find Sharing Object",
+                        Message = $"no file for share",
                     };
                 }
                 var fileinfo = new FileInfo(filepath);
@@ -63,13 +72,13 @@ namespace cloudsharpback.Services
                     Token = token,
                     FileSize = (ulong)fileinfo.Length,
                 });
-                return ServiceResult.Success;
+                return null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to sharing",
@@ -77,14 +86,20 @@ namespace cloudsharpback.Services
             }
         }
 
-        public async Task<(ServiceResult response, ShareResponseDto? result)> GetShareAsync(string token)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns>410 : expired share </returns>
+        /// <exception cref="HttpErrorException"></exception>
+        public async Task<(HttpErrorDto? err, ShareResponseDto? result)> GetShareAsync(string token)
         {
             try
             {
                 //ulong id, ulong ownerId, string ownerNick, ulong shareTime, ulong? expireTime, string target, string? shareName, string? comment
                 var sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
                     "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
-                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.file_size filesize " +
+                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
                     "FROM share AS s " +
                     "INNER JOIN member AS m " +
                     "ON s.member_id = m.member_id " +
@@ -93,20 +108,20 @@ namespace cloudsharpback.Services
                 var result = await conn.QueryFirstOrDefaultAsync<ShareResponseDto>(sql, new { Token = token });
                 if (result.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
                 {
-                    var response = new ServiceResult()
+                    var err = new HttpErrorDto()
                     {
                         ErrorCode = 410,
                         Message = "expired share",
                     };
-                    return (response, null);
+                    return (err, null);
                 }
-                return (ServiceResult.Success, result);
+                return (null, result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to get shares",
@@ -133,7 +148,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to get share",
@@ -141,7 +156,14 @@ namespace cloudsharpback.Services
             }
         }
 
-        public async Task<(ServiceResult response, FileStream? result)> DownloadShareAsync(string token, string? password)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="token"></param>
+        /// <param name="password"></param>
+        /// <returns>404 : file doesnt exist , 403 : bad password, 410 : expired share</returns>
+        /// <exception cref="HttpErrorException"></exception>
+        public async Task<(HttpErrorDto? err, FileStream? result)> DownloadShareAsync(string token, string? password)
         {
             try
             {
@@ -155,7 +177,7 @@ namespace cloudsharpback.Services
                 var filepath = Path.Combine(userPath(dto.Directory), dto.Target);
                 if (dto is null || !FileExist(filepath))
                 {
-                    var res = new ServiceResult
+                    var res = new HttpErrorDto
                     {
                         ErrorCode = 404,
                     };
@@ -165,10 +187,10 @@ namespace cloudsharpback.Services
                 {
                     if (password is null || !VerifyPassword(password, dto.Password))
                     {
-                        var res = new ServiceResult
+                        var res = new HttpErrorDto
                         {
                             ErrorCode = 403,
-                            Message = "Bad Password",
+                            Message = "bad password",
                         };
                         return (res, null);
                     }
@@ -177,7 +199,7 @@ namespace cloudsharpback.Services
                 {
                     if (dto.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
                     {
-                        var res = new ServiceResult
+                        var res = new HttpErrorDto
                         {
                             ErrorCode = 410,
                             Message = "expired share",
@@ -185,14 +207,14 @@ namespace cloudsharpback.Services
                         return (res, null);
                     }
                 }
-                return (ServiceResult.Success, new FileStream(filepath, FileMode.Open, FileAccess.Read));
+                return (null, new FileStream(filepath, FileMode.Open, FileAccess.Read));
             }
             catch (HttpErrorException) { throw; }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to download share",
@@ -218,7 +240,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to close share",
@@ -253,7 +275,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to update share",
@@ -279,13 +301,76 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to delete share",
                 });
             }
 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="password"></param>
+        /// <param name="token"></param>
+        /// <returns>404 : NotFound Share</returns>
+        /// <exception cref="HttpErrorException"></exception>
+        public async Task<(HttpErrorDto? err, bool? result)> ValidatePassword(string password, string token)
+        {
+            try
+            {
+                var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
+                using var conn = _connService.Connection;
+                var hash = await conn.QueryFirstOrDefaultAsync<string>(sql, new
+                {
+                    Token = token,
+                });
+                if (hash is null)
+                {
+                    var err = new HttpErrorDto()
+                    {
+                        ErrorCode = 404,
+                    };
+                    return (err, null);
+                }
+                return (null, VerifyPassword(password, hash));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to Validate Password",
+                });
+            }
+        }
+
+        public async Task<bool> CheckPassword(string token)
+        {
+            try
+            {
+                var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
+                using var conn = _connService.Connection;
+                var hash = await conn.QueryFirstOrDefaultAsync<string>(sql, new
+                {
+                    Token = token,
+                });
+                return hash is not null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to check Password",
+                });
+            }
         }
     }
 }

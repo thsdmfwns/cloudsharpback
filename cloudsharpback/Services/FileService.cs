@@ -43,7 +43,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to make template directory",
@@ -129,7 +129,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to delete file",
@@ -155,7 +155,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to upload file",
@@ -180,7 +180,7 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new ServiceResult
+                throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
                     Message = "fail to download file",
@@ -188,6 +188,57 @@ namespace cloudsharpback.Services
             }
         }
 
-        
+        Dictionary<Guid, (DateTime expireTime, string target)> DownloadTokens = new Dictionary<Guid, (DateTime expireTime, string target)>();
+
+        /// <returns>404 : file not found, 409 : try again</returns>
+        public HttpErrorDto? GetDownloadToken(MemberDto member, string targetPath, out Guid? token)
+        {
+            token = null;
+            var target = Path.Combine(userPath(member.Directory), targetPath);
+            if (!FileExist(target))
+            {
+                return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+            }
+            token = Guid.NewGuid();
+            var expireTime = DateTime.Now.AddMinutes(1);
+            if (!DownloadTokens.TryAdd(token.Value, (expireTime, target)))
+            {
+                return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
+            }
+            return null;
+        }
+
+        /// <returns>500 : server error , 403 : bad token, 410 : expire, 404 : file not found</returns>
+        public HttpErrorDto? DownloadFile(Guid downloadToken, out FileStream? fileStream)
+        {
+            try
+            {
+                fileStream = null;
+                if (!DownloadTokens.Remove(downloadToken, out var item))
+                {
+                    return new HttpErrorDto() { ErrorCode = 403, Message = "bad token" };
+                }
+                if (item.expireTime < DateTime.Now)
+                {
+                    return new HttpErrorDto() { ErrorCode = 410, Message = "expire token" };
+                }
+                if (!FileExist(item.target))
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                }
+                fileStream = new FileStream(item.target, FileMode.Open, FileAccess.Read);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to download file",
+                });
+            }
+        }
     }
 }

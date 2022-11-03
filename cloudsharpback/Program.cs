@@ -42,10 +42,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors(x => x.AllowAnyMethod()
+app.UseCors(builder => builder
                 .AllowAnyHeader()
-                .SetIsOriginAllowed(origin => true) 
-                .AllowCredentials());
+                .AllowAnyMethod()
+                .AllowAnyOrigin()
+                .WithExposedHeaders(tusdotnet.Helpers.CorsHelper.GetExposedHeaders()));
+
 app.UseTus(ctx => ctx.RequestServices.GetService<ITusService>()!.GetTusConfiguration());
 
 app.UseMiddleware<HttpErrorMiddleware>();
