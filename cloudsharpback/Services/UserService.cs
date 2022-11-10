@@ -53,7 +53,8 @@ namespace cloudsharpback.Services
                     var res = new HttpErrorDto() { ErrorCode = 404 };
                     return (res, null);
                 }
-                var query = "SELECT member_id id, role_id role, email, nickname, BIN_TO_UUID(directory) directory, BIN_TO_UUID(profile_image_id) profileImageID " +
+                var query = "SELECT member_id id, role_id role, email, nickname, " +
+                    "BIN_TO_UUID(directory) directory, profile_image profileImage " +
                     "FROM member " +
                     "WHERE id = @Id";
                 using var conn = _connService.Connection;
@@ -122,11 +123,13 @@ namespace cloudsharpback.Services
             try
             {
                 var profileId = Guid.NewGuid();
+                var extension = Path.GetExtension(imageFile.FileName);
                 if (imageFile.ContentType.Split('/')[0] != "image")
                 {
-                    return new HttpErrorDto() { ErrorCode = 415, Message = "bad image type" };
+                    return new HttpErrorDto() { ErrorCode = 415, Message = "bad type" };
                 }
-                var filepath = Path.Combine(ProfilePath, profileId.ToString());
+                var filename = profileId.ToString() + extension;
+                var filepath = Path.Combine(ProfilePath, filename);
                 if (File.Exists(filepath))
                 {
                     return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
@@ -135,15 +138,13 @@ namespace cloudsharpback.Services
                 {
                     await imageFile.CopyToAsync(stream);
                 }
-
                 using var conn = _connService.Connection;
                 var sql = "UPDATE member " +
-                    "SET profile_image_id = UUID_TO_BIN(@ProfileId), profile_image_type = @ProfileType " +
+                    "SET profile_image = @Filename " +
                     "WHERE member_id = @Id";
                 var result = await conn.ExecuteAsync(sql, new
                 {
-                    ProfileId = profileId,
-                    ProfileType = imageFile.ContentType,
+                    Filename = filename,
                     Id = member.Id,
                 });
                 if (result <= 0)
@@ -160,6 +161,33 @@ namespace cloudsharpback.Services
                 {
                     ErrorCode = 500,
                     Message = "fail to upload profile image",
+                });
+            }
+        }
+
+        public HttpErrorDto? DownloadProfileImage(string profileImage, out FileStream? fileStream, out string? contentType)
+        {
+            try
+            {
+                fileStream = null;
+                var filepath = Path.Combine(ProfilePath, profileImage);
+                contentType = MimeTypeUtil.GetMimeType(profileImage);
+                if (!File.Exists(filepath)
+                    || contentType is null)
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                }
+                fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to download file",
                 });
             }
         }

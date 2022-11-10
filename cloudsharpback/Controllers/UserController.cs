@@ -1,4 +1,5 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -113,6 +114,24 @@ namespace cloudsharpback.Controllers
                 return StatusCode(res.ErrorCode, res.Message);
             }
             return Ok();
+        }
+
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpGet("imageDL/{image}")]
+        public IActionResult DownloadProfileImage(string image)
+        {
+            var err = userService.DownloadProfileImage(image, out var fileStream, out var contentType);
+            if (err is not null || fileStream is null || contentType is null)
+            {
+                return StatusCode(err!.ErrorCode, err.Message);
+            }
+            return new FileStreamResult(fileStream, contentType)
+            {
+                FileDownloadName = Path.GetFileName(fileStream.Name),
+                EnableRangeProcessing = true
+            };
         }
     }
 }

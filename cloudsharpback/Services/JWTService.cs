@@ -32,9 +32,9 @@ namespace cloudsharpback.Services
                 descriptor.AddClaim("userId", data.Id.ToString());
                 descriptor.AddClaim("roleId", data.Role.ToString());
                 descriptor.AddClaim("directory", data.Directory);
-                if (data.ProfileImageID is not null)
+                if (data.ProfileImage is not null)
                 {
-                    descriptor.AddClaim("profile_image_id", data.ProfileImageID);
+                    descriptor.AddClaim("profile_image", data.ProfileImage);
                 }
                 return new JwtWriter().WriteTokenString(descriptor);
             }
