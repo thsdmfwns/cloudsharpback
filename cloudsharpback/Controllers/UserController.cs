@@ -160,7 +160,7 @@ namespace cloudsharpback.Controllers
         [ProducesResponseType(403, Type = typeof(string))]
         [ProducesResponseType(404, Type = typeof(string))]
         [ProducesResponseType(500, Type = typeof(string))]
-        [HttpGet("updateNick")]
+        [HttpPost("updateNick")]
         public async Task<IActionResult> UpdateNickName(string nickname, [FromHeader]string auth)
         {
             if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
@@ -181,7 +181,7 @@ namespace cloudsharpback.Controllers
         [ProducesResponseType(403, Type = typeof(string))]
         [ProducesResponseType(404, Type = typeof(string))]
         [ProducesResponseType(500, Type = typeof(string))]
-        [HttpGet("updateEmail")]
+        [HttpPost("updateEmail")]
         public async Task<IActionResult> UpdateEmail(string email, [FromHeader] string auth)
         {
             if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
