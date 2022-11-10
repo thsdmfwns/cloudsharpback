@@ -4,6 +4,7 @@ using cloudsharpback.Utills;
 using Dapper;
 using System.Diagnostics.Metrics;
 using System.Net.Mail;
+using Ubiety.Dns.Core;
 
 namespace cloudsharpback.Services
 {
@@ -158,7 +159,9 @@ namespace cloudsharpback.Services
             {
                 var profileId = Guid.NewGuid();
                 var extension = Path.GetExtension(imageFile.FileName);
-                if (imageFile.ContentType.Split('/')[0] != "image")
+                var mime = MimeTypeUtil.GetMimeType(extension);
+                if (mime is null 
+                    || mime.Split('/')[0] != "image")
                 {
                     return new HttpErrorDto() { ErrorCode = 415, Message = "bad type" };
                 }
