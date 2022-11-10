@@ -204,7 +204,7 @@ namespace cloudsharpback.Services
 
                 var sql = "UPDATE member " +
                 "SET nickname = @ChangeNick " +
-                "WHERE user_id = @Id";
+                "WHERE member_id = @Id";
                 using var conn = _connService.Connection;
                 var result = await conn.ExecuteAsync(sql, new
                 {
@@ -224,7 +224,7 @@ namespace cloudsharpback.Services
                 throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
-                    Message = "fail to update",
+                    Message = "fail to update nick",
                 });
             }
         }
@@ -245,7 +245,7 @@ namespace cloudsharpback.Services
 
                 var sql = "UPDATE member " +
                 "SET email = @ChangeEmail " +
-                "WHERE user_id = @Id";
+                "WHERE member_id = @Id";
                 using var conn = _connService.Connection;
                 var result = await conn.ExecuteAsync(sql, new
                 {
@@ -265,8 +265,73 @@ namespace cloudsharpback.Services
                 throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
-                    Message = "fail to update",
+                    Message = "fail to update email",
                 });
+            }
+        }
+
+        public async Task<(HttpErrorDto? err, bool result)> CheckPassword(MemberDto member, string password)
+        {
+            try
+            {
+                var sql = "SELECT password FROM member WHERE member_id = @Id";
+                using var conn = _connService.Connection;
+                var passwordHash = await conn.QuerySingleOrDefaultAsync<string?>(sql, new { Id = member.Id });
+                if (passwordHash is null)
+                {
+                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    return (err, false);
+                }
+                return (null, VerifyPassword(password, passwordHash));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to check password",
+                });
+                throw;
+            }
+
+        }
+
+        public async Task<HttpErrorDto?> UpdatePassword(MemberDto member, UpadtePasswordDto requset)
+        {
+            try
+            {
+                var checkresult = await CheckPassword(member, requset.Original);
+                if (checkresult.err is not null)
+                {
+                    return checkresult.err;
+                }
+                if (!checkresult.result)
+                {
+                    return new HttpErrorDto() { ErrorCode = 400, Message = "check password" };
+                }
+
+                var password = EncryptPassword(requset.ChangeTo);
+                var sql = "UPDATE member SET password = @Password WHERE member_id = @Id";
+                using var conn = _connService.Connection;
+                var result = await conn.ExecuteAsync(sql, new { Password = password, Id = member.Id });
+                if (result <= 0)
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to update password",
+                });
+                throw;
             }
         }
     }

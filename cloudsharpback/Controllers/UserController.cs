@@ -156,6 +156,7 @@ namespace cloudsharpback.Controllers
 
         [ProducesResponseType(200)]
         [ProducesResponseType(400, Type = typeof(string))]
+        [ProducesResponseType(403, Type = typeof(string))]
         [ProducesResponseType(404, Type = typeof(string))]
         [ProducesResponseType(500, Type = typeof(string))]
         [HttpGet("updateEmail")]
@@ -167,6 +168,46 @@ namespace cloudsharpback.Controllers
                 return StatusCode(403, "bad auth");
             }
             var err = await userService.UpadteEmail(memberDto, email);
+            if (err is not null)
+            {
+                return StatusCode(err.ErrorCode, err.Message);
+            }
+            return Ok();
+        }
+
+        [ProducesResponseType(200, Type = typeof(bool))]
+        [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpPost("checkPw")]
+        public async Task<IActionResult> CheckPassword([FromBody]string password, [FromHeader] string auth)
+        {
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403, "bad auth");
+            }
+            var result = await userService.CheckPassword(memberDto, password);
+            if (result.err is not null)
+            {
+                return StatusCode(result.err.ErrorCode, result.err.Message);
+            }
+            return Ok(result.result);
+        }
+
+        [ProducesResponseType(200)]
+        [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpPost("updatePw")]
+        public async Task<IActionResult> UpadtePassword([FromBody] UpadtePasswordDto requset, [FromHeader] string auth)
+        {
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403, "bad auth");
+            }
+            var err = await userService.UpdatePassword(memberDto, requset);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);

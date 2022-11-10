@@ -14,5 +14,7 @@ namespace cloudsharpback.Services.Interfaces
         HttpErrorDto? DownloadProfileImage(string profileImage, out FileStream? fileStream, out string? contentType);
         Task<HttpErrorDto?> UpadteNickname(MemberDto member, string changeNick);
         Task<HttpErrorDto?> UpadteEmail(MemberDto member, string changeEmail);
+        Task<(HttpErrorDto? err, bool result)> CheckPassword(MemberDto member, string password);
+        Task<HttpErrorDto?> UpdatePassword(MemberDto member, UpadtePasswordDto requset);
     }
 }
