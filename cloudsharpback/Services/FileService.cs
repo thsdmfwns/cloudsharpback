@@ -138,6 +138,9 @@ namespace cloudsharpback.Services
 
         }
 
+
+        // old codes
+        /*
         public async Task<bool> UploadFile(IFormFile file, MemberDto member, string? path)
         {
             try
@@ -187,6 +190,7 @@ namespace cloudsharpback.Services
                 });
             }
         }
+        */
 
         Dictionary<Guid, (DateTime expireTime, string target)> DownloadTokens = new Dictionary<Guid, (DateTime expireTime, string target)>();
 

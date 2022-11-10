@@ -56,32 +56,6 @@ namespace cloudsharpback.Controllers
             return Ok(fileDto);
         }
 
-        [ProducesResponseType(200, Type = typeof(FileStreamResult))]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(500, Type = typeof(string))]
-        [ProducesResponseType(404)]
-        [HttpGet("download")]
-        public IActionResult Download(string path, [FromHeader] string auth)
-        {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-
-            if (fileService.DownloadFile(memberDto, path, out var fileStream)
-                || fileStream is null)
-            {
-                return StatusCode(404);
-            }
-
-            return new FileStreamResult(fileStream, "application/octet-stream")
-            {
-                FileDownloadName = Path.GetFileName(fileStream.Name),
-                EnableRangeProcessing = true
-            };
-        }
-
         [ProducesResponseType(200, Type = typeof(string))]
         [ProducesResponseType(403, Type = typeof(string))]
         [ProducesResponseType(404, Type = typeof(string))]
@@ -145,25 +119,6 @@ namespace cloudsharpback.Controllers
                 FileDownloadName = Path.GetFileName(fileStream.Name),
                 EnableRangeProcessing = true
             };
-        }
-
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(500, Type = typeof(string))]
-        [ProducesResponseType(409)]
-        [HttpPost("upload")]
-        public async Task<IActionResult> Upload(IFormFile file, string? path, [FromHeader] string auth)
-        {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            if (!await fileService.UploadFile(file, memberDto, path))
-            {
-                return StatusCode(409);
-            }
-            return Ok();
         }
 
         [ProducesResponseType(200)]
