@@ -26,12 +26,12 @@ builder.Services.AddCors();
 builder.Services.Configure<FormOptions>(x =>
 {
     x.ValueLengthLimit = int.MaxValue;
-    x.MultipartBodyLengthLimit = int.MaxValue; 
+    x.MultipartBodyLengthLimit = long.MaxValue; 
     x.MultipartHeadersLengthLimit = int.MaxValue;
 });
 builder.Services.Configure<KestrelServerOptions>(options =>
 {
-    options.Limits.MaxRequestBodySize = int.MaxValue;
+    options.Limits.MaxRequestBodySize = long.MaxValue;
 });
 var app = builder.Build();
 
