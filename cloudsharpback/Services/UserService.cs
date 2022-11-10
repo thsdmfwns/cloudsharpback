@@ -10,9 +10,12 @@ namespace cloudsharpback.Services
     {
         private readonly IDBConnService _connService;
         private readonly ILogger _logger;
+        private string ProfilePath;
 
-        public UserService(IDBConnService connService, ILogger<IUserService> logger)
+        public UserService(IConfiguration configuration, IDBConnService connService, ILogger<IUserService> logger)
         {
+            ProfilePath = configuration["File:ProfileImagePath"];
+            if (!Directory.Exists(ProfilePath)) Directory.CreateDirectory(ProfilePath);
             _connService = connService;
             _logger = logger;
         }
@@ -50,7 +53,7 @@ namespace cloudsharpback.Services
                     var res = new HttpErrorDto() { ErrorCode = 404 };
                     return (res, null);
                 }
-                var query = "SELECT member_id id, role_id role, email, nickname, BIN_TO_UUID(directory) directory " +
+                var query = "SELECT member_id id, role_id role, email, nickname, BIN_TO_UUID(directory) directory, BIN_TO_UUID(profile_image_id) profileImageID " +
                     "FROM member " +
                     "WHERE id = @Id";
                 using var conn = _connService.Connection;
@@ -110,6 +113,53 @@ namespace cloudsharpback.Services
                 {
                     ErrorCode = 500,
                     Message = "fail to register",
+                });
+            }
+        }
+        /// <returns>415 : bad type, 409 : try again, 404: member not found</returns>
+        public async Task<HttpErrorDto?> UploadProfileImage(IFormFile imageFile, MemberDto member)
+        {
+            try
+            {
+                var profileId = Guid.NewGuid();
+                if (imageFile.ContentType.Split('/')[0] != "image")
+                {
+                    return new HttpErrorDto() { ErrorCode = 415, Message = "bad image type" };
+                }
+                var filepath = Path.Combine(ProfilePath, profileId.ToString());
+                if (File.Exists(filepath))
+                {
+                    return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
+                }
+                using (var stream = System.IO.File.Create(filepath))
+                {
+                    await imageFile.CopyToAsync(stream);
+                }
+
+                using var conn = _connService.Connection;
+                var sql = "UPDATE member " +
+                    "SET profile_image_id = UUID_TO_BIN(@ProfileId), profile_image_type = @ProfileType " +
+                    "WHERE member_id = @Id";
+                var result = await conn.ExecuteAsync(sql, new
+                {
+                    ProfileId = profileId,
+                    ProfileType = imageFile.ContentType,
+                    Id = member.Id,
+                });
+                if (result <= 0)
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to upload profile image",
                 });
             }
         }

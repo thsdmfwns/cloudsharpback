@@ -79,5 +79,40 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
+        [ProducesResponseType(200, Type = typeof(MemberDto))]
+        [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpGet("member")]
+        public IActionResult GetMember([FromHeader] string auth)
+        {
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
+               || memberDto is null)
+            {
+                return StatusCode(403, "bad auth");
+            }
+            return Ok(memberDto);
+        }
+
+        [ProducesResponseType(200)]
+        [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(409, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(415, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpPost("profileImage")]
+        public async Task<IActionResult> UploadProfileImage(IFormFile image, [FromHeader] string auth)
+        {
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403, "bad auth");
+            }
+            var res = await userService.UploadProfileImage(image, memberDto);
+            if (res is not null)
+            {
+                return StatusCode(res.ErrorCode, res.Message);
+            }
+            return Ok();
+        }
     }
 }

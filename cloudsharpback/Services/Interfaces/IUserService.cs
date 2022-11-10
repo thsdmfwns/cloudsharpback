@@ -9,5 +9,7 @@ namespace cloudsharpback.Services.Interfaces
         Task<(HttpErrorDto? err, MemberDto? result)> Login(LoginDto loginDto);
         /// <returns>404 : bad json </returns>
         Task<(HttpErrorDto? err, string? directoryId)> Register(RegisterDto registerDto, ulong role);
+        /// <returns>415 : bad type, 409 : try again, 404: member not found</returns>
+        Task<HttpErrorDto?> UploadProfileImage(IFormFile imageFile, MemberDto member);
     }
 }
