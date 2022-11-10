@@ -5,6 +5,7 @@ namespace cloudsharpback.Services.Interfaces
     public interface IUserService
     {
         Task<bool> IdCheck(string id);
+        Task<(HttpErrorDto? err, MemberDto? result)> GetMemberById(ulong id);
         /// <returns>404 : fail to login</returns>
         Task<(HttpErrorDto? err, MemberDto? result)> Login(LoginDto loginDto);
         /// <returns>404 : bad json </returns>

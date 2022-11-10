@@ -28,7 +28,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("files")]
         public IActionResult GetFiles(string? path, [FromHeader]string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -43,7 +43,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("file")]
         public IActionResult GetFile(string path, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -64,7 +64,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("dlToken")]
         public IActionResult GetDownloadToken(string path, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403, "bad auth");
@@ -84,7 +84,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("tusToken")]
         public IActionResult GetTusToken([FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403, "bad auth");
@@ -128,7 +128,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("delete")]
         public async Task<IActionResult> Delete(string path, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);

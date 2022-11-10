@@ -37,6 +37,36 @@ namespace cloudsharpback.Services
             return (await conn.QueryAsync(query, new { Id = id })).Any();
         }
 
+        /// <returns>404 : fail to login</returns>
+        public async Task<(HttpErrorDto? err, MemberDto? result)> GetMemberById(ulong id)
+        {
+            try
+            {
+                var query = "SELECT member_id id, role_id role, email, nickname, " +
+                    "BIN_TO_UUID(directory) directory, profile_image profileImage " +
+                    "FROM member " +
+                    "WHERE member_id = @Id";
+                using var conn = _connService.Connection;
+                var result = await conn.QuerySingleOrDefaultAsync<MemberDto>(query, new { Id = id });
+                if (result is null)
+                {
+                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    return (err, null);
+                }
+                return (null, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to get member",
+                });
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -51,7 +81,7 @@ namespace cloudsharpback.Services
                 if (passwordHash is null
                     || !VerifyPassword(loginDto.Password, passwordHash))
                 {
-                    var res = new HttpErrorDto() { ErrorCode = 404 };
+                    var res = new HttpErrorDto() { ErrorCode = 404 , Message = "login fail"};
                     return (res, null);
                 }
                 var query = "SELECT member_id id, role_id role, email, nickname, " +
@@ -59,7 +89,11 @@ namespace cloudsharpback.Services
                     "FROM member " +
                     "WHERE id = @Id";
                 using var conn = _connService.Connection;
-                var result = await conn.QuerySingleAsync<MemberDto>(query, new { Id = loginDto.Id });
+                var result = await conn.QuerySingleOrDefaultAsync<MemberDto>(query, new { Id = loginDto.Id });
+                if (result is null)
+                {
+                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                }
                 return (null, result);
             }
             catch (Exception ex)
@@ -72,7 +106,6 @@ namespace cloudsharpback.Services
                     Message = "fail to login",
                 });
             }
-
         }
 
         /// <summary>

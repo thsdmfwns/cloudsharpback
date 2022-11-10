@@ -16,7 +16,7 @@ namespace cloudsharpback.Services
             _logger = logger;
         }
 
-        public string WriteToken(MemberDto data)
+        public string WriteAcessToken(MemberDto data)
         {
             try
             {
@@ -45,12 +45,39 @@ namespace cloudsharpback.Services
                 throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
-                    Message = "fail to write token",
+                    Message = "fail to write ac token",
                 });
             }
         }
 
-        public bool TryValidateToken(string token, out MemberDto? member)
+        public string WriteRefeshToken(MemberDto data)
+        {
+            try
+            {
+                var descriptor = new JwsDescriptor()
+                {
+                    Algorithm = SignatureAlgorithm.HmacSha512,
+                    SigningKey = jwtKey,
+                    IssuedAt = DateTime.UtcNow,
+                    ExpirationTime = DateTime.UtcNow.AddDays(30),
+                };
+                descriptor.AddClaim("userId", data.Id.ToString());
+                return new JwtWriter().WriteTokenString(descriptor);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to write rf token",
+                });
+            }
+        }
+
+
+        public bool TryValidateAcessToken(string token, out MemberDto? member)
         {
             try
             {
@@ -67,6 +94,43 @@ namespace cloudsharpback.Services
                     return false;
                 }
                 member = MemberDto.ParseToken(result.Token);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to validate token",
+                });
+            }
+        }
+
+        public bool TryValidateRefeshToken(string token, out ulong? memberId)
+        {
+            try
+            {
+                memberId = null;
+                var policy = new TokenValidationPolicyBuilder()
+                .RequireSignature(jwtKey, SignatureAlgorithm.HmacSha512)
+                .EnableLifetimeValidation()
+                .Build();
+                var reader = new JwtReader();
+                var result = reader.TryReadToken(token, policy);
+                if (result.Token == null
+                    || result.Status != TokenValidationStatus.Success)
+                {
+                    return false;
+                }
+                var memberIdObj = result.Token.Payload!["userId"];
+                if (memberIdObj is null 
+                    || !ulong.TryParse((string)memberIdObj, out var id))
+                {
+                    return false;
+                }
+                memberId = id;
                 return true;
             }
             catch (Exception ex)

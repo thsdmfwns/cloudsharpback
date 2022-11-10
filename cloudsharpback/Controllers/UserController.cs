@@ -22,17 +22,39 @@ namespace cloudsharpback.Controllers
         }
 
         [ProducesResponseType(200)]
+        [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpPost("token")]
+        public async Task<IActionResult> GetAcessToken([FromHeader] string rf_token)
+        {
+            if (!jwtService.TryValidateRefeshToken(rf_token, out var memberId)
+                || memberId is null)
+            {
+                return StatusCode(403, "bad token");
+            }
+            var result = await userService.GetMemberById(memberId.Value);
+            if (result.err is not null || result.result is null)
+            {
+                return StatusCode(result.err!.ErrorCode, result.err.Message);
+            }
+            var acToken = jwtService.WriteAcessToken(result.result);
+            return Ok(acToken);
+        }
+
+        [ProducesResponseType(200)]
         [ProducesResponseType(404, Type = typeof(string))]
         [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
-            var res = await userService.Login(loginDto);
-            if (res.err is not null || res.result is null)
+            var result = await userService.Login(loginDto);
+            if (result.err is not null || result.result is null)
             {
-                return StatusCode(res.err!.ErrorCode, res.err.Message);
+                return StatusCode(result.err!.ErrorCode, result.err.Message);
             }
-            return Ok(jwtService.WriteToken(res.result));
+            var res = new TokenDto(jwtService.WriteAcessToken(result.result), jwtService.WriteRefeshToken(result.result));
+            return Ok(res);
         }
 
         [ProducesResponseType(200)]
@@ -65,7 +87,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("register/admin")]
         public async Task<IActionResult> RegisterAdmin(RegisterDto registerDto, [FromHeader] string adminToken)
         {
-            if (!jwtService.TryValidateToken(adminToken, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(adminToken, out var memberDto)
                 || memberDto is null
                 || memberDto.Role != 999)
             {
@@ -86,7 +108,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("member")]
         public IActionResult GetMember([FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                || memberDto is null)
             {
                 return StatusCode(403, "bad auth");
@@ -103,7 +125,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("updateImage")]
         public async Task<IActionResult> UploadProfileImage(IFormFile image, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403, "bad auth");
@@ -141,7 +163,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("updateNick")]
         public async Task<IActionResult> UpdateNickName(string nickname, [FromHeader]string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403, "bad auth");
@@ -162,7 +184,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("updateEmail")]
         public async Task<IActionResult> UpdateEmail(string email, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403, "bad auth");
@@ -182,7 +204,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("checkPw")]
         public async Task<IActionResult> CheckPassword([FromBody]string password, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403, "bad auth");
@@ -202,7 +224,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("updatePw")]
         public async Task<IActionResult> UpadtePassword([FromBody] UpadtePasswordDto requset, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403, "bad auth");

@@ -25,7 +25,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("share")]
         public async Task<IActionResult> Share(ShareRequestDto req, [FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -44,7 +44,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("getList")]
         public async Task<IActionResult> GetShares([FromHeader] string auth)
         {
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -110,7 +110,7 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
@@ -131,7 +131,7 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            if (!jwtService.TryValidateToken(auth, out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 return StatusCode(403);
