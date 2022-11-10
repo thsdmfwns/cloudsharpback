@@ -3,6 +3,7 @@ using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using Dapper;
 using System.Diagnostics.Metrics;
+using System.Net.Mail;
 
 namespace cloudsharpback.Services
 {
@@ -188,6 +189,83 @@ namespace cloudsharpback.Services
                 {
                     ErrorCode = 500,
                     Message = "fail to download file",
+                });
+            }
+        }
+
+        public async Task<HttpErrorDto?> UpadteNickname(MemberDto member, string changeNick)
+        {
+            try
+            {
+                if (member.Email.Equals(changeNick))
+                {
+                    return null;
+                }
+
+                var sql = "UPDATE member " +
+                "SET nickname = @ChangeNick " +
+                "WHERE user_id = @Id";
+                using var conn = _connService.Connection;
+                var result = await conn.ExecuteAsync(sql, new
+                {
+                    ChangeNick = changeNick,
+                    Id = member.Id
+                });
+                if (result <= 0)
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to update",
+                });
+            }
+        }
+
+        public async Task<HttpErrorDto?> UpadteEmail(MemberDto member, string changeEmail)
+        {
+            try
+            {
+                // validate email
+                try
+                {
+                    var temp = new MailAddress(changeEmail);
+                }
+                catch (Exception)
+                {
+                    return new HttpErrorDto() { ErrorCode = 400, Message = "bad email" };
+                }
+
+                var sql = "UPDATE member " +
+                "SET email = @ChangeEmail " +
+                "WHERE user_id = @Id";
+                using var conn = _connService.Connection;
+                var result = await conn.ExecuteAsync(sql, new
+                {
+                    ChangeEmail = changeEmail,
+                    Id = member.Id
+                });
+                if (result <= 0)
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to update",
                 });
             }
         }

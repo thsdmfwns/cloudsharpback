@@ -12,5 +12,7 @@ namespace cloudsharpback.Services.Interfaces
         /// <returns>415 : bad type, 409 : try again, 404: member not found</returns>
         Task<HttpErrorDto?> UploadProfileImage(IFormFile imageFile, MemberDto member);
         HttpErrorDto? DownloadProfileImage(string profileImage, out FileStream? fileStream, out string? contentType);
+        Task<HttpErrorDto?> UpadteNickname(MemberDto member, string changeNick);
+        Task<HttpErrorDto?> UpadteEmail(MemberDto member, string changeEmail);
     }
 }

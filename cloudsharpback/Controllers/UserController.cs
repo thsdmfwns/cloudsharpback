@@ -100,7 +100,7 @@ namespace cloudsharpback.Controllers
         [ProducesResponseType(404, Type = typeof(string))]
         [ProducesResponseType(415, Type = typeof(string))]
         [ProducesResponseType(500, Type = typeof(string))]
-        [HttpPost("profileImage")]
+        [HttpPost("updateImage")]
         public async Task<IActionResult> UploadProfileImage(IFormFile image, [FromHeader] string auth)
         {
             if (!jwtService.TryValidateToken(auth, out var memberDto)
@@ -132,6 +132,46 @@ namespace cloudsharpback.Controllers
                 FileDownloadName = Path.GetFileName(fileStream.Name),
                 EnableRangeProcessing = true
             };
+        }
+
+        [ProducesResponseType(200)]
+        [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpGet("updateNick")]
+        public async Task<IActionResult> UpdateNickName(string nickname, [FromHeader]string auth)
+        {
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403, "bad auth");
+            }
+            var err = await userService.UpadteNickname(memberDto, nickname);
+            if (err is not null)
+            {
+                return StatusCode(err.ErrorCode, err.Message);
+            }
+            return Ok();
+        }
+
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpGet("updateEmail")]
+        public async Task<IActionResult> UpdateEmail(string email, [FromHeader] string auth)
+        {
+            if (!jwtService.TryValidateToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403, "bad auth");
+            }
+            var err = await userService.UpadteEmail(memberDto, email);
+            if (err is not null)
+            {
+                return StatusCode(err.ErrorCode, err.Message);
+            }
+            return Ok();
         }
     }
 }
