@@ -29,6 +29,7 @@ namespace cloudsharpback.Services
         bool VerifyPassword(string password, string hash) => Encrypt.VerifyBCrypt(password, Base64.Decode(hash));
         string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
+        Dictionary<Guid, ShareDownloadDto> downloadTokens = new();
 
         /// <summary>
         /// 
@@ -163,7 +164,7 @@ namespace cloudsharpback.Services
         /// <param name="password"></param>
         /// <returns>404 : file doesnt exist , 403 : bad password, 410 : expired share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpErrorDto? err, FileStream? result)> DownloadShareAsync(string token, string? password)
+        public async Task<(HttpErrorDto? err, Guid? dlToken)> GetDownloadTokenAsync(ShareDowonloadRequestDto requestDto)
         {
             try
             {
@@ -173,19 +174,19 @@ namespace cloudsharpback.Services
                     "ON s.member_id = m.member_id " +
                     "WHERE s.token = UUID_TO_BIN(@Token)";
                 using var conn = _connService.Connection;
-                var dto = await conn.QueryFirstOrDefaultAsync<ShareDownloadDto>(sql, new { Token = token });
-                var filepath = Path.Combine(userPath(dto.Directory), dto.Target);
-                if (dto is null || !FileExist(filepath))
+                var dto = await conn.QueryFirstOrDefaultAsync<ShareDownloadDto?>(sql, new { Token = requestDto.Token });
+                if (dto is null)
                 {
                     var res = new HttpErrorDto
                     {
                         ErrorCode = 404,
+                        Message = "share not found"
                     };
                     return (res, null);
                 }
                 if (dto.Password is not null)
                 {
-                    if (password is null || !VerifyPassword(password, dto.Password))
+                    if (requestDto.Password is null || !VerifyPassword(requestDto.Password, dto.Password))
                     {
                         var res = new HttpErrorDto
                         {
@@ -207,7 +208,9 @@ namespace cloudsharpback.Services
                         return (res, null);
                     }
                 }
-                return (null, new FileStream(filepath, FileMode.Open, FileAccess.Read));
+                var downloadtoken = Guid.NewGuid();
+                downloadTokens.TryAdd(downloadtoken, dto);
+                return (null, downloadtoken);
             }
             catch (HttpErrorException) { throw; }
             catch (Exception ex)
@@ -220,6 +223,25 @@ namespace cloudsharpback.Services
                     Message = "fail to download share",
                 });
             }
+        }
+        /// <returns>400 : bad token , 404 : file not found</returns>
+        public HttpErrorDto? DownloadShare(string token, out FileStream? fileStream)
+        {
+            fileStream = null;
+            if (!Guid.TryParse(token, out var dlToken)
+                || !downloadTokens.Remove(dlToken, out var dlDto)
+                || DateTime.Now > dlDto.DtoExpireTime)
+            {
+                return new HttpErrorDto() { ErrorCode = 400, Message = "bad token" };
+               
+            }
+            var filepath = Path.Combine(userPath(dlDto.Directory), dlDto.Target);
+            if (!FileExist(filepath))
+            {
+                return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+            }
+            fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
+            return null;
         }
 
         public async Task<bool> CloseShareAsync(MemberDto member, string token)

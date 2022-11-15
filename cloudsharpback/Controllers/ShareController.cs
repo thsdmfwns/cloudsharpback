@@ -1,5 +1,6 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
+using cloudsharpback.Utills;
 using Microsoft.AspNetCore.Mvc;
 using MySqlX.XDevAPI.Common;
 
@@ -74,26 +75,36 @@ namespace cloudsharpback.Controllers
         }
 
         [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
         [ProducesResponseType(404, Type = typeof(string))]
         [ProducesResponseType(403, Type = typeof(string))]
         [ProducesResponseType(410, Type = typeof(string))]
         [ProducesResponseType(500, Type = typeof(string))]
-        [HttpGet("download")]
-        public async Task<IActionResult> DownLoad(string token, string? password)
+        [HttpPost("dlToken")]
+        public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto)
         {
-            if (!Guid.TryParse(token, out _))
-            {
-                return BadRequest();
-            }
-            var result = await shareService.DownloadShareAsync(token, password);
-            if (result.err is not null || result.result is null)
+            var result = await shareService.GetDownloadTokenAsync(requestDto);
+            if (result.err is not null || result.dlToken is null)
             {
                 return StatusCode(result.err!.ErrorCode, result);
             }
-            return new FileStreamResult(result.result, "application/octet-stream")
+            return Ok(result.dlToken.ToString());
+        }
+
+        [ProducesResponseType(200)]
+        [ProducesResponseType(400, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpGet("dl/{token}")]
+        public IActionResult Donload(string token)
+        {
+            var err = shareService.DownloadShare(token, out var fileStream);
+            if (err is not null || fileStream is null)
             {
-                FileDownloadName = Path.GetFileName(result.result.Name),
+                return StatusCode(err!.ErrorCode, err.Message);
+            }
+            return new FileStreamResult(fileStream, MimeTypeUtil.GetMimeType(fileStream.Name) ?? "application/octet-stream")
+            {
+                FileDownloadName = Path.GetFileName(fileStream.Name),
                 EnableRangeProcessing = true
             };
         }

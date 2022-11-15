@@ -1,5 +1,6 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
+using cloudsharpback.Utills;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -114,7 +115,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(err!.ErrorCode, err.Message);
             }
-            return new FileStreamResult(fileStream, "application/octet-stream")
+            return new FileStreamResult(fileStream, MimeTypeUtil.GetMimeType(fileStream.Name) ?? "application/octet-stream")
             {
                 FileDownloadName = Path.GetFileName(fileStream.Name),
                 EnableRangeProcessing = true
