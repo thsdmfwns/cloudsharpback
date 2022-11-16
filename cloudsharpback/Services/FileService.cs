@@ -212,6 +212,28 @@ namespace cloudsharpback.Services
             return null;
         }
 
+        /// <returns>404 : file not found, 409 : try again</returns>
+        public HttpErrorDto? GetViewToken(MemberDto member, string targetPath, out Guid? token)
+        {
+            token = null;
+            var target = Path.Combine(userPath(member.Directory), targetPath);
+            if (!FileExist(target))
+            {
+                return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+            }
+            if (!MimeTypeUtil.CanViewInFront(Path.GetExtension(targetPath)))
+            {
+                return new HttpErrorDto() { ErrorCode = 415, Message = "file can not view in html" };
+            }
+            token = Guid.NewGuid();
+            var expireTime = DateTime.Now.AddHours(1);
+            if (!DownloadTokens.TryAdd(token.Value, (expireTime, target)))
+            {
+                return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
+            }
+            return null;
+        }
+
         /// <returns>500 : server error , 403 : bad token, 410 : expire, 404 : file not found</returns>
         public HttpErrorDto? DownloadFile(Guid downloadToken, out FileStream? fileStream)
         {
@@ -224,6 +246,7 @@ namespace cloudsharpback.Services
                 }
                 if (item.expireTime < DateTime.Now)
                 {
+                    DownloadTokens.Where(x => x.Value.expireTime < DateTime.Now).ToList().ForEach(x => DownloadTokens.Remove(x.Key));
                     return new HttpErrorDto() { ErrorCode = 410, Message = "expire token" };
                 }
                 if (!FileExist(item.target))
@@ -241,6 +264,40 @@ namespace cloudsharpback.Services
                 {
                     ErrorCode = 500,
                     Message = "fail to download file",
+                });
+            }
+        }
+
+        /// <returns>500 : server error , 403 : bad token, 410 : expire, 404 : file not found</returns>
+        public HttpErrorDto? ViewFile(Guid downloadToken, out FileStream? fileStream)
+        {
+            try
+            {
+                fileStream = null;
+                if (!DownloadTokens.TryGetValue(downloadToken, out var item))
+                {
+                    return new HttpErrorDto() { ErrorCode = 403, Message = "bad token" };
+                }
+                if (item.expireTime < DateTime.Now)
+                {
+                    DownloadTokens.Where(x => x.Value.expireTime < DateTime.Now).ToList().ForEach(x => DownloadTokens.Remove(x.Key));
+                    return new HttpErrorDto() { ErrorCode = 410, Message = "expire token" };
+                }
+                if (!FileExist(item.target))
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                }
+                fileStream = new FileStream(item.target, FileMode.Open, FileAccess.Read);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to View file",
                 });
             }
         }

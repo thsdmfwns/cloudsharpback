@@ -80,6 +80,28 @@ namespace cloudsharpback.Controllers
 
         [ProducesResponseType(200, Type = typeof(string))]
         [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(409, Type = typeof(string))]
+        [ProducesResponseType(415, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpGet("viewToken")]
+        public IActionResult GetViewToken(string path, [FromHeader] string auth)
+        {
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403, "bad auth");
+            }
+            var err = fileService.GetViewToken(memberDto, path, out var token);
+            if (err is not null)
+            {
+                return StatusCode(err.ErrorCode, err.Message);
+            }
+            return Ok(token.ToString());
+        }
+
+        [ProducesResponseType(200, Type = typeof(string))]
+        [ProducesResponseType(403, Type = typeof(string))]
         [ProducesResponseType(409, Type = typeof(string))]
         [ProducesResponseType(500, Type = typeof(string))]
         [HttpGet("tusToken")]
@@ -111,6 +133,30 @@ namespace cloudsharpback.Controllers
                 return StatusCode(403, "bad token");
             };
             var err = fileService.DownloadFile(id, out var fileStream);
+            if (err is not null || fileStream is null)
+            {
+                return StatusCode(err!.ErrorCode, err.Message);
+            }
+            return new FileStreamResult(fileStream, MimeTypeUtil.GetMimeType(fileStream.Name) ?? "application/octet-stream")
+            {
+                FileDownloadName = Path.GetFileName(fileStream.Name),
+                EnableRangeProcessing = true
+            };
+        }
+
+        [ProducesResponseType(200)]
+        [ProducesResponseType(403, Type = typeof(string))]
+        [ProducesResponseType(410, Type = typeof(string))]
+        [ProducesResponseType(404, Type = typeof(string))]
+        [ProducesResponseType(500, Type = typeof(string))]
+        [HttpGet("view/{token}")]
+        public IActionResult View(string token)
+        {
+            if (!Guid.TryParse(token, out var id))
+            {
+                return StatusCode(403, "bad token");
+            };
+            var err = fileService.ViewFile(id, out var fileStream);
             if (err is not null || fileStream is null)
             {
                 return StatusCode(err!.ErrorCode, err.Message);
