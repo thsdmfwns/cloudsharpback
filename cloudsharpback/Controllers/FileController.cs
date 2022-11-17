@@ -3,6 +3,7 @@ using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Mime;
 
 namespace cloudsharpback.Controllers
 {
@@ -163,7 +164,6 @@ namespace cloudsharpback.Controllers
             }
             return new FileStreamResult(fileStream, MimeTypeUtil.GetMimeType(fileStream.Name) ?? "application/octet-stream")
             {
-                FileDownloadName = Path.GetFileName(fileStream.Name),
                 EnableRangeProcessing = true
             };
         }
@@ -186,6 +186,22 @@ namespace cloudsharpback.Controllers
             }
             await shareService.DeleteShareAsync(path, memberDto);
             return Ok(fileDto);
+        }
+
+        [HttpGet("view/zip")]
+        public IActionResult ViewZip([FromHeader]string auth, string target)
+        {
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
+                || memberDto is null)
+            {
+                return StatusCode(403);
+            }
+            var err = fileService.ViewZip(memberDto, target, out var entries);
+            if (err is not null || entries is null)
+            {
+                return StatusCode(err!.ErrorCode, err.Message);
+            }
+            return Ok(entries);
         }
     }
 }

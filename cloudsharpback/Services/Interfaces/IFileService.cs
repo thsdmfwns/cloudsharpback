@@ -16,5 +16,6 @@ namespace cloudsharpback.Services.Interfaces
         HttpErrorDto? DownloadFile(Guid downloadToken, out FileStream? fileStream);
         /// <returns>500 : server error , 403 : bad token, 410 : expire, 404 : file not found</returns>
         HttpErrorDto? ViewFile(Guid downloadToken, out FileStream? fileStream);
+        HttpErrorDto? ViewZip(MemberDto member, string target, out List<ZipEntryDto>? zipEntries);
     }
 }

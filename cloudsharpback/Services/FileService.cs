@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Asn1.X509;
 using System.Diagnostics.Metrics;
 using System.IO;
+using System.IO.Compression;
 using System.Security.Cryptography.X509Certificates;
 using System.Xml.Linq;
 using static System.Net.WebRequestMethods;
@@ -298,6 +299,41 @@ namespace cloudsharpback.Services
                 {
                     ErrorCode = 500,
                     Message = "fail to View file",
+                });
+            }
+        }
+
+        public HttpErrorDto? ViewZip(MemberDto member, string target, out List<ZipEntryDto>? zipEntries)
+        {
+            try
+            {
+                zipEntries = null;
+                if (Path.GetExtension(target) != ".zip")
+                {
+                    return new HttpErrorDto() { ErrorCode = 415, Message = "bad file type" };
+                }
+                var filepath = Path.Combine(userPath(member.Directory), target);
+                if (!FileExist(filepath))
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                }
+                using ZipArchive archive = ZipFile.OpenRead(filepath);
+                var resp = archive.Entries.Select(x => ZipEntryDto.FromEntry(x)).ToList();
+                if (resp is null)
+                {
+                    return new HttpErrorDto() { ErrorCode = 400, Message = "zip is encrypted" };
+                }
+                zipEntries = resp;
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to View zip",
                 });
             }
         }

@@ -6,7 +6,7 @@ namespace cloudsharpback.Utills
     {
         private static readonly List<string> viewableExtensions = new()
         {
-            ".gif", ".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".ico", ".webm", ".ogg", ".mp4", ".pdf", ".zip"
+            ".gif", ".jpg", ".jpeg", ".png", ".svg", ".webp", ".bmp", ".ico", ".webm", ".ogg", ".mp4", ".pdf", ".zip", ".docx"
         };
 
         public static bool CanViewInFront(string extension)
