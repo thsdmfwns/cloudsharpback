@@ -1,3 +1,4 @@
+using cloudsharpback.Hubs;
 using cloudsharpback.Middleware;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
@@ -19,8 +20,10 @@ builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IFileService, FileService>();
 builder.Services.AddSingleton<IShareService, ShareService>();
 builder.Services.AddSingleton<ITusService, TusService>();
+builder.Services.AddSingleton<IYoutubeDlService, YoutubeDlService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
 builder.Services.Configure<FormOptions>(x =>
@@ -52,10 +55,10 @@ app.UseTus(ctx => ctx.RequestServices.GetService<ITusService>()!.GetTusConfigura
 
 app.UseMiddleware<HttpErrorMiddleware>();
 
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<YoutubeDlHub>("/ytdl");
 
 app.Run();
