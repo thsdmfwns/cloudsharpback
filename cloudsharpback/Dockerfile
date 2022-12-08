@@ -20,6 +20,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 RUN apt-get update -y 
-RUN apt-get install curl -y && apt-get install python3 -y
+RUN apt-get -y install curl python3 transmission-cli transmission-common transmission-daemon
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp
+ENV CURL_CA_BUNDLE = /etc/ssl/certs/ca-certificates.crt
 ENTRYPOINT ["dotnet", "cloudsharpback.dll"]

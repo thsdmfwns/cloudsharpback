@@ -21,6 +21,7 @@ builder.Services.AddSingleton<IFileService, FileService>();
 builder.Services.AddSingleton<IShareService, ShareService>();
 builder.Services.AddSingleton<ITusService, TusService>();
 builder.Services.AddSingleton<IYoutubeDlService, YoutubeDlService>();
+builder.Services.AddSingleton<ITorrentDlService, TorrentDlService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();

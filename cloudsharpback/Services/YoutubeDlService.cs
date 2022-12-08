@@ -51,25 +51,15 @@ namespace cloudsharpback.Services
             await SendHubDone(userid, requsestToken);
         }
 
-        private async void OnSignalrConnected(HubCallerContext ctx)
+        private async void OnSignalrConnected(string connId, string auth)
         {
-            var connId = ctx.ConnectionId;
-            var httpctx = ctx.GetHttpContext();
-            if (httpctx is null)
-            {
-                ctx.Abort();
-                return;
-            }
-            if (!httpctx.Request.Headers.TryGetValue("auth", out var auth)
-                || auth.FirstOrDefault() is null
-                || !jwtService.TryValidateAcessToken(auth.First(), out var memberDto)
+            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)
             {
                 await SendHubAuthError(connId, "bad auth");
-                ctx.Abort();
                 return;
             }
-            SignalrUsers.Add(auth.First(), (connId, memberDto));
+            SignalrUsers.Add(auth, (connId, memberDto));
             await SendHubConnected(connId, "connected");
         }
 
