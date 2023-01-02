@@ -7,6 +7,6 @@ namespace cloudsharpback.Controllers.Base
     [Auth]
     public class AuthControllerBase : ControllerBase
     {
-        public MemberDto? MemberDto => HttpContext.Items["member"] as MemberDto;
+        public MemberDto? Member => HttpContext.Items["member"] as MemberDto;
     }
 }
