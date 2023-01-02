@@ -16,7 +16,6 @@ namespace cloudsharpback.Services
         public YoutubeDlService(IHubContext<YoutubeDlHub> hubContext, IConfiguration configuration, ILogger<IYoutubeDlService> logger, IJWTService jwtService)
         {
             _hubContext = hubContext;
-            YoutubeDlHub.OnConnect += OnSignalrConnected;
             DirectoryPath = configuration["File:DirectoryPath"];
             _logger = logger;
             this.jwtService = jwtService;
@@ -51,7 +50,7 @@ namespace cloudsharpback.Services
             await SendHubDone(userid, requsestToken);
         }
 
-        private async void OnSignalrConnected(string connId, string auth)
+        public async Task OnSignalrConnected(string connId, string auth)
         {
             if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
                 || memberDto is null)

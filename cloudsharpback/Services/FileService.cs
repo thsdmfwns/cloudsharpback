@@ -28,7 +28,7 @@ namespace cloudsharpback.Services
 
         string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
 
-        public void TryMakeTemplateDirectory(string directoryId)
+        public void MakeTemplateDirectory(string directoryId)
         {
             try
             {
@@ -318,7 +318,7 @@ namespace cloudsharpback.Services
                     return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
                 }
                 using ZipArchive archive = ZipFile.OpenRead(filepath);
-                var resp = archive.Entries.Select(x => ZipEntryDto.FromEntry(x)).ToList();
+                var resp = archive.Entries.Select(ZipEntryDto.FromEntry).ToList();
                 if (resp is null)
                 {
                     return new HttpErrorDto() { ErrorCode = 400, Message = "zip is encrypted" };

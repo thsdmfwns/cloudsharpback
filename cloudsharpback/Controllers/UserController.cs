@@ -68,7 +68,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
-            fileService.TryMakeTemplateDirectory(res.directoryId);
+            fileService.MakeTemplateDirectory(res.directoryId);
             return Ok();
         }
 
@@ -98,7 +98,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
-            fileService.TryMakeTemplateDirectory(res.directoryId);
+            fileService.MakeTemplateDirectory(res.directoryId);
             return Ok();
         }
 

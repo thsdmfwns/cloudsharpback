@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using System.Xml.Linq;
 
 namespace cloudsharpback.Models
 {
@@ -25,8 +26,11 @@ namespace cloudsharpback.Models
 
         public static ZipEntryDto FromEntry(ZipArchiveEntry entry)
         {
-            var isfol = !Path.HasExtension(entry.Name);
-            var extension = Path.GetExtension(entry.Name);
+            int nameLength = entry.Name.Length;
+            var isfol = ((nameLength > 0) &&
+                ((entry.Name[nameLength - 1] == '/') || (entry.Name[nameLength - 1] == '\\'))) ||
+                ((entry.ExternalAttributes & 16) != 0);
+            var extension = Path.GetExtension(entry.FullName);
             return new ZipEntryDto(
                 name: entry.Name,
                 length: entry.Length,

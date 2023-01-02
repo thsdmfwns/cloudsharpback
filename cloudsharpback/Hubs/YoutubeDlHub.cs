@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using cloudsharpback.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
@@ -6,22 +7,26 @@ namespace cloudsharpback.Hubs
 {
     public class YoutubeDlHub : Hub
     {
-        public static event Action<string, string>? OnConnect;
+        private readonly IYoutubeDlService youtubeDlService;
+        public YoutubeDlHub(IYoutubeDlService youtubeDlService)
+        {
+            this.youtubeDlService = youtubeDlService;
+        }
 
         public override async Task OnConnectedAsync()
         {
             await base.OnConnectedAsync();
             var connId = Context.ConnectionId;
             var httpctx = Context.GetHttpContext();
-            if (httpctx is null || OnConnect is null
-                || !httpctx.Request.Headers.TryGetValue("auth", out var auth)
+            if (httpctx is null
+                || !httpctx.Request.Query.TryGetValue("auth", out var auth)
                 || auth.FirstOrDefault() is null)
             {
                 Context.Abort();
                 return;
             }
             var authString = auth.First();
-            OnConnect.Invoke(connId, authString);
+            await youtubeDlService.OnSignalrConnected(connId, authString);
         }
     }
 }
