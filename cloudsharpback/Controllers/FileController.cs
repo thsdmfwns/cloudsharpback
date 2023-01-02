@@ -10,7 +10,6 @@ namespace cloudsharpback.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Auth]
     public class FileController : ControllerBase
     {
         private readonly IFileService fileService;
@@ -26,11 +25,9 @@ namespace cloudsharpback.Controllers
             this.tusService = tusService;
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(500, Type = typeof(string))]
-        [ProducesResponseType(403)]
+        [Auth]
         [HttpGet("files")]
-        public IActionResult GetFiles(string? path, [FromHeader]string auth)
+        public IActionResult GetFiles(string? path)
         {
             MemberDto? memberDto = HttpContext.Items["member"] as MemberDto;
             return Ok(fileService.GetFiles(memberDto!.Directory, path));
