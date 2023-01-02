@@ -1,4 +1,5 @@
-﻿using cloudsharpback.Models;
+﻿using cloudsharpback.Attribute;
+using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +10,7 @@ namespace cloudsharpback.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Auth]
     public class FileController : ControllerBase
     {
         private readonly IFileService fileService;
@@ -30,12 +32,8 @@ namespace cloudsharpback.Controllers
         [HttpGet("files")]
         public IActionResult GetFiles(string? path, [FromHeader]string auth)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            return Ok(fileService.GetFiles(memberDto.Directory, path));
+            MemberDto? memberDto = HttpContext.Items["member"] as MemberDto;
+            return Ok(fileService.GetFiles(memberDto!.Directory, path));
         }
 
         [ProducesResponseType(200)]

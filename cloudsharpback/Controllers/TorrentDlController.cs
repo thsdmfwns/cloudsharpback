@@ -31,6 +31,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(result.err.ErrorCode, result.err.Message);
             }
+
             return Ok(result.torrentHash);
         }
 
