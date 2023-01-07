@@ -1,7 +1,9 @@
 ﻿using cloudsharpback.Attribute;
+using cloudsharpback.Controllers.Base;
 using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
@@ -10,42 +12,30 @@ namespace cloudsharpback.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class FileController : ControllerBase
+    public class FileController : AuthControllerBase
     {
         private readonly IFileService fileService;
-        private readonly IJWTService jwtService;
         private readonly IShareService shareService;
         private readonly ITusService tusService;
 
-        public FileController(IFileService fileService, IJWTService jwtService, IShareService shareService, ITusService tusService)
+        public FileController(IFileService fileService, IShareService shareService, ITusService tusService)
         {
             this.fileService = fileService;
-            this.jwtService = jwtService;
             this.shareService = shareService;
             this.tusService = tusService;
         }
 
-        [Auth]
         [HttpGet("files")]
         public IActionResult GetFiles(string? path)
         {
-            MemberDto? memberDto = HttpContext.Items["member"] as MemberDto;
-            return Ok(fileService.GetFiles(memberDto!.Directory, path));
+            return Ok(fileService.GetFiles(Member!.Directory, path));
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(500, Type = typeof(string))]
         [ProducesResponseType(404)]
         [HttpGet("file")]
-        public IActionResult GetFile(string path, [FromHeader] string auth)
+        public IActionResult GetFile(string path)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            if (!fileService.GetFile(memberDto, path, out var fileDto))
+            if (!fileService.GetFile(Member!, path, out var fileDto))
             {
                 return NotFound();
             }
@@ -53,20 +43,10 @@ namespace cloudsharpback.Controllers
             return Ok(fileDto);
         }
 
-        [ProducesResponseType(200, Type = typeof(string))]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(409, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpGet("dlToken")]
-        public IActionResult GetDownloadToken(string path, [FromHeader] string auth)
+        public IActionResult GetDownloadToken(string path)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = fileService.GetDownloadToken(memberDto, path, out var token);
+            var err = fileService.GetDownloadToken(Member!, path, out var token);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);
@@ -74,21 +54,10 @@ namespace cloudsharpback.Controllers
             return Ok(token.ToString());
         }
 
-        [ProducesResponseType(200, Type = typeof(string))]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(409, Type = typeof(string))]
-        [ProducesResponseType(415, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpGet("viewToken")]
-        public IActionResult GetViewToken(string path, [FromHeader] string auth)
+        public IActionResult GetViewToken(string path)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = fileService.GetViewToken(memberDto, path, out var token);
+            var err = fileService.GetViewToken(Member!, path, out var token);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);
@@ -96,19 +65,10 @@ namespace cloudsharpback.Controllers
             return Ok(token.ToString());
         }
 
-        [ProducesResponseType(200, Type = typeof(string))]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(409, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpGet("tusToken")]
-        public IActionResult GetTusToken([FromHeader] string auth)
+        public IActionResult GetTusToken()
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = tusService.GetTusToken(memberDto, out var token);
+            var err = tusService.GetTusToken(Member!, out var token);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);
@@ -116,17 +76,13 @@ namespace cloudsharpback.Controllers
             return Ok(token.ToString());
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(410, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpGet("dl/{token}")]
         public IActionResult DownLoad(string token)
         {
             if (!Guid.TryParse(token, out var id))
             {
-                return StatusCode(403, "bad token");
+                return StatusCode(400, "bad token");
             };
             var err = fileService.DownloadFile(id, out var fileStream);
             if (err is not null || fileStream is null)
@@ -140,11 +96,7 @@ namespace cloudsharpback.Controllers
             };
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(410, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpGet("view/{token}")]
         public IActionResult View(string token)
         {
@@ -163,35 +115,21 @@ namespace cloudsharpback.Controllers
             };
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(500, Type = typeof(string))]
-        [ProducesResponseType(404)]
         [HttpPost("delete")]
-        public async Task<IActionResult> Delete(string path, [FromHeader] string auth)
+        public async Task<IActionResult> Delete(string path)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            if (!fileService.DeleteFile(memberDto, path, out var fileDto))
+            if (!fileService.DeleteFile(Member!, path, out var fileDto))
             {
                 return StatusCode(404);
             }
-            await shareService.DeleteShareAsync(path, memberDto);
+            await shareService.DeleteShareAsync(path, Member!);
             return Ok(fileDto);
         }
 
         [HttpGet("view/zip")]
-        public IActionResult ViewZip([FromHeader]string auth, string target)
+        public IActionResult ViewZip(string target)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            var err = fileService.ViewZip(memberDto, target, out var entries);
+            var err = fileService.ViewZip(Member!, target, out var entries);
             if (err is not null || entries is null)
             {
                 return StatusCode(err!.ErrorCode, err.Message);

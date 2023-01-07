@@ -1,4 +1,5 @@
 ﻿using cloudsharpback.Attribute;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -11,7 +12,8 @@ namespace cloudsharpback.Filter
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
             var isAuthorized = context.ApiDescription.ActionDescriptor.EndpointMetadata.Any(attribute => attribute is AuthAttribute);
-            if (isAuthorized)
+            var isAllowAnonymous = context.ApiDescription.ActionDescriptor.EndpointMetadata.Any(attribute => attribute is AllowAnonymousAttribute);
+            if (isAuthorized && !isAllowAnonymous)
             {
                 operation.Parameters ??= new List<OpenApiParameter>();
                 operation.Parameters.Add(new OpenApiParameter()
