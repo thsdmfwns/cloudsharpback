@@ -7,6 +7,20 @@ namespace cloudsharpback.Controllers.Base
     [Auth]
     public class AuthControllerBase : ControllerBase
     {
-        public MemberDto? Member => HttpContext.Items["member"] as MemberDto;
+        public MemberDto Member {
+            get
+            {
+                var member = HttpContext.Items["member"] as MemberDto;
+                if (member is null)
+                {
+                    throw new HttpErrorException(new HttpErrorDto
+                    {
+                        ErrorCode = 500,
+                        Message = "Can not found memberDto in Controller"
+                    });
+                }
+                return member;
+            } 
+        }
     }
 }

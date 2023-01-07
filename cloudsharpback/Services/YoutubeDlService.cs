@@ -20,7 +20,7 @@ namespace cloudsharpback.Services
             _logger = logger;
             this.jwtService = jwtService;
         }
-        private readonly Dictionary<string, (string id, MemberDto member)> SignalrUsers = new();
+        private readonly Dictionary<ulong, (string id, MemberDto member)> SignalrUsers = new();
 
         string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
 
@@ -58,13 +58,13 @@ namespace cloudsharpback.Services
                 await SendHubAuthError(connId, "bad auth");
                 return;
             }
-            SignalrUsers.Add(auth, (connId, memberDto));
+            SignalrUsers.Add(memberDto.Id, (connId, memberDto));
             await SendHubConnected(connId, "connected");
         }
 
-        public HttpErrorDto? Download(string auth, string youtubeUrl, string path, Guid requsestToken)
+        public HttpErrorDto? Download(MemberDto member, string youtubeUrl, string path, Guid requsestToken)
         {
-            if (!SignalrUsers.TryGetValue(auth, out var conn))
+            if (!SignalrUsers.TryGetValue(member.Id, out var conn))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "connection not found" };
             }
