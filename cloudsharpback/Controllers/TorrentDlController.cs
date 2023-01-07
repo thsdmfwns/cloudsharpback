@@ -1,4 +1,5 @@
-﻿using cloudsharpback.Models;
+﻿using cloudsharpback.Controllers.Base;
+using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using MySqlX.XDevAPI.Common;
@@ -7,26 +8,19 @@ namespace cloudsharpback.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TorrentDlController : ControllerBase
+    public class TorrentDlController : AuthControllerBase
     {
         private readonly ITorrentDlService dlService;
-        private readonly IJWTService jwtService;
 
-        public TorrentDlController(ITorrentDlService dlService, IJWTService jwtService)
+        public TorrentDlController(ITorrentDlService dlService)
         {
             this.dlService = dlService;
-            this.jwtService = jwtService;
         }
 
         [HttpPost("add_torrent")]
-        public async Task<IActionResult> AddTorrent([FromHeader] string auth, string torrentPath, string? dlPath)
+        public async Task<IActionResult> AddTorrent(string torrentPath, string? dlPath)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var result = await dlService.addTorrentAsync(memberDto, torrentPath, dlPath ?? string.Empty);
+            var result = await dlService.addTorrentAsync(Member!, torrentPath, dlPath ?? string.Empty);
             if (result.err is not null)
             {
                 return StatusCode(result.err.ErrorCode, result.err.Message);
@@ -36,14 +30,9 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpPost("add_magnet")]
-        public async Task<IActionResult> AddMagnet([FromHeader] string auth, string magnetUrl, string? dlPath)
+        public async Task<IActionResult> AddMagnet(string magnetUrl, string? dlPath)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var result = await dlService.addMagnetAsync(memberDto, magnetUrl, dlPath ?? string.Empty);
+            var result = await dlService.addMagnetAsync(Member!, magnetUrl, dlPath ?? string.Empty);
             if (result.err is not null)
             {
                 return StatusCode(result.err.ErrorCode, result.err.Message);
@@ -52,25 +41,15 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> Getall([FromHeader] string auth)
+        public async Task<IActionResult> Getall()
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            return Ok(await dlService.GetAllAsync(memberDto));
+            return Ok(await dlService.GetAllAsync(Member!));
         }
 
         [HttpPost("rm")]
-        public async Task<IActionResult> Remove([FromHeader] string auth, string torrent_hash)
+        public async Task<IActionResult> Remove(string torrent_hash)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = await dlService.removeTorrent(memberDto, torrent_hash);
+            var err = await dlService.removeTorrent(Member!, torrent_hash);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message); 
@@ -79,14 +58,9 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpPost("run")]
-        public async Task<IActionResult> Run([FromHeader] string auth, string torrent_hash)
+        public async Task<IActionResult> Run(string torrent_hash)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = await dlService.StartTorrent(memberDto, torrent_hash);
+            var err = await dlService.StartTorrent(Member!, torrent_hash);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);
