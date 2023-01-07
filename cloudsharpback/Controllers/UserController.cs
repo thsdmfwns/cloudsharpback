@@ -1,6 +1,8 @@
-﻿using cloudsharpback.Models;
+﻿using cloudsharpback.Controllers.Base;
+using cloudsharpback.Models;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +10,7 @@ namespace cloudsharpback.Controllers
 {
     [Route("api/user")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class UserController : AuthControllerBase
     {
         private readonly IJWTService jwtService;
         private readonly IUserService userService;
@@ -21,10 +23,7 @@ namespace cloudsharpback.Controllers
             this.fileService = fileService;
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpPost("token")]
         public async Task<IActionResult> GetAcessToken([FromHeader] string rf_token)
         {
@@ -42,9 +41,7 @@ namespace cloudsharpback.Controllers
             return Ok(acToken);
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
@@ -57,9 +54,7 @@ namespace cloudsharpback.Controllers
             return Ok(res);
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {
@@ -72,24 +67,17 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [ProducesResponseType(200)]
+        [AllowAnonymous]
         [HttpGet("idcheck")]
         public async Task<IActionResult> IdCkeck(string id)
         {
             return Ok(await userService.IdCheck(id));
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("register/admin")]
-        public async Task<IActionResult> RegisterAdmin(RegisterDto registerDto, [FromHeader] string adminToken)
+        public async Task<IActionResult> RegisterAdmin(RegisterDto registerDto)
         {
-            if (!jwtService.TryValidateAcessToken(adminToken, out var memberDto)
-                || memberDto is null
-                || memberDto.Role != 999)
+            if (Member.Role != 999)
             {
                 return StatusCode(403);
             }
@@ -102,35 +90,16 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [ProducesResponseType(200, Type = typeof(MemberDto))]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpGet("member")]
-        public IActionResult GetMember([FromHeader] string auth)
+        public IActionResult GetMember()
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-               || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            return Ok(memberDto);
+            return Ok(Member);
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(409, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(415, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("updateImage")]
-        public async Task<IActionResult> UploadProfileImage(IFormFile image, [FromHeader] string auth)
+        public async Task<IActionResult> UploadProfileImage(IFormFile image)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var res = await userService.UploadProfileImage(image, memberDto);
+            var res = await userService.UploadProfileImage(image, Member);
             if (res is not null)
             {
                 return StatusCode(res.ErrorCode, res.Message);
@@ -138,9 +107,7 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpGet("imageDL/{image}")]
         public IActionResult DownloadProfileImage(string image)
         {
@@ -156,19 +123,11 @@ namespace cloudsharpback.Controllers
             };
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+
         [HttpPost("updateNick")]
-        public async Task<IActionResult> UpdateNickName(string nickname, [FromHeader]string auth)
+        public async Task<IActionResult> UpdateNickName(string nickname)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = await userService.UpadteNickname(memberDto, nickname);
+            var err = await userService.UpadteNickname(Member, nickname);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);
@@ -176,20 +135,10 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400, Type = typeof(string))]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("updateEmail")]
-        public async Task<IActionResult> UpdateEmail(string email, [FromHeader] string auth)
+        public async Task<IActionResult> UpdateEmail(string email)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = await userService.UpadteEmail(memberDto, email);
+            var err = await userService.UpadteEmail(Member, email);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);
@@ -197,19 +146,10 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [ProducesResponseType(200, Type = typeof(bool))]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("checkPw")]
-        public async Task<IActionResult> CheckPassword([FromBody]string password, [FromHeader] string auth)
+        public async Task<IActionResult> CheckPassword([FromBody]string password)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var result = await userService.CheckPassword(memberDto, password);
+            var result = await userService.CheckPassword(Member, password);
             if (result.err is not null)
             {
                 return StatusCode(result.err.ErrorCode, result.err.Message);
@@ -217,19 +157,10 @@ namespace cloudsharpback.Controllers
             return Ok(result.result);
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("updatePw")]
-        public async Task<IActionResult> UpadtePassword([FromBody] UpadtePasswordDto requset, [FromHeader] string auth)
+        public async Task<IActionResult> UpadtePassword(UpadtePasswordDto requset)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403, "bad auth");
-            }
-            var err = await userService.UpdatePassword(memberDto, requset);
+            var err = await userService.UpdatePassword(Member, requset);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);

@@ -1,36 +1,27 @@
-﻿using cloudsharpback.Models;
+﻿using cloudsharpback.Controllers.Base;
+using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ShareController : ControllerBase
+    public class ShareController : AuthControllerBase
     {
-        private readonly IJWTService jwtService;
         private readonly IShareService shareService;
 
-        public ShareController(IJWTService jwtService, IShareService shareService)
+        public ShareController(IShareService shareService)
         {
-            this.jwtService = jwtService;
             this.shareService = shareService;
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("share")]
-        public async Task<IActionResult> Share(ShareRequestDto req, [FromHeader] string auth)
+        public async Task<IActionResult> Share(ShareRequestDto req)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            var result = await shareService.Share(memberDto, req);
+            var result = await shareService.Share(Member, req);
             if (result is not null)
             {
                 return StatusCode(result.ErrorCode, result.Message);
@@ -38,26 +29,14 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpGet("getList")]
-        public async Task<IActionResult> GetShares([FromHeader] string auth)
+        public async Task<IActionResult> GetShares()
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            var res = await shareService.GetSharesAsync(memberDto);
+            var res = await shareService.GetSharesAsync(Member);
             return Ok(res);
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(410, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpGet("get")]
         public async Task<IActionResult> GetShare(string token)
         {
@@ -73,11 +52,7 @@ namespace cloudsharpback.Controllers
             return Ok(res.result);
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(403, Type = typeof(string))]
-        [ProducesResponseType(410, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpPost("dlToken")]
         public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto)
         {
@@ -89,10 +64,7 @@ namespace cloudsharpback.Controllers
             return Ok(result.dlToken.ToString());
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400, Type = typeof(string))]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpGet("dl/{token}")]
         public IActionResult Donload(string token)
         {
@@ -108,53 +80,29 @@ namespace cloudsharpback.Controllers
             };
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("close")]
-        public async Task<IActionResult> CloseShare(string token, [FromHeader] string auth)
+        public async Task<IActionResult> CloseShare(string token)
         {
             if (!Guid.TryParse(token, out _))
             {
                 return BadRequest();
             }
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            var result = await shareService.CloseShareAsync(memberDto, token);
+            var result = await shareService.CloseShareAsync(Member, token);
             return result ? Ok() : NotFound();
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(403)]
-        [ProducesResponseType(404)]
-        [ProducesResponseType(500, Type = typeof(string))]
         [HttpPost("update")]
-        public async Task<IActionResult> UpadteShare(string token, [FromBody] ShareUpdateDto dto, [FromHeader] string auth)
+        public async Task<IActionResult> UpadteShare(string token, [FromBody] ShareUpdateDto dto)
         {
             if (!Guid.TryParse(token, out _))
             {
                 return BadRequest();
             }
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
-            {
-                return StatusCode(403);
-            }
-            var result = await shareService.UpdateShareAsync(dto, token, memberDto);
+            var result = await shareService.UpdateShareAsync(dto, token, Member);
             return result ? Ok() : NotFound();
         }
 
-
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(404, Type = typeof(string))]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpPost("val")]
         public async Task<IActionResult> ValidatePassword(string token, string password)
         {
@@ -170,9 +118,7 @@ namespace cloudsharpback.Controllers
             return Ok(result.result);
         }
 
-        [ProducesResponseType(200)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(500, Type = typeof(string))]
+        [AllowAnonymous]
         [HttpGet("check")]
         public async Task<IActionResult> CheckPassword(string token)
         {
