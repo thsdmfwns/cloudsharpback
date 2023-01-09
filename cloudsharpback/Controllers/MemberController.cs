@@ -10,13 +10,13 @@ namespace cloudsharpback.Controllers
 {
     [Route("api/user")]
     [ApiController]
-    public class UserController : AuthControllerBase
+    public class MemberController : AuthControllerBase
     {
         private readonly IJWTService jwtService;
         private readonly IMemberService userService;
         private readonly IFileService fileService;
 
-        public UserController(IJWTService jwtService, IMemberService userService, IFileService fileService)
+        public MemberController(IJWTService jwtService, IMemberService userService, IFileService fileService)
         {
             this.jwtService = jwtService;
             this.userService = userService;
@@ -74,21 +74,6 @@ namespace cloudsharpback.Controllers
             return Ok(await userService.IdCheck(id));
         }
 
-        [HttpPost("register/admin")]
-        public async Task<IActionResult> RegisterAdmin(RegisterDto registerDto)
-        {
-            if (Member.Role != 999)
-            {
-                return StatusCode(403);
-            }
-            var res = await userService.Register(registerDto, 999);
-            if (res.err is not null || res.directoryId is null)
-            {
-                return StatusCode(res.err!.ErrorCode, res.err.Message);
-            }
-            fileService.MakeTemplateDirectory(res.directoryId);
-            return Ok();
-        }
 
         [HttpGet("member")]
         public IActionResult GetMember()
