@@ -22,8 +22,6 @@ namespace cloudsharpback.Services
             _logger = logger;
         }
 
-        bool VerifyPassword(string password, string hash) => PasswordEncrypt.VerifyBCrypt(password, Base64.Decode(hash));
-
         async Task<string?> GetPasswordHash(string id)
         {
             var query = "SELECT password FROM member WHERE id = @Id";

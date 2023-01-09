@@ -25,8 +25,6 @@ namespace cloudsharpback.Services
             _logger = logger;
         }
 
-        string EncryptPassword(string password) => Base64.Encode(PasswordEncrypt.EncryptByBCrypt(password));
-        bool VerifyPassword(string password, string hash) => PasswordEncrypt.VerifyBCrypt(password, Base64.Decode(hash));
         string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
         Dictionary<Guid, ShareDownloadDto> downloadTokens = new();
@@ -55,7 +53,7 @@ namespace cloudsharpback.Services
                 var password = req.Password;
                 if (password is not null)
                 {
-                    password = EncryptPassword(password);
+                    password = PasswordEncrypt.EncryptPassword(password);
                 }
                 var sql = "INSERT INTO share(member_id, target, password, expire_time, comment, share_time, share_name, token, file_size) " +
                     "VALUES(@MemberID, @Target, @Password, @ExpireTime, @Comment, @ShareTime, @ShareName, UUID_TO_BIN(@Token), @FileSize)";
@@ -186,7 +184,8 @@ namespace cloudsharpback.Services
                 }
                 if (dto.Password is not null)
                 {
-                    if (requestDto.Password is null || !VerifyPassword(requestDto.Password, dto.Password))
+                    if (requestDto.Password is null 
+                        || !PasswordEncrypt.VerifyPassword(requestDto.Password, dto.Password))
                     {
                         var res = new HttpErrorDto
                         {
@@ -280,7 +279,7 @@ namespace cloudsharpback.Services
                 var password = dto.Password;
                 if (password is not null)
                 {
-                    password = EncryptPassword(password);
+                    password = PasswordEncrypt.EncryptPassword(password);
                 }
                 using var conn = _connService.Connection;
                 return await conn.ExecuteAsync(sql, new
@@ -357,7 +356,7 @@ namespace cloudsharpback.Services
                     };
                     return (err, null);
                 }
-                return (null, VerifyPassword(password, hash));
+                return (null, PasswordEncrypt.VerifyPassword(password, hash));
             }
             catch (Exception ex)
             {

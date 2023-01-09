@@ -1,5 +1,6 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
+using cloudsharpback.Utills;
 using Dapper;
 
 namespace cloudsharpback.Services
@@ -20,9 +21,9 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var passwordHash = await GetPasswordHash(loginDto.Id);
+                var passwordHash = PasswordEncrypt.EncryptPassword(loginDto.Id);
                 if (passwordHash is null
-                    || !VerifyPassword(loginDto.Password, passwordHash))
+                    || !PasswordEncrypt.VerifyPassword(loginDto.Password, passwordHash))
                 {
                     var res = new HttpErrorDto() { ErrorCode = 404, Message = "login fail" };
                     return (res, null);
