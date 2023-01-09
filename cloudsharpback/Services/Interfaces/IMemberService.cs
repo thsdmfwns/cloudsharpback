@@ -2,7 +2,7 @@
 
 namespace cloudsharpback.Services.Interfaces
 {
-    public interface IUserService
+    public interface IMemberService
     {
         Task<bool> IdCheck(string id);
         Task<(HttpErrorDto? err, MemberDto? result)> GetMemberById(ulong id);

@@ -13,10 +13,10 @@ namespace cloudsharpback.Controllers
     public class UserController : AuthControllerBase
     {
         private readonly IJWTService jwtService;
-        private readonly IUserService userService;
+        private readonly IMemberService userService;
         private readonly IFileService fileService;
 
-        public UserController(IJWTService jwtService, IUserService userService, IFileService fileService)
+        public UserController(IJWTService jwtService, IMemberService userService, IFileService fileService)
         {
             this.jwtService = jwtService;
             this.userService = userService;

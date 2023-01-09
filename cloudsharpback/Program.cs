@@ -16,7 +16,7 @@ builder.Logging.AddConsole();
 
 builder.Services.AddControllers();
 builder.Services.AddSingleton<IJWTService, JWTService>();
-builder.Services.AddSingleton<IUserService, UserService>();
+builder.Services.AddSingleton<IMemberService, MemberService>();
 builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IFileService, FileService>();
 builder.Services.AddSingleton<IShareService, ShareService>();

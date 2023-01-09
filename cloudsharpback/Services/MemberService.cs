@@ -8,13 +8,13 @@ using Ubiety.Dns.Core;
 
 namespace cloudsharpback.Services
 {
-    public class UserService : IUserService
+    public class MemberService : IMemberService
     {
         private readonly IDBConnService _connService;
         private readonly ILogger _logger;
         private string ProfilePath;
 
-        public UserService(IConfiguration configuration, IDBConnService connService, ILogger<IUserService> logger)
+        public MemberService(IConfiguration configuration, IDBConnService connService, ILogger<IMemberService> logger)
         {
             ProfilePath = configuration["File:ProfileImagePath"];
             if (!Directory.Exists(ProfilePath)) Directory.CreateDirectory(ProfilePath);
