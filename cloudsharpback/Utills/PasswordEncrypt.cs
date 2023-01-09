@@ -2,9 +2,9 @@
 
 namespace cloudsharpback.Utills
 {
-    public static class Encrypt
+    public static class PasswordEncrypt
     {
-        public static string EncryptByBCrypt(string password) => BC.HashPassword(password);
-        public static bool VerifyBCrypt(string text, string hash) => BC.Verify(text, hash);
+        public static string EncryptPasswordByBCrypt(string password) => Base64.Encode(BC.HashPassword(password));
+        public static bool VerifyPassword(string text, string hash) => BC.Verify(text, Base64.Decode(hash));
     }
 }

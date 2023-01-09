@@ -25,8 +25,8 @@ namespace cloudsharpback.Services
             _logger = logger;
         }
 
-        string EncryptPassword(string password) => Base64.Encode(Encrypt.EncryptByBCrypt(password));
-        bool VerifyPassword(string password, string hash) => Encrypt.VerifyBCrypt(password, Base64.Decode(hash));
+        string EncryptPassword(string password) => Base64.Encode(PasswordEncrypt.EncryptByBCrypt(password));
+        bool VerifyPassword(string password, string hash) => PasswordEncrypt.VerifyBCrypt(password, Base64.Decode(hash));
         string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
         Dictionary<Guid, ShareDownloadDto> downloadTokens = new();

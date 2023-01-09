@@ -22,8 +22,7 @@ namespace cloudsharpback.Services
             _logger = logger;
         }
 
-        string EncryptPassword(string password) => Base64.Encode(Encrypt.EncryptByBCrypt(password));
-        bool VerifyPassword(string password, string hash) => Encrypt.VerifyBCrypt(password, Base64.Decode(hash));
+        bool VerifyPassword(string password, string hash) => PasswordEncrypt.VerifyBCrypt(password, Base64.Decode(hash));
 
         async Task<string?> GetPasswordHash(string id)
         {
