@@ -17,6 +17,7 @@ builder.Logging.AddConsole();
 builder.Services.AddControllers();
 builder.Services.AddSingleton<IJWTService, JWTService>();
 builder.Services.AddSingleton<IMemberService, MemberService>();
+builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IFileService, FileService>();
 builder.Services.AddSingleton<IShareService, ShareService>();
@@ -48,7 +49,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors(builder => builder
+app.UseCors(x => x
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowAnyOrigin()

@@ -10,7 +10,7 @@ namespace cloudsharpback.Services
         private readonly IDBConnService _connService;
         private readonly ILogger _logger;
 
-        public UserService(IDBConnService connService, ILogger logger)
+        public UserService(IDBConnService connService, ILogger<IUserService> logger)
         {
             _connService = connService;
             _logger = logger;
