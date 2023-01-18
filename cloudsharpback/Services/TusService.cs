@@ -10,26 +10,23 @@ namespace cloudsharpback.Services
     public class TusService : ITusService
     {
         private readonly ILogger _logger;
-        private readonly IJWTService jwtService;
-        private string TusStorePath;
-        private string DirectoryPath;
+        private IPathStore _pathStore;
 
-        public TusService(ILogger<ITusService> logger, IConfiguration configuration, IJWTService jwtService)
+        public TusService(ILogger<ITusService> logger, IPathStore pathStore)
         {
             _logger = logger;
-            TusStorePath = configuration["File:TusStorePath"];
-            DirectoryPath = configuration["File:DirectoryPath"];
-            this.jwtService = jwtService;
+            _pathStore = pathStore;
         }
 
-        private Dictionary<string, string> Targets = new ();
-        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
+        private readonly Dictionary<string, string> _targets = new ();
+        private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
+        private string TusStorePath => _pathStore.TusStorePath;
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
 
         public HttpErrorDto? GetTusToken(MemberDto member, out Guid token)
         {
             token = Guid.NewGuid();
-            if (!Targets.TryAdd(token.ToString(), member.Directory))
+            if (!_targets.TryAdd(token.ToString(), member.Directory))
             {
                 return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
             }
@@ -70,7 +67,7 @@ namespace cloudsharpback.Services
                 context.FailRequest(System.Net.HttpStatusCode.Unauthorized, "req_token is required in request header");
                 return Task.CompletedTask;
             }
-            if (!Targets.TryGetValue(req_token, out var directoryId))
+            if (!_targets.TryGetValue(req_token, out var directoryId))
             {
                 context.FailRequest(System.Net.HttpStatusCode.BadRequest, "bad req_token");
                 return Task.CompletedTask;
@@ -82,7 +79,7 @@ namespace cloudsharpback.Services
                 return Task.CompletedTask;
             }
             var metadata = context.Metadata;
-            var directory = userPath(directoryId);
+            var directory = MemberDirectory(directoryId);
             var fileName = metadata["filename"].GetString(System.Text.Encoding.UTF8);
             var filepath = metadata["filepath"].GetString(System.Text.Encoding.UTF8);
             var target = Path.Combine(directory, filepath, fileName);
@@ -102,8 +99,8 @@ namespace cloudsharpback.Services
                 {
                     throw new Exception("Can not find directoryId");
                 }
-                var dirId = Targets[req_token];
-                var directory = userPath(dirId);
+                var dirId = _targets[req_token];
+                var directory = MemberDirectory(dirId);
                 ITusFile file = await ctx.GetFileAsync();
                 Dictionary<string, Metadata> metadata = await file.GetMetadataAsync(ctx.CancellationToken);
                 var fileName = metadata["filename"].GetString(System.Text.Encoding.UTF8);
@@ -116,7 +113,7 @@ namespace cloudsharpback.Services
                 }
                 var terminationStore = (ITusTerminationStore)ctx.Store;
                 await terminationStore.DeleteFileAsync(file.Id, ctx.CancellationToken);
-                Targets.Remove(req_token);
+                _targets.Remove(req_token);
             }
             catch (Exception ex)
             {

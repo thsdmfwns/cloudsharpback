@@ -8,27 +8,25 @@ namespace cloudsharpback.Services
     public class FileService : IFileService
     {
         private readonly ILogger _logger;
-        private string DirectoryPath;
+        private readonly IPathStore _pathStore;
 
-        public FileService(IConfiguration configuration, ILogger<IFileService> logger)
+        public FileService(ILogger<IFileService> logger, IPathStore pathStore)
         {
-            DirectoryPath = configuration["File:DirectoryPath"];
             _logger = logger;
+            _pathStore = pathStore;
         }
 
-        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
+        private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
 
         public void MakeTemplateDirectory(string directoryId)
         {
             try
             {
-                string path = userPath(directoryId);
-                string subPath(string foldername) => Path.Combine(path, foldername);
-                Directory.CreateDirectory(path);
-                Directory.CreateDirectory(subPath("Download"));
-                Directory.CreateDirectory(subPath("Music"));
-                Directory.CreateDirectory(subPath("Video"));
-                Directory.CreateDirectory(subPath("Document"));
+                string SubPath(string foldername) => Path.Combine(MemberDirectory(directoryId), foldername);
+                Directory.CreateDirectory(SubPath("Download"));
+                Directory.CreateDirectory(SubPath("Music"));
+                Directory.CreateDirectory(SubPath("Video"));
+                Directory.CreateDirectory(SubPath("Document"));
             }
             catch (Exception ex)
             {
@@ -46,14 +44,14 @@ namespace cloudsharpback.Services
         public List<FileDto> GetFiles(string id, string? path)
         {
             List<FileDto> fileDtos = new();
-            var dir = new DirectoryInfo(Path.Combine(userPath(id),path ?? string.Empty));
+            var dir = new DirectoryInfo(Path.Combine(MemberDirectory(id), path ?? string.Empty));
             foreach (var fol in dir.GetDirectories())
             {
-                fileDtos.Add(new()
+                fileDtos.Add(new FileDto
                 {
                     Name = fol.Name,
                     FileType = FileType.FOLDER,
-                    Path = fol.FullName.Substring(userPath(id).Length + 1),
+                    Path = fol.FullName.Substring(MemberDirectory(id).Length + 1),
                 });
             }
             foreach (var file in dir.GetFiles())
@@ -65,7 +63,7 @@ namespace cloudsharpback.Services
                     Extention = file.Extension,
                     LastWriteTime = file.LastWriteTime.ToUniversalTime().Ticks,
                     Size = (ulong?)file.Length,
-                    Path = file.FullName.Substring(userPath(id).Length + 1),
+                    Path = file.FullName.Substring(MemberDirectory(id).Length + 1),
                 });
             }
             return fileDtos;
@@ -73,21 +71,21 @@ namespace cloudsharpback.Services
 
         public bool GetFile(MemberDto member, string path, out FileDto? fileDto)
         {
-            var filepath = Path.Combine(userPath(member.Directory), path);
+            var filepath = Path.Combine(MemberDirectory(member.Directory), path);
             if (!FileExist(filepath))
             {
                 fileDto = null;
                 return false;
             }
             var file = new FileInfo(filepath);
-            fileDto = new()
+            fileDto = new FileDto
             {
                 Name = file.Name,
                 FileType = FileType.FILE,
                 Extention = file.Extension,
                 LastWriteTime = file.LastWriteTime.ToUniversalTime().Ticks,
                 Size = (ulong?)file.Length,
-                Path = file.FullName.Substring(userPath(member.Directory).Length + 1),
+                Path = file.FullName.Substring(MemberDirectory(member.Directory).Length + 1),
             };
             return true;
         }
@@ -98,14 +96,14 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var filepath = Path.Combine(userPath(member.Directory), path);
+                var filepath = Path.Combine(MemberDirectory(member.Directory), path);
                 if (!FileExist(filepath))
                 {
                     fileDto = null;
                     return false;
                 }
                 var file = new FileInfo(filepath);
-                fileDto = new()
+                fileDto = new FileDto
                 {
                     Name = file.Name,
                     FileType = FileType.FILE,
@@ -183,20 +181,20 @@ namespace cloudsharpback.Services
         }
         */
 
-        Dictionary<Guid, (DateTime expireTime, string target)> DownloadTokens = new Dictionary<Guid, (DateTime expireTime, string target)>();
+        private readonly Dictionary<Guid, (DateTime expireTime, string target)> _downloadTokens = new();
 
         /// <returns>404 : file not found, 409 : try again</returns>
         public HttpErrorDto? GetDownloadToken(MemberDto member, string targetPath, out Guid? token)
         {
             token = null;
-            var target = Path.Combine(userPath(member.Directory), targetPath);
+            var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
             }
             token = Guid.NewGuid();
             var expireTime = DateTime.Now.AddMinutes(1);
-            if (!DownloadTokens.TryAdd(token.Value, (expireTime, target)))
+            if (!_downloadTokens.TryAdd(token.Value, (expireTime, target)))
             {
                 return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
             }
@@ -207,7 +205,7 @@ namespace cloudsharpback.Services
         public HttpErrorDto? GetViewToken(MemberDto member, string targetPath, out Guid? token)
         {
             token = null;
-            var target = Path.Combine(userPath(member.Directory), targetPath);
+            var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
@@ -218,7 +216,7 @@ namespace cloudsharpback.Services
             }
             token = Guid.NewGuid();
             var expireTime = DateTime.Now.AddHours(1);
-            if (!DownloadTokens.TryAdd(token.Value, (expireTime, target)))
+            if (!_downloadTokens.TryAdd(token.Value, (expireTime, target)))
             {
                 return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
             }
@@ -231,13 +229,15 @@ namespace cloudsharpback.Services
             try
             {
                 fileStream = null;
-                if (!DownloadTokens.Remove(downloadToken, out var item))
+                if (!_downloadTokens.Remove(downloadToken, out var item))
                 {
                     return new HttpErrorDto() { ErrorCode = 403, Message = "bad token" };
                 }
                 if (item.expireTime < DateTime.Now)
                 {
-                    DownloadTokens.Where(x => x.Value.expireTime < DateTime.Now).ToList().ForEach(x => DownloadTokens.Remove(x.Key));
+                    _downloadTokens.Where(x => x.Value.expireTime < DateTime.Now)
+                        .ToList()
+                        .ForEach(x => _downloadTokens.Remove(x.Key));
                     return new HttpErrorDto() { ErrorCode = 410, Message = "expire token" };
                 }
                 if (!FileExist(item.target))
@@ -265,13 +265,15 @@ namespace cloudsharpback.Services
             try
             {
                 fileStream = null;
-                if (!DownloadTokens.TryGetValue(downloadToken, out var item))
+                if (!_downloadTokens.TryGetValue(downloadToken, out var item))
                 {
                     return new HttpErrorDto() { ErrorCode = 403, Message = "bad token" };
                 }
                 if (item.expireTime < DateTime.Now)
                 {
-                    DownloadTokens.Where(x => x.Value.expireTime < DateTime.Now).ToList().ForEach(x => DownloadTokens.Remove(x.Key));
+                    _downloadTokens.Where(x => x.Value.expireTime < DateTime.Now)
+                        .ToList()
+                        .ForEach(x => _downloadTokens.Remove(x.Key));
                     return new HttpErrorDto() { ErrorCode = 410, Message = "expire token" };
                 }
                 if (!FileExist(item.target))
@@ -302,7 +304,7 @@ namespace cloudsharpback.Services
                 {
                     return new HttpErrorDto() { ErrorCode = 415, Message = "bad file type" };
                 }
-                var filepath = Path.Combine(userPath(member.Directory), target);
+                var filepath = Path.Combine(MemberDirectory(member.Directory), target);
                 if (!FileExist(filepath))
                 {
                     return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };

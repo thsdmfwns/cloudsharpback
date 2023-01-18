@@ -9,18 +9,18 @@ namespace cloudsharpback.Services
     {
         private readonly IDBConnService _connService;
         private readonly ILogger _logger;
-        private string DirectoryPath;
+        private readonly IPathStore _pathStore;
 
-        public ShareService(IConfiguration configuration, IDBConnService connService, ILogger<IShareService> logger)
+        public ShareService(IDBConnService connService, ILogger<IShareService> logger, IPathStore pathStore)
         {
-            DirectoryPath = configuration["File:DirectoryPath"];
+            _pathStore = pathStore;
             _connService = connService;
             _logger = logger;
         }
 
-        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
+        string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
-        Dictionary<Guid, ShareDownloadDto> downloadTokens = new();
+        private readonly Dictionary<Guid, ShareDownloadDto> _downloadTokens = new();
 
         /// <summary>
         /// 
@@ -33,7 +33,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var filepath = Path.Combine(userPath(member.Directory), req.Target);
+                var filepath = Path.Combine(MemberDirectory(member.Directory), req.Target);
                 if (!FileExist(filepath))
                 {
                     return new HttpErrorDto
@@ -201,7 +201,7 @@ namespace cloudsharpback.Services
                     }
                 }
                 var downloadtoken = Guid.NewGuid();
-                downloadTokens.TryAdd(downloadtoken, dto);
+                _downloadTokens.TryAdd(downloadtoken, dto);
                 return (null, downloadtoken);
             }
             catch (HttpErrorException) { throw; }
@@ -221,13 +221,13 @@ namespace cloudsharpback.Services
         {
             fileStream = null;
             if (!Guid.TryParse(token, out var dlToken)
-                || !downloadTokens.Remove(dlToken, out var dlDto)
+                || !_downloadTokens.Remove(dlToken, out var dlDto)
                 || DateTime.Now > dlDto.DtoExpireTime)
             {
                 return new HttpErrorDto() { ErrorCode = 400, Message = "bad token" };
                
             }
-            var filepath = Path.Combine(userPath(dlDto.Directory), dlDto.Target);
+            var filepath = Path.Combine(MemberDirectory(dlDto.Directory), dlDto.Target);
             if (!FileExist(filepath))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };

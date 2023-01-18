@@ -8,18 +8,18 @@ namespace cloudsharpback.Services
 {
     public class TorrentDlService : ITorrentDlService
     {
-        private string DirectoryPath;
         private readonly ILogger _logger;
         private readonly IDBConnService _connService;
+        private readonly IPathStore _pathStore;
 
-        public TorrentDlService(IConfiguration configuration, ILogger<ITorrentDlService> logger, IDBConnService connService)
+        public TorrentDlService(IPathStore pathStore, ILogger<ITorrentDlService> logger, IDBConnService connService)
         {
-            DirectoryPath = configuration["File:DirectoryPath"];
+            _pathStore = pathStore;
             _logger = logger;
             _connService = connService;
         }
 
-        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
+        private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
         async Task<TorrentInfo?> FindTorrentByHash(string hash) 
             => (await client.TorrentGetAsync(TorrentFields.ALL_FIELDS)).Torrents.ToList().FirstOrDefault(x => x.HashString == hash);
         async Task<List<TorrentInfo>> FindTorrentByHash(List<string> fields, List<string> hashes)
@@ -30,7 +30,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var userDir = userPath(member.Directory);
+                var userDir = MemberDirectory(member.Directory);
                 var filepath = Path.Combine(userDir, torrentFilePath);
                 if (!File.Exists(filepath)
                     || Path.GetExtension(filepath) != ".torrent")
@@ -76,7 +76,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var userDir = userPath(member.Directory);
+                var userDir = MemberDirectory(member.Directory);
                 if (!magnetUrl.StartsWith("magnet:"))
                 {
                     var err = new HttpErrorDto()

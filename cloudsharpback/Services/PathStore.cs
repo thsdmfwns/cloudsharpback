@@ -24,7 +24,7 @@ public class PathStore : IPathStore
     public string DirectoryPath => Path.Combine(_volumePath, "Directory");
     public string TusStorePath => Path.Combine(_volumePath, "TusStore");
     public string ProfilePath => Path.Combine(_volumePath, "Profile");
-    public string MemberDirectoryPath(string memberDirectoryId) =>
+    public string MemberDirectory(string memberDirectoryId) =>
         Path.Combine(DirectoryPath, memberDirectoryId);
     
 }

@@ -10,12 +10,12 @@ namespace cloudsharpback.Services
     {
         private readonly IDBConnService _connService;
         private readonly ILogger _logger;
-        private string ProfilePath;
+        private readonly string _profilePath;
 
-        public MemberService(IConfiguration configuration, IDBConnService connService, ILogger<IMemberService> logger)
+        public MemberService(IDBConnService connService, ILogger<IMemberService> logger, IPathStore pathStore)
         {
-            ProfilePath = configuration["File:ProfileImagePath"];
-            if (!Directory.Exists(ProfilePath)) Directory.CreateDirectory(ProfilePath);
+            _profilePath = pathStore.ProfilePath;
+            if (!Directory.Exists(_profilePath)) Directory.CreateDirectory(_profilePath);
             _connService = connService;
             _logger = logger;
         }
@@ -64,7 +64,7 @@ namespace cloudsharpback.Services
                     return new HttpErrorDto() { ErrorCode = 415, Message = "bad type" };
                 }
                 var filename = profileId.ToString() + extension;
-                var filepath = Path.Combine(ProfilePath, filename);
+                var filepath = Path.Combine(_profilePath, filename);
                 if (File.Exists(filepath))
                 {
                     return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
@@ -105,7 +105,7 @@ namespace cloudsharpback.Services
             try
             {
                 fileStream = null;
-                var filepath = Path.Combine(ProfilePath, profileImage);
+                var filepath = Path.Combine(_profilePath, profileImage);
                 contentType = MimeTypeUtil.GetMimeType(profileImage);
                 if (!File.Exists(filepath)
                     || contentType is null)

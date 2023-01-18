@@ -9,19 +9,19 @@ namespace cloudsharpback.Services
     public class YoutubeDlService : IYoutubeDlService
     {
         private readonly IHubContext<YoutubeDlHub> _hubContext;
-        private readonly string _directoryPath;
+        private readonly IPathStore _pathStore;
         private readonly ILogger _logger;
         private readonly IJWTService _jwtService;
-        public YoutubeDlService(IHubContext<YoutubeDlHub> hubContext, IConfiguration configuration, ILogger<IYoutubeDlService> logger, IJWTService jwtService)
+        public YoutubeDlService(IHubContext<YoutubeDlHub> hubContext, IPathStore pathStore, ILogger<IYoutubeDlService> logger, IJWTService jwtService)
         {
             _hubContext = hubContext;
-            _directoryPath = configuration["File:DirectoryPath"];
+            _pathStore = pathStore;
             _logger = logger;
             _jwtService = jwtService;
         }
         private readonly Dictionary<ulong, (string signalrUserId, MemberDto member)> _signalrUsers = new();
 
-        private string UserPath(string directoryId) => Path.Combine(_directoryPath, directoryId);
+        private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
 
         private async Task SendHubAuthError(string id, string detail)
             => await _hubContext.Clients.Client(id).SendAsync("AuthError", detail);
@@ -69,7 +69,7 @@ namespace cloudsharpback.Services
                 {
                     return new HttpErrorDto() { ErrorCode = 404, Message = "connection not found" };
                 }
-                var dir = Path.Combine(UserPath(conn.member.Directory), path ?? string.Empty);
+                var dir = Path.Combine(MemberDirectory(conn.member.Directory), path ?? string.Empty);
                 Task.Run(() => DlYoutube(youtubeUrl, dir, conn.signalrUserId, requestToken));
                 return null;
             }
