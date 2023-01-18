@@ -17,11 +17,11 @@ namespace cloudsharpback.Services
             _hubContext = hubContext;
             _directoryPath = configuration["File:DirectoryPath"];
             _logger = logger;
-            this._jwtService = jwtService;
+            _jwtService = jwtService;
         }
         private readonly Dictionary<ulong, (string signalrUserId, MemberDto member)> _signalrUsers = new();
 
-        string userPath(string directoryId) => Path.Combine(_directoryPath, directoryId);
+        private string UserPath(string directoryId) => Path.Combine(_directoryPath, directoryId);
 
         private async Task SendHubAuthError(string id, string detail)
             => await _hubContext.Clients.Client(id).SendAsync("AuthError", detail);
@@ -38,15 +38,15 @@ namespace cloudsharpback.Services
         private async Task SendHubError(string id, Guid requestToken, string detail)
             => await _hubContext.Clients.Client(id).SendAsync("DlError", requestToken.ToString(), detail);
 
-        private async Task DLYoutube(string youtubeUrl, string directory, string userid, Guid requsestToken)
+        private async Task DlYoutube(string youtubeUrl, string directory, string userid, Guid requestToken)
         {
             await Cli.Wrap("yt-dlp")
             .WithArguments(youtubeUrl)
-            .WithStandardOutputPipe(PipeTarget.ToDelegate((text) => SendHubProgress(userid, requsestToken, text)))
-            .WithStandardErrorPipe(PipeTarget.ToDelegate((text) => SendHubError(userid, requsestToken, text)))
+            .WithStandardOutputPipe(PipeTarget.ToDelegate((text) => SendHubProgress(userid, requestToken, text)))
+            .WithStandardErrorPipe(PipeTarget.ToDelegate((text) => SendHubError(userid, requestToken, text)))
             .WithWorkingDirectory(directory)
             .ExecuteAsync();
-            await SendHubDone(userid, requsestToken);
+            await SendHubDone(userid, requestToken);
         }
 
         public async Task OnSignalrConnected(string connId, string auth)
@@ -61,15 +61,28 @@ namespace cloudsharpback.Services
             await SendHubConnected(connId, "connected");
         }
 
-        public HttpErrorDto? Download(MemberDto member, string youtubeUrl, string path, Guid requestToken)
+        public HttpErrorDto? Download(MemberDto member, string youtubeUrl, string? path, Guid requestToken)
         {
-            if (!_signalrUsers.TryGetValue(member.Id, out var conn))
+            try
             {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "connection not found" };
+                if (!_signalrUsers.TryGetValue(member.Id, out var conn))
+                {
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "connection not found" };
+                }
+                var dir = Path.Combine(UserPath(conn.member.Directory), path ?? string.Empty);
+                Task.Run(() => DlYoutube(youtubeUrl, dir, conn.signalrUserId, requestToken));
+                return null;
             }
-            var dir = Path.Combine(userPath(conn.member.Directory), path ?? string.Empty);
-            Task.Run(() => DLYoutube(youtubeUrl, dir, conn.signalrUserId, requestToken));
-            return null;
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.StackTrace);
+                _logger.LogError(exception.Message);
+                throw new HttpErrorException(new HttpErrorDto
+                {
+                    ErrorCode = 500,
+                    Message = "fail to Download Youtube",
+                });
+            }
         }
     }
 }
