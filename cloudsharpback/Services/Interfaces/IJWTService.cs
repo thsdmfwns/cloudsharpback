@@ -1,5 +1,4 @@
 ﻿using cloudsharpback.Models;
-using JsonWebToken;
 
 namespace cloudsharpback.Services.Interfaces
 {

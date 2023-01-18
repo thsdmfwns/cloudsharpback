@@ -2,13 +2,6 @@
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using Dapper;
-using MySqlX.XDevAPI.Relational;
-using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Ocsp;
-using System.Diagnostics.Metrics;
-using System.IO;
-using Ubiety.Dns.Core;
 
 namespace cloudsharpback.Services
 {

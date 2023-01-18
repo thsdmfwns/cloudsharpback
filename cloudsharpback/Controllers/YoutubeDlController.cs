@@ -1,7 +1,5 @@
-﻿using CliWrap;
-using cloudsharpback.Controllers.Base;
+﻿using cloudsharpback.Controllers.Base;
 using cloudsharpback.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers

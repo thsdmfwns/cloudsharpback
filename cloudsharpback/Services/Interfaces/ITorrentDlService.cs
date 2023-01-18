@@ -1,5 +1,4 @@
 ﻿using cloudsharpback.Models;
-using Transmission.API.RPC.Entity;
 
 namespace cloudsharpback.Services.Interfaces
 {

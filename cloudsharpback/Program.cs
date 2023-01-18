@@ -5,7 +5,6 @@ using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.DependencyInjection;
 using tusdotnet;
 
 var builder = WebApplication.CreateBuilder(args);

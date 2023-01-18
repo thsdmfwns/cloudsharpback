@@ -1,6 +1,4 @@
 ﻿using cloudsharpback.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 
 namespace cloudsharpback.Hubs

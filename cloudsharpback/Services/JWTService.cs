@@ -1,7 +1,6 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using JsonWebToken;
-using Microsoft.Extensions.Logging;
 
 namespace cloudsharpback.Services
 {

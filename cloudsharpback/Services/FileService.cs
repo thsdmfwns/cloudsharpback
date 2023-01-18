@@ -1,17 +1,7 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
-using Dapper;
-using JsonWebToken;
-using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.X509;
-using System.Diagnostics.Metrics;
-using System.IO;
 using System.IO.Compression;
-using System.Security.Cryptography.X509Certificates;
-using System.Xml.Linq;
-using static System.Net.WebRequestMethods;
 
 namespace cloudsharpback.Services
 {

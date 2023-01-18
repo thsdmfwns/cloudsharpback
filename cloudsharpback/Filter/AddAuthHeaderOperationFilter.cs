@@ -1,9 +1,7 @@
 ﻿using cloudsharpback.Attribute;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using Ubiety.Dns.Core;
 
 namespace cloudsharpback.Filter
 {

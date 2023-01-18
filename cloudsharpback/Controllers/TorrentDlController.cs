@@ -1,8 +1,6 @@
 ﻿using cloudsharpback.Controllers.Base;
-using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using MySqlX.XDevAPI.Common;
 
 namespace cloudsharpback.Controllers
 {

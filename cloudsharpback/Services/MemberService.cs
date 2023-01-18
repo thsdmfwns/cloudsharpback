@@ -2,9 +2,7 @@
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using Dapper;
-using System.Diagnostics.Metrics;
 using System.Net.Mail;
-using Ubiety.Dns.Core;
 
 namespace cloudsharpback.Services
 {

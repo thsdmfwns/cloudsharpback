@@ -1,6 +1,5 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
-using System.Collections.Generic;
 using tusdotnet.Interfaces;
 using tusdotnet.Models;
 using tusdotnet.Models.Configuration;
