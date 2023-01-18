@@ -14,10 +14,11 @@ builder.Logging.AddConsole();
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddSingleton<IPathStore, PathStore>();
+builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IJWTService, JWTService>();
 builder.Services.AddSingleton<IMemberService, MemberService>();
 builder.Services.AddSingleton<IUserService, UserService>();
-builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IFileService, FileService>();
 builder.Services.AddSingleton<IShareService, ShareService>();
 builder.Services.AddSingleton<ITusService, TusService>();
