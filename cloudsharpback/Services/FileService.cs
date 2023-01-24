@@ -127,62 +127,7 @@ namespace cloudsharpback.Services
 
         }
 
-
-        // old codes
-        /*
-        public async Task<bool> UploadFile(IFormFile file, MemberDto member, string? path)
-        {
-            try
-            {
-                var filepath = Path.Combine(userPath(member.Directory), path ?? string.Empty, file.FileName);
-                if (FileExist(filepath))
-                {
-                    return false;
-                }
-                using var stream = System.IO.File.Create(filepath);
-                await file.CopyToAsync(stream);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.StackTrace);
-                _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
-                {
-                    ErrorCode = 500,
-                    Message = "fail to upload file",
-                });
-            }
-        }
-
-        public bool DownloadFile(MemberDto member, string path, out FileStream? fileStream)
-        {
-            try
-            {
-                var filepath = Path.Combine(userPath(member.Directory), path);
-                if (!FileExist(filepath))
-                {
-                    fileStream = null;
-                    return false;
-                }
-                fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
-                return fileStream is null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.StackTrace);
-                _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
-                {
-                    ErrorCode = 500,
-                    Message = "fail to download file",
-                });
-            }
-        }
-        */
-
         private readonly Dictionary<Guid, (DateTime expireTime, string target)> _downloadTokens = new();
-
         /// <returns>404 : file not found, 409 : try again</returns>
         public HttpErrorDto? GetDownloadToken(MemberDto member, string targetPath, out Guid? token)
         {
