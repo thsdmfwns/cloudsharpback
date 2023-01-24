@@ -1,7 +1,6 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
-using System.IO.Compression;
 
 namespace cloudsharpback.Services
 {
@@ -9,11 +8,13 @@ namespace cloudsharpback.Services
     {
         private readonly ILogger _logger;
         private readonly IPathStore _pathStore;
+        private readonly ITicketStore _ticketStore;
 
-        public FileService(ILogger<IFileService> logger, IPathStore pathStore)
+        public FileService(ILogger<IFileService> logger, IPathStore pathStore, ITicketStore ticketStore)
         {
             _logger = logger;
             _pathStore = pathStore;
+            _ticketStore = ticketStore;
         }
 
         private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
@@ -102,6 +103,7 @@ namespace cloudsharpback.Services
                     fileDto = null;
                     return false;
                 }
+
                 var file = new FileInfo(filepath);
                 fileDto = new FileDto
                 {
@@ -127,29 +129,24 @@ namespace cloudsharpback.Services
 
         }
 
-        private readonly Dictionary<Guid, (DateTime expireTime, string target)> _downloadTokens = new();
         /// <returns>404 : file not found, 409 : try again</returns>
-        public HttpErrorDto? GetDownloadToken(MemberDto member, string targetPath, out Guid? token)
+        public HttpErrorDto? GetDownloadToken(MemberDto member, string targetPath, out Guid? ticketToken)
         {
-            token = null;
+            ticketToken = null;
             var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
             }
-            token = Guid.NewGuid();
-            var expireTime = DateTime.Now.AddMinutes(1);
-            if (!_downloadTokens.TryAdd(token.Value, (expireTime, target)))
-            {
-                return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
-            }
+            _ticketStore.Add(member, TicketType.Download, out var token, targetPath);
+            ticketToken = token;
             return null;
         }
 
         /// <returns>404 : file not found, 409 : try again</returns>
-        public HttpErrorDto? GetViewToken(MemberDto member, string targetPath, out Guid? token)
+        public HttpErrorDto? GetViewToken(MemberDto member, string targetPath, out Guid? ticketToken)
         {
-            token = null;
+            ticketToken = null;
             var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
@@ -157,39 +154,31 @@ namespace cloudsharpback.Services
             }
             if (!MimeTypeUtil.CanViewInFront(Path.GetExtension(targetPath)))
             {
-                return new HttpErrorDto() { ErrorCode = 415, Message = "file can not view in html" };
+                return new HttpErrorDto() { ErrorCode = 415, Message = "file can not view" };
             }
-            token = Guid.NewGuid();
-            var expireTime = DateTime.Now.AddHours(1);
-            if (!_downloadTokens.TryAdd(token.Value, (expireTime, target)))
-            {
-                return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
-            }
+            _ticketStore.Add(member, TicketType.ViewFile, out var token, targetPath);
+            ticketToken = token;
             return null;
         }
 
         /// <returns>500 : server error , 403 : bad token, 410 : expire, 404 : file not found</returns>
-        public HttpErrorDto? DownloadFile(Guid downloadToken, out FileStream? fileStream)
+        public HttpErrorDto? GetFileStream(Guid ticketToken, out FileStream? fileStream)
         {
             try
             {
                 fileStream = null;
-                if (!_downloadTokens.Remove(downloadToken, out var item))
+                if (!_ticketStore.TryGet(ticketToken, out var ticket)
+                    || ticket is null)
                 {
-                    return new HttpErrorDto() { ErrorCode = 403, Message = "bad token" };
+                    return new HttpErrorDto() { ErrorCode = 404, Message = "ticket not found" };
                 }
-                if (item.expireTime < DateTime.Now)
-                {
-                    _downloadTokens.Where(x => x.Value.expireTime < DateTime.Now)
-                        .ToList()
-                        .ForEach(x => _downloadTokens.Remove(x.Key));
-                    return new HttpErrorDto() { ErrorCode = 410, Message = "expire token" };
-                }
-                if (!FileExist(item.target))
+                var targetTicket = Path.Combine(MemberDirectory(ticket.Member.Directory), ticket.Target!);
+                
+                if (ticket?.Target is null || !FileExist(targetTicket))
                 {
                     return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
                 }
-                fileStream = new FileStream(item.target, FileMode.Open, FileAccess.Read);
+                fileStream = new FileStream(targetTicket, FileMode.Open, FileAccess.Read);
                 return null;
             }
             catch (Exception ex)
@@ -199,78 +188,7 @@ namespace cloudsharpback.Services
                 throw new HttpErrorException(new HttpErrorDto
                 {
                     ErrorCode = 500,
-                    Message = "fail to download file",
-                });
-            }
-        }
-
-        /// <returns>500 : server error , 403 : bad token, 410 : expire, 404 : file not found</returns>
-        public HttpErrorDto? ViewFile(Guid downloadToken, out FileStream? fileStream)
-        {
-            try
-            {
-                fileStream = null;
-                if (!_downloadTokens.TryGetValue(downloadToken, out var item))
-                {
-                    return new HttpErrorDto() { ErrorCode = 403, Message = "bad token" };
-                }
-                if (item.expireTime < DateTime.Now)
-                {
-                    _downloadTokens.Where(x => x.Value.expireTime < DateTime.Now)
-                        .ToList()
-                        .ForEach(x => _downloadTokens.Remove(x.Key));
-                    return new HttpErrorDto() { ErrorCode = 410, Message = "expire token" };
-                }
-                if (!FileExist(item.target))
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
-                }
-                fileStream = new FileStream(item.target, FileMode.Open, FileAccess.Read);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.StackTrace);
-                _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
-                {
-                    ErrorCode = 500,
-                    Message = "fail to View file",
-                });
-            }
-        }
-
-        public HttpErrorDto? ViewZip(MemberDto member, string target, out List<ZipEntryDto>? zipEntries)
-        {
-            try
-            {
-                zipEntries = null;
-                if (Path.GetExtension(target) != ".zip")
-                {
-                    return new HttpErrorDto() { ErrorCode = 415, Message = "bad file type" };
-                }
-                var filepath = Path.Combine(MemberDirectory(member.Directory), target);
-                if (!FileExist(filepath))
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
-                }
-                using ZipArchive archive = ZipFile.OpenRead(filepath);
-                var resp = archive.Entries.Select(ZipEntryDto.FromEntry).ToList();
-                if (resp is null)
-                {
-                    return new HttpErrorDto() { ErrorCode = 400, Message = "zip is encrypted" };
-                }
-                zipEntries = resp;
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.StackTrace);
-                _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
-                {
-                    ErrorCode = 500,
-                    Message = "fail to View zip",
+                    Message = "fail to get filestream",
                 });
             }
         }
