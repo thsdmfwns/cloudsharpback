@@ -5,10 +5,10 @@ namespace cloudsharpback.Hubs
 {
     public class YoutubeDlHub : Hub
     {
-        private readonly IYoutubeDlService youtubeDlService;
+        private readonly IYoutubeDlService _youtubeDlService;
         public YoutubeDlHub(IYoutubeDlService youtubeDlService)
         {
-            this.youtubeDlService = youtubeDlService;
+            this._youtubeDlService = youtubeDlService;
         }
 
         public override async Task OnConnectedAsync()
@@ -24,7 +24,7 @@ namespace cloudsharpback.Hubs
                 return;
             }
             var authString = auth.First();
-            await youtubeDlService.OnSignalrConnected(connId, authString);
+            await _youtubeDlService.OnSignalrConnected(connId, authString);
         }
     }
 }

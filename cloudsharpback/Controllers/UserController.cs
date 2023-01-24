@@ -10,28 +10,28 @@ namespace cloudsharpback.Controllers
     public class UserController : ControllerBase
     {
 
-        private readonly IUserService userService;
-        private readonly IJWTService jwtService;
-        private readonly IFileService fileService;
+        private readonly IUserService _userService;
+        private readonly IJWTService _jwtService;
+        private readonly IFileService _fileService;
 
 
         public UserController(IUserService userService, IJWTService jwtService, IFileService fileService)
         {
-            this.userService = userService;
-            this.jwtService = jwtService;
-            this.fileService = fileService;
+            this._userService = userService;
+            this._jwtService = jwtService;
+            this._fileService = fileService;
         }
 
         [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
-            var result = await userService.Login(loginDto);
+            var result = await _userService.Login(loginDto);
             if (result.err is not null || result.result is null)
             {
                 return StatusCode(result.err!.ErrorCode, result.err.Message);
             }
-            var res = new TokenDto(jwtService.WriteAcessToken(result.result), jwtService.WriteRefeshToken(result.result));
+            var res = new TokenDto(_jwtService.WriteAcessToken(result.result), _jwtService.WriteRefeshToken(result.result));
             return Ok(res);
         }
 
@@ -39,20 +39,20 @@ namespace cloudsharpback.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {
-            var res = await userService.Register(registerDto, 2);
+            var res = await _userService.Register(registerDto, 2);
             if (res.err is not null || res.directoryId is null)
             {
                 return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
-            fileService.MakeTemplateDirectory(res.directoryId);
+            _fileService.MakeTemplateDirectory(res.directoryId);
             return Ok();
         }
 
         [AllowAnonymous]
-        [HttpGet("idcheck")]
-        public async Task<IActionResult> IdCkeck(string id)
+        [HttpGet("id_check")]
+        public async Task<IActionResult> IdCheck(string id)
         {
-            return Ok(await userService.IdCheck(id));
+            return Ok(await _userService.IdCheck(id));
         }
     }
 }

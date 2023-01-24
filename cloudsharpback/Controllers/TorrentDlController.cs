@@ -8,17 +8,17 @@ namespace cloudsharpback.Controllers
     [ApiController]
     public class TorrentDlController : AuthControllerBase
     {
-        private readonly ITorrentDlService dlService;
+        private readonly ITorrentDlService _dlService;
 
         public TorrentDlController(ITorrentDlService dlService)
         {
-            this.dlService = dlService;
+            this._dlService = dlService;
         }
 
         [HttpPost("add_torrent")]
         public async Task<IActionResult> AddTorrent(string torrentPath, string? dlPath)
         {
-            var result = await dlService.addTorrentAsync(Member!, torrentPath, dlPath ?? string.Empty);
+            var result = await _dlService.addTorrentAsync(Member!, torrentPath, dlPath ?? string.Empty);
             if (result.err is not null)
             {
                 return StatusCode(result.err.ErrorCode, result.err.Message);
@@ -30,7 +30,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("add_magnet")]
         public async Task<IActionResult> AddMagnet(string magnetUrl, string? dlPath)
         {
-            var result = await dlService.addMagnetAsync(Member!, magnetUrl, dlPath ?? string.Empty);
+            var result = await _dlService.addMagnetAsync(Member!, magnetUrl, dlPath ?? string.Empty);
             if (result.err is not null)
             {
                 return StatusCode(result.err.ErrorCode, result.err.Message);
@@ -39,15 +39,15 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> Getall()
+        public async Task<IActionResult> GetAll()
         {
-            return Ok(await dlService.GetAllAsync(Member!));
+            return Ok(await _dlService.GetAllAsync(Member!));
         }
 
         [HttpPost("rm")]
         public async Task<IActionResult> Remove(string torrent_hash)
         {
-            var err = await dlService.removeTorrent(Member!, torrent_hash);
+            var err = await _dlService.removeTorrent(Member!, torrent_hash);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message); 
@@ -58,7 +58,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("run")]
         public async Task<IActionResult> Run(string torrent_hash)
         {
-            var err = await dlService.StartTorrent(Member!, torrent_hash);
+            var err = await _dlService.StartTorrent(Member!, torrent_hash);
             if (err is not null)
             {
                 return StatusCode(err.ErrorCode, err.Message);

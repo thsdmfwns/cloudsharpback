@@ -11,17 +11,17 @@ namespace cloudsharpback.Controllers
     [ApiController]
     public class ShareController : AuthControllerBase
     {
-        private readonly IShareService shareService;
+        private readonly IShareService _shareService;
 
         public ShareController(IShareService shareService)
         {
-            this.shareService = shareService;
+            this._shareService = shareService;
         }
 
         [HttpPost("share")]
         public async Task<IActionResult> Share(ShareRequestDto req)
         {
-            var result = await shareService.Share(Member, req);
+            var result = await _shareService.Share(Member, req);
             if (result is not null)
             {
                 return StatusCode(result.ErrorCode, result.Message);
@@ -32,7 +32,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("getList")]
         public async Task<IActionResult> GetShares()
         {
-            var res = await shareService.GetSharesAsync(Member);
+            var res = await _shareService.GetSharesAsync(Member);
             return Ok(res);
         }
 
@@ -44,7 +44,7 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            var res = await shareService.GetShareAsync(token);
+            var res = await _shareService.GetShareAsync(token);
             if (res.err is not null || res.result is null)
             {
                 return StatusCode(res.err!.ErrorCode, res.err.Message);
@@ -56,7 +56,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("dlToken")]
         public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto)
         {
-            var result = await shareService.GetDownloadTokenAsync(requestDto);
+            var result = await _shareService.GetDownloadTokenAsync(requestDto);
             if (result.err is not null || result.dlToken is null)
             {
                 return StatusCode(result.err!.ErrorCode, result);
@@ -66,9 +66,9 @@ namespace cloudsharpback.Controllers
 
         [AllowAnonymous]
         [HttpGet("dl/{token}")]
-        public IActionResult Donload(string token)
+        public IActionResult Download(string token)
         {
-            var err = shareService.DownloadShare(token, out var fileStream);
+            var err = _shareService.DownloadShare(token, out var fileStream);
             if (err is not null || fileStream is null)
             {
                 return StatusCode(err!.ErrorCode, err.Message);
@@ -87,18 +87,18 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            var result = await shareService.CloseShareAsync(Member, token);
+            var result = await _shareService.CloseShareAsync(Member, token);
             return result ? Ok() : NotFound();
         }
 
         [HttpPost("update")]
-        public async Task<IActionResult> UpadteShare(string token, [FromBody] ShareUpdateDto dto)
+        public async Task<IActionResult> UpdateShare(string token, [FromBody] ShareUpdateDto dto)
         {
             if (!Guid.TryParse(token, out _))
             {
                 return BadRequest();
             }
-            var result = await shareService.UpdateShareAsync(dto, token, Member);
+            var result = await _shareService.UpdateShareAsync(dto, token, Member);
             return result ? Ok() : NotFound();
         }
 
@@ -110,7 +110,7 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            var result = await shareService.ValidatePassword(password, token);
+            var result = await _shareService.ValidatePassword(password, token);
             if (result.err is not null || result.result is null)
             {
                 return StatusCode(result.err!.ErrorCode, result.err.Message);
@@ -126,7 +126,7 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            var result = await shareService.CheckPassword(token);
+            var result = await _shareService.CheckPassword(token);
             return Ok(result);
         }
     }
