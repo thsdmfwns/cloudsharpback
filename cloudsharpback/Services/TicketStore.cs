@@ -13,10 +13,15 @@ public class TicketStore : ITicketStore
         .ToList()
         .ForEach(x => _tickets.Remove(x));
 
-    public void Add(MemberDto memberDto, TicketType type, out Guid ticket)
+    public void Add(MemberDto memberDto, TicketType type, out Guid ticket, string? target = null)
     {
         ticket = new Guid();
-        _tickets.Add(ticket, new Ticket(ticket, memberDto, DateTime.Now.AddMinutes(3), type));
+        var value = new Ticket(ticket, memberDto, DateTime.Now.AddMinutes(3), type);
+        if (target is not null)
+        {
+            value.Target = target;
+        }
+        _tickets.Add(ticket, value);
     }
 
     public bool TryGet(Guid key, out Ticket? ticket)

@@ -14,4 +14,5 @@ public class Ticket
     public DateTime ExpireTime { get; set; }
     public MemberDto Member { get; private set; }
     public TicketType Type { get; private set; }
+    public string? Target { get; set; }
 }
