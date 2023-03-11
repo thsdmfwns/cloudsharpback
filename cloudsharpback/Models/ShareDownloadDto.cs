@@ -14,6 +14,5 @@
         public string Target { get; set; }
         public string? Password { get; set; }
         public ulong? ExpireTime { get; set; }
-        public DateTime DtoExpireTime = DateTime.Now.AddMinutes(1);
     }
 }

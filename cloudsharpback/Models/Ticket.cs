@@ -1,18 +1,36 @@
+using Org.BouncyCastle.Asn1.X509;
+
 namespace cloudsharpback.Models;
 
 public class Ticket
 {
-    public Ticket(Guid value, MemberDto member, DateTime expireTime, TicketType type)
+    public Ticket(string directory, TicketType type, string requestIpAddress, bool isMember, string? target = null)
     {
-        Member = member;
-        ExpireTime = expireTime;
+        Directory = directory;
+        ExpireTime = GetExpireTime(type);
         Type = type;
-        Value = value;
+        RequestIpAddress = requestIpAddress;
+        IsMember = isMember;
+        Token = Guid.NewGuid();
+        Target = target;
     }
 
-    public Guid Value { get; private set; }
+    public Guid Token { get; }
     public DateTime ExpireTime { get; set; }
-    public MemberDto Member { get; private set; }
-    public TicketType Type { get; private set; }
+    public string Directory { get; }
+    public TicketType Type { get; }
     public string? Target { get; set; }
+    public string RequestIpAddress { get; }
+    public bool IsMember { get; }
+
+    private DateTime GetExpireTime(TicketType type)
+    {
+        return type switch
+        {
+            TicketType.Download => DateTime.Now.AddMinutes(10),
+            TicketType.ViewFile => DateTime.Now.AddDays(1),
+            TicketType.Signalr => DateTime.Now.AddMinutes(10),
+            _ => DateTime.Now.AddMinutes(10)
+        };
+    }
 }

@@ -19,12 +19,13 @@ builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IJWTService, JWTService>();
 builder.Services.AddSingleton<IMemberService, MemberService>();
 builder.Services.AddSingleton<IUserService, UserService>();
-builder.Services.AddSingleton<IFileService, FileService>();
+builder.Services.AddSingleton<IMemberFileService, MemberFileService>();
 builder.Services.AddSingleton<IShareService, ShareService>();
 builder.Services.AddSingleton<ITusService, TusService>();
 builder.Services.AddSingleton<IYoutubeDlService, YoutubeDlService>();
 builder.Services.AddSingleton<ITorrentDlService, TorrentDlService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+builder.Services.AddScoped<IFileStreamService, FileStreamService>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();

@@ -12,17 +12,16 @@ namespace cloudsharpback.Controllers
 
         private readonly IUserService _userService;
         private readonly IJWTService _jwtService;
-        private readonly IFileService _fileService;
+        private readonly IMemberFileService _memberFileService;
 
 
-        public UserController(IUserService userService, IJWTService jwtService, IFileService fileService)
+        public UserController(IUserService userService, IJWTService jwtService, IMemberFileService memberFileService)
         {
             this._userService = userService;
             this._jwtService = jwtService;
-            this._fileService = fileService;
+            this._memberFileService = memberFileService;
         }
-
-        [AllowAnonymous]
+        
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
@@ -34,8 +33,7 @@ namespace cloudsharpback.Controllers
             var res = new TokenDto(_jwtService.WriteAcessToken(result.result), _jwtService.WriteRefeshToken(result.result));
             return Ok(res);
         }
-
-        [AllowAnonymous]
+        
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {
@@ -44,11 +42,10 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
-            _fileService.MakeTemplateDirectory(res.directoryId);
+            _memberFileService.MakeTemplateDirectory(res.directoryId);
             return Ok();
         }
-
-        [AllowAnonymous]
+        
         [HttpGet("id_check")]
         public async Task<IActionResult> IdCheck(string id)
         {

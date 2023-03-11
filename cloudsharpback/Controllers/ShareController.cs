@@ -56,28 +56,12 @@ namespace cloudsharpback.Controllers
         [HttpPost("dlToken")]
         public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto)
         {
-            var result = await _shareService.GetDownloadTokenAsync(requestDto);
+            var result = await _shareService.GetDownloadTokenAsync(requestDto, Request.HttpContext.Connection.RemoteIpAddress?.ToString());
             if (result.err is not null || result.dlToken is null)
             {
                 return StatusCode(result.err!.ErrorCode, result);
             }
             return Ok(result.dlToken.ToString());
-        }
-
-        [AllowAnonymous]
-        [HttpGet("dl/{token}")]
-        public IActionResult Download(string token)
-        {
-            var err = _shareService.DownloadShare(token, out var fileStream);
-            if (err is not null || fileStream is null)
-            {
-                return StatusCode(err!.ErrorCode, err.Message);
-            }
-            return new FileStreamResult(fileStream, MimeTypeUtil.GetMimeType(fileStream.Name) ?? "application/octet-stream")
-            {
-                FileDownloadName = Path.GetFileName(fileStream.Name),
-                EnableRangeProcessing = true
-            };
         }
 
         [HttpPost("close")]

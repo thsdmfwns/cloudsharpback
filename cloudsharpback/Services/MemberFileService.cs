@@ -4,17 +4,15 @@ using cloudsharpback.Utills;
 
 namespace cloudsharpback.Services
 {
-    public class FileService : IFileService
+    public class MemberFileService : IMemberFileService
     {
         private readonly ILogger _logger;
         private readonly IPathStore _pathStore;
-        private readonly ITicketStore _ticketStore;
 
-        public FileService(ILogger<IFileService> logger, IPathStore pathStore, ITicketStore ticketStore)
+        public MemberFileService(ILogger<IMemberFileService> logger, IPathStore pathStore)
         {
             _logger = logger;
             _pathStore = pathStore;
-            _ticketStore = ticketStore;
         }
 
         private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
@@ -130,23 +128,22 @@ namespace cloudsharpback.Services
         }
 
         /// <returns>404 : file not found, 409 : try again</returns>
-        public HttpErrorDto? GetDownloadToken(MemberDto member, string targetPath, out Guid? ticketToken)
+        public HttpErrorDto? GetDownloadTicket(MemberDto member, string targetPath, string reqIp, out Ticket? ticket)
         {
-            ticketToken = null;
+            ticket = null;
             var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
             }
-            _ticketStore.Add(member, TicketType.Download, out var token, targetPath);
-            ticketToken = token;
+            ticket = new Ticket(member.Directory, TicketType.Download, reqIp, true, target);
             return null;
         }
 
         /// <returns>404 : file not found, 409 : try again</returns>
-        public HttpErrorDto? GetViewToken(MemberDto member, string targetPath, out Guid? ticketToken)
+        public HttpErrorDto? GetViewTicket(MemberDto member, string targetPath, string reqIp, out Ticket? ticket)
         {
-            ticketToken = null;
+            ticket = null;
             var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
@@ -156,41 +153,8 @@ namespace cloudsharpback.Services
             {
                 return new HttpErrorDto() { ErrorCode = 415, Message = "file can not view" };
             }
-            _ticketStore.Add(member, TicketType.ViewFile, out var token, targetPath);
-            ticketToken = token;
+            ticket = new Ticket(member.Directory, TicketType.Download, reqIp, true, target);
             return null;
-        }
-
-        /// <returns>500 : server error , 403 : bad token, 410 : expire, 404 : file not found</returns>
-        public HttpErrorDto? GetFileStream(Guid ticketToken, out FileStream? fileStream)
-        {
-            try
-            {
-                fileStream = null;
-                if (!_ticketStore.TryGet(ticketToken, out var ticket)
-                    || ticket is null)
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "ticket not found" };
-                }
-                var targetTicket = Path.Combine(MemberDirectory(ticket.Member.Directory), ticket.Target!);
-                
-                if (ticket?.Target is null || !FileExist(targetTicket))
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
-                }
-                fileStream = new FileStream(targetTicket, FileMode.Open, FileAccess.Read);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.StackTrace);
-                _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
-                {
-                    ErrorCode = 500,
-                    Message = "fail to get filestream",
-                });
-            }
         }
     }
 }

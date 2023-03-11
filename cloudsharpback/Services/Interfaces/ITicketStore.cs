@@ -4,7 +4,8 @@ namespace cloudsharpback.Services.Interfaces;
 
 public interface ITicketStore
 {
-    void Add(MemberDto memberDto, TicketType type, out Guid ticketToken, string? tartget = null);
+    void Add(Ticket ticket);
+    bool TryGetAndRemove(Guid ticketToken, out Ticket? ticket);
     bool TryGet(Guid ticketToken, out Ticket? ticket);
     bool TrySetTarget(Guid ticketToken, string target);
 }

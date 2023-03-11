@@ -16,7 +16,7 @@ namespace cloudsharpback.Controllers.Base
                     throw new HttpErrorException(new HttpErrorDto
                     {
                         ErrorCode = 500,
-                        Message = "Can not found memberDto in Controller"
+                        Message = "Can not found memberDto in HttpContext"
                     });
                 }
                 return member;
