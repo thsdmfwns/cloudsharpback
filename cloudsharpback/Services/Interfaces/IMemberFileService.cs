@@ -8,11 +8,7 @@ namespace cloudsharpback.Services.Interfaces
         List<FileDto> GetFiles(string id, string? path);
         bool GetFile(MemberDto member, string path, out FileDto? fileDto);
         bool DeleteFile(MemberDto member, string path, out FileDto? fileDto);
-
-        /// <returns>404 : file not found, 409 : try again</returns>
-        HttpErrorDto? GetDownloadTicket(MemberDto member, string targetPath, string reqIp, out Ticket? ticket);
-
-        /// <returns>404 : file not found, 409 : try again, 415 : can not view</returns>
-        HttpErrorDto? GetViewTicket(MemberDto member, string targetPath, string reqIp, out Ticket? ticket);
+        HttpErrorDto? CheckBeforeTicketAdd(MemberDto member, string targetPath, bool isView = false);
+        
     }
 }

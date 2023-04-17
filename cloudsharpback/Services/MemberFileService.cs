@@ -126,34 +126,18 @@ namespace cloudsharpback.Services
             }
 
         }
-
-        /// <returns>404 : file not found, 409 : try again</returns>
-        public HttpErrorDto? GetDownloadTicket(MemberDto member, string targetPath, string reqIp, out Ticket? ticket)
+        
+        public HttpErrorDto? CheckBeforeTicketAdd(MemberDto member, string targetPath, bool isView = false)
         {
-            ticket = null;
             var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
             }
-            ticket = new Ticket(member.Directory, TicketType.Download, reqIp, true, target);
-            return null;
-        }
-
-        /// <returns>404 : file not found, 409 : try again</returns>
-        public HttpErrorDto? GetViewTicket(MemberDto member, string targetPath, string reqIp, out Ticket? ticket)
-        {
-            ticket = null;
-            var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
-            if (!FileExist(target))
-            {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
-            }
-            if (!MimeTypeUtil.CanViewInFront(Path.GetExtension(targetPath)))
+            if (isView && !MimeTypeUtil.CanViewInFront(Path.GetExtension(targetPath)))
             {
                 return new HttpErrorDto() { ErrorCode = 415, Message = "file can not view" };
             }
-            ticket = new Ticket(member.Directory, TicketType.Download, reqIp, true, target);
             return null;
         }
     }

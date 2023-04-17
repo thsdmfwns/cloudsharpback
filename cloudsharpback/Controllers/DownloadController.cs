@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers;
 
-[Route("dnv")]
+[Route("dl")]
 [ApiController]
 public class DownloadController : ControllerBase
 {
@@ -18,32 +18,8 @@ public class DownloadController : ControllerBase
         _fileStreamService = fileStreamService;
     }
 
-    [HttpGet("dl/{token}")]
+    [HttpGet("{token}")]
     public IActionResult Download(string token)
-    {
-        if (!Guid.TryParse(token, out var ticketToken))
-        {
-            return StatusCode(400, "bad token");
-        };
-        if (!_ticketStore.TryGetAndRemove(ticketToken, out var ticket)
-            || ticket is null)
-        {
-            return StatusCode(404, "ticket not found");
-        }
-        var err = _fileStreamService.GetFileStream(ticket, out var fs);
-        if (err is not null || fs is null)
-        {
-            return StatusCode(err!.ErrorCode, err.Message);
-        }
-        return new FileStreamResult(fs, MimeTypeUtil.GetMimeType(fs.Name)?? "application/octet-stream")
-        {
-            FileDownloadName = Path.GetFileName(fs.Name),
-            EnableRangeProcessing = true
-        };;
-    }
-    
-    [HttpGet("v/{token}")]
-    public IActionResult View(string token)
     {
         if (!Guid.TryParse(token, out var ticketToken))
         {
@@ -59,9 +35,15 @@ public class DownloadController : ControllerBase
         {
             return StatusCode(err!.ErrorCode, err.Message);
         }
-        return new FileStreamResult(fs, MimeTypeUtil.GetMimeType(fs.Name)?? "application/octet-stream")
+        var res = new FileStreamResult(fs, MimeTypeUtil.GetMimeType(fs.Name)?? "application/octet-stream")
         {
             EnableRangeProcessing = true
         };
+        if (ticket.Type == TicketType.Download)
+        {
+            res.FileDownloadName = Path.GetFileName(fs.Name);
+        }
+
+        return res;
     }
 }

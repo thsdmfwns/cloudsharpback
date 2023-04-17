@@ -10,12 +10,10 @@ namespace cloudsharpback.Services
         private readonly IDBConnService _connService;
         private readonly ILogger _logger;
         private readonly IPathStore _pathStore;
-        private readonly ITicketStore _ticketStore;
 
-        public ShareService(IDBConnService connService, ILogger<IShareService> logger, IPathStore pathStore, ITicketStore ticketStore)
+        public ShareService(IDBConnService connService, ILogger<IShareService> logger, IPathStore pathStore)
         {
             _pathStore = pathStore;
-            _ticketStore = ticketStore;
             _connService = connService;
             _logger = logger;
         }
@@ -157,7 +155,7 @@ namespace cloudsharpback.Services
         /// <param name="req"></param>
         /// <returns>404 : file doesnt exist , 403 : bad password, 410 : expired share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpErrorDto? err, Ticket? dlToken)> GetDownloadTokenAsync(ShareDowonloadRequestDto req, string reqIp)
+        public async Task<(HttpErrorDto? err, ShareDownloadDto? dto)> GetDownloadDtoAsync(ShareDowonloadRequestDto req)
         {
             try
             {
@@ -199,8 +197,8 @@ namespace cloudsharpback.Services
                     };
                     return (res, null);
                 }
-                var ticket = new Ticket(dto.Directory, TicketType.Download, reqIp, false, dto.Target);
-                return (null, ticket);
+                
+                return (null, dto);
             }
             catch (Exception ex)
             {

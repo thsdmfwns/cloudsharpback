@@ -12,10 +12,14 @@ namespace cloudsharpback.Controllers
     public class ShareController : AuthControllerBase
     {
         private readonly IShareService _shareService;
+        private readonly IJWTService _jwtService;
+        private readonly ITicketStore _ticketStore;
 
-        public ShareController(IShareService shareService)
+        public ShareController(IShareService shareService, IJWTService jwtService, ITicketStore ticketStore)
         {
             this._shareService = shareService;
+            _jwtService = jwtService;
+            _ticketStore = ticketStore;
         }
 
         [HttpPost("share")]
@@ -53,15 +57,27 @@ namespace cloudsharpback.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("dlToken")]
-        public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto)
+        [HttpPost("dl_ticket")]
+        public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto, [FromHeader] string? auth)
         {
-            var result = await _shareService.GetDownloadTokenAsync(requestDto, Request.HttpContext.Connection.RemoteIpAddress?.ToString());
-            if (result.err is not null || result.dlToken is null)
+            var result = await _shareService.GetDownloadDtoAsync(requestDto);
+            if (result.err is not null || result.dto is null)
             {
                 return StatusCode(result.err!.ErrorCode, result);
             }
-            return Ok(result.dlToken.ToString());
+            MemberDto? member = null;
+            if (auth is not null)
+            {
+                _jwtService.TryValidateAcessToken(auth, out member);
+            }
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            if (ipAddress != null && ipAddress.Contains(":"))
+            {
+                ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
+            }
+            var ticket = new Ticket(result.dto.Directory, TicketType.Download, ipAddress, member, result.dto.Target);
+            _ticketStore.Add(ticket);
+            return Ok(ticket.Token.ToString());
         }
 
         [HttpPost("close")]

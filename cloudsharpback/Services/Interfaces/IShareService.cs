@@ -8,7 +8,7 @@ namespace cloudsharpback.Services.Interfaces
         Task<bool> CloseShareAsync(MemberDto member, string token);
         Task DeleteShareAsync(string target, MemberDto member);
         /// <returns>404 : share doesnt exist , 403 : bad password, 410 : expired share</returns>
-        Task<(HttpErrorDto? err, Ticket? dlToken)> GetDownloadTokenAsync(ShareDowonloadRequestDto req, string reqIp);
+        Task<(HttpErrorDto? err, ShareDownloadDto? dto)> GetDownloadDtoAsync(ShareDowonloadRequestDto req);
         /// <returns>410 : expired share </returns>
         Task<(HttpErrorDto? err, ShareResponseDto? result)> GetShareAsync(string token);
         Task<List<ShareResponseDto>> GetSharesAsync(MemberDto member);

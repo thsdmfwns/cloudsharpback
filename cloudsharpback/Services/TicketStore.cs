@@ -16,7 +16,7 @@ public class TicketStore : ITicketStore
     public void Add(Ticket ticket)
         => _tickets.Add(ticket.Token, ticket);
 
-    public bool TryGetAndRemove(Guid ticketToken, out Ticket? ticket)
+    public bool TryGet(Guid ticketToken, out Ticket? ticket)
     {
         RemoveExpired();
         ticket = null;
@@ -24,27 +24,16 @@ public class TicketStore : ITicketStore
         {
             return false;
         }
-        if (value.Type is TicketType.ViewFile or TicketType.Signalr)
+        switch (value.Type)
         {
-            value.ExpireTime = DateTime.Now.AddDays(1);
-            _tickets.Add(value.Token, value);
-        }
-        ticket = value;
-        return true;
-    }
-    
-    public bool TryGet(Guid ticketToken, out Ticket? ticket)
-    {
-        RemoveExpired();
-        ticket = null;
-        if (!_tickets.TryGetValue(ticketToken, out var value))
-        {
-            return false;
-        }
-        if (value.Type is TicketType.ViewFile or TicketType.Signalr)
-        {
-            value.ExpireTime = DateTime.Now.AddDays(1);
-            _tickets.Add(value.Token, value);
+            case TicketType.ViewFile :
+                value.ExpireTime = DateTime.Now.AddDays(1);
+                _tickets.Add(value.Token, value);
+                break;
+            case TicketType.Signalr :
+                value.ExpireTime = DateTime.Now.AddMinutes(1);
+                _tickets.Add(value.Token, value);
+                break;
         }
         ticket = value;
         return true;

@@ -1,4 +1,5 @@
 ﻿using cloudsharpback.Controllers.Base;
+using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,28 +40,39 @@ namespace cloudsharpback.Controllers
             return Ok(fileDto);
         }
 
-        [HttpGet("dlToken")]
+        [HttpGet("dl_ticket")]
         public IActionResult GetDownloadToken(string path)
         {
-            var err = _memberFileService.GetDownloadTicket(Member, path, Request.HttpContext.Connection.RemoteIpAddress?.ToString(), out var ticket);
-            if (err is not null
-                || ticket is null)
+            var err = _memberFileService.CheckBeforeTicketAdd(Member, path);
+            if (err is not null)
             {
                 return StatusCode(err!.ErrorCode, err.Message);
             }
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            if (ipAddress is not null && ipAddress.Contains(":"))
+            {
+                ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
+            }
+
+            var ticket = new Ticket(Member.Directory, TicketType.Download, ipAddress, Member, path);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpGet("viewToken")]
+        [HttpGet("view_ticket")]
         public IActionResult GetViewToken(string path)
         {
-            var err = _memberFileService.GetViewTicket(Member, path, Request.HttpContext.Connection.RemoteIpAddress?.ToString(), out var ticket);
-            if (err is not null 
-                || ticket is null)
+            var err = _memberFileService.CheckBeforeTicketAdd(Member, path, true);
+            if (err is not null)
             {
                 return StatusCode(err!.ErrorCode, err.Message);
             }
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            if (ipAddress is not null && ipAddress.Contains(":"))
+            {
+                ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
+            }
+            var ticket = new Ticket(Member.Directory, TicketType.ViewFile, ipAddress, Member, path);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
