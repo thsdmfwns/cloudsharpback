@@ -53,8 +53,15 @@ namespace cloudsharpback.Controllers
             {
                 ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
             }
-
-            var ticket = new Ticket(Member.Directory, TicketType.Download, ipAddress, Member, path);
+            var dl = new DownloadDto(Member.Directory, path, DownloadType.Download);
+            var ticket = new Ticket(
+                token: Guid.NewGuid(),
+                requestIpAddress: ipAddress,
+                owner: Member,
+                expireTime: DateTime.Now.AddMinutes(10),
+                target: dl,
+                targetType: typeof(DownloadDto)
+            );
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
@@ -72,7 +79,16 @@ namespace cloudsharpback.Controllers
             {
                 ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
             }
-            var ticket = new Ticket(Member.Directory, TicketType.ViewFile, ipAddress, Member, path);
+
+            var dl = new DownloadDto(Member.Directory, path, DownloadType.View);
+            var ticket = new Ticket(
+                token: Guid.NewGuid(),
+                requestIpAddress: ipAddress,
+                owner: Member,
+                expireTime: DateTime.Now.AddMinutes(10),
+                target: dl,
+                targetType: typeof(DownloadDto)
+            );
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }

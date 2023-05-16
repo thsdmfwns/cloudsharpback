@@ -22,8 +22,13 @@ public class FileStreamService : IFileStreamService
         try
         {
             fileStream = null;
-            var targetPath = Path.Combine(MemberDirectory(ticket.Directory), ticket.Target ?? string.Empty);
-            if (ticket.Target is null || !FileExist(targetPath))
+            if (ticket.TargetType != typeof(DownloadDto))
+            {
+                return new HttpErrorDto() { ErrorCode = 409, Message = "ticket type is not download" };
+            }
+            var file = (DownloadDto)ticket.Target;
+            var targetPath = Path.Combine(MemberDirectory(file.FileDirectory), file.FIlePath ?? string.Empty);
+            if (!FileExist(targetPath))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
             }

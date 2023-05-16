@@ -4,26 +4,24 @@ namespace cloudsharpback.Models;
 
 public class Ticket
 {
-    public Ticket(string directory, TicketType type, string? requestIpAddress, MemberDto? member, string? target = null)
+    public Ticket(Guid token, string requestIpAddress, MemberDto? owner, DateTime expireTime, Type targetType, object target)
     {
-        Directory = directory;
-        ExpireTime = GetExpireTime(type);
-        Type = type;
+        Token = token;
         RequestIpAddress = requestIpAddress;
-        Member = member;
-        Token = Guid.NewGuid();
+        Owner = owner;
+        ExpireTime = expireTime;
+        TargetType = targetType;
         Target = target;
     }
 
     public Guid Token { get; }
-    public DateTime ExpireTime { get; set; }
-    public string Directory { get; }
-    public TicketType Type { get; }
-    public string? Target { get; set; }
-    public string? RequestIpAddress { get; }
-    public MemberDto? Member { get; }
+    public DateTime ExpireTime { get;}
+    public string RequestIpAddress { get; }
+    public MemberDto? Owner { get; }
+    public Object Target { get; }
+    public Type TargetType { get; }
 
-    private DateTime GetExpireTime(TicketType type)
+    public static DateTime GetExpireTime(TicketType type)
     {
         return type switch
         {

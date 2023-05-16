@@ -24,28 +24,7 @@ public class TicketStore : ITicketStore
         {
             return false;
         }
-        switch (value.Type)
-        {
-            case TicketType.ViewFile :
-                value.ExpireTime = DateTime.Now.AddDays(1);
-                _tickets.Add(value.Token, value);
-                break;
-            case TicketType.Signalr :
-                value.ExpireTime = DateTime.Now.AddMinutes(1);
-                _tickets.Add(value.Token, value);
-                break;
-        }
         ticket = value;
-        return true;
-    }
-
-    public bool TrySetTarget(Guid ticketToken, string target)
-    {
-        if (!_tickets.ContainsKey(ticketToken))
-        {
-            return false;
-        }
-        _tickets[ticketToken].Target = target;
         return true;
     }
 }
