@@ -22,12 +22,13 @@ public class FileStreamService : IFileStreamService
         try
         {
             fileStream = null;
-            if (ticket.TargetType != typeof(DownloadToken))
+            if (ticket.Target is null ||
+                (ticket.TicketType != TicketType.Download && ticket.TicketType != TicketType.ViewFile) ||
+                ticket.Target is not DownloadToken file)
             {
-                return new HttpErrorDto() { ErrorCode = 409, Message = "ticket type is not download" };
+                return new HttpErrorDto() { ErrorCode = 404, Message = "wrong ticket" };
             }
-            var file = (DownloadToken)ticket.Target;
-            var targetPath = Path.Combine(MemberDirectory(file.FileDirectory), file.FIlePath ?? string.Empty);
+            var targetPath = Path.Combine(MemberDirectory(file.FileDirectory), file.FIlePath);
             if (!FileExist(targetPath))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };

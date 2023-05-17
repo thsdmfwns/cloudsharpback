@@ -123,7 +123,7 @@ namespace cloudsharpback.Controllers
         {
             var ip = IpAdressUtil.Get(HttpContext);
             var guid = Guid.NewGuid();
-            var ticket = new Ticket(guid, ip, Member, DateTime.Now.AddMinutes(10), typeof(MemberDto), Member);
+            var ticket = new Ticket(HttpContext, TicketType.SignalrConnect, null);
             _ticketStore.Add(ticket);
             return Ok(guid);
         }

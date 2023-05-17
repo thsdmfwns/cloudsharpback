@@ -48,20 +48,8 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(err!.ErrorCode, err.Message);
             }
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            if (ipAddress is not null && ipAddress.Contains(":"))
-            {
-                ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
-            }
             var dl = new DownloadToken(Member.Directory, path, DownloadType.Download);
-            var ticket = new Ticket(
-                token: Guid.NewGuid(),
-                requestIpAddress: ipAddress,
-                owner: Member,
-                expireTime: DateTime.Now.AddMinutes(10),
-                target: dl,
-                targetType: typeof(DownloadToken)
-            );
+            var ticket = new Ticket(HttpContext, TicketType.Download, dl);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
@@ -74,21 +62,8 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(err!.ErrorCode, err.Message);
             }
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            if (ipAddress is not null && ipAddress.Contains(":"))
-            {
-                ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
-            }
-
             var dl = new DownloadToken(Member.Directory, path, DownloadType.View);
-            var ticket = new Ticket(
-                token: Guid.NewGuid(),
-                requestIpAddress: ipAddress,
-                owner: Member,
-                expireTime: DateTime.Now.AddMinutes(10),
-                target: dl,
-                targetType: typeof(DownloadToken)
-            );
+            var ticket = new Ticket(HttpContext, TicketType.ViewFile, dl);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }

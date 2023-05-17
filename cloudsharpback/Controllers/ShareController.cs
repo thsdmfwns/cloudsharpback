@@ -70,21 +70,8 @@ namespace cloudsharpback.Controllers
             {
                 _jwtService.TryValidateAcessToken(auth, out member);
             }
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            if (ipAddress != null && ipAddress.Contains(":"))
-            {
-                ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
-            }
-
             var dl = new DownloadToken(result.dto.Directory, result.dto.Target, DownloadType.Download);
-            var ticket = new Ticket(
-                token: Guid.NewGuid(),
-                requestIpAddress: ipAddress,
-                owner: member,
-                expireTime: DateTime.Now.AddMinutes(10),
-                target: dl,
-                targetType: typeof(DownloadToken)
-            );
+            var ticket = new Ticket(IpAdressUtil.Get(HttpContext), Member, TicketType.Download, dl);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }

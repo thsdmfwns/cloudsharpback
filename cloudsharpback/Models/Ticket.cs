@@ -1,16 +1,27 @@
+using cloudsharpback.Utills;
 using Org.BouncyCastle.Asn1.X509;
 
 namespace cloudsharpback.Models;
 
 public class Ticket
 {
-    public Ticket(Guid token, string requestIpAddress, MemberDto? owner, DateTime expireTime, Type targetType, object target)
+    public Ticket(string? requestIpAddress, MemberDto? owner, TicketType ticketType, object target)
     {
-        Token = token;
-        RequestIpAddress = requestIpAddress;
+        Token = Guid.NewGuid();
+        RequestIpAddress = requestIpAddress ?? string.Empty;
         Owner = owner;
-        ExpireTime = expireTime;
-        TargetType = targetType;
+        ExpireTime = DateTime.Now.AddMinutes(10);
+        TicketType = ticketType;
+        Target = target;
+    }
+    
+    public Ticket(HttpContext httpContext, TicketType ticketType, object? target)
+    {
+        Token = Guid.NewGuid();
+        RequestIpAddress = IpAdressUtil.Get(httpContext) ?? string.Empty;
+        Owner = httpContext.Items["member"] as MemberDto;
+        ExpireTime = DateTime.Now.AddMinutes(10);
+        TicketType = ticketType;
         Target = target;
     }
 
@@ -18,10 +29,10 @@ public class Ticket
     public DateTime ExpireTime { get;}
     public string RequestIpAddress { get; }
     public MemberDto? Owner { get; }
-    public Object Target { get; }
-    public Type TargetType { get; }
+    public Object? Target { get; }
+    public TicketType TicketType { get; }
 
-    public static DateTime GetExpireTime(TicketType type)
+    /*public static DateTime GetExpireTime(TicketType type)
     {
         return type switch
         {
@@ -30,5 +41,5 @@ public class Ticket
             TicketType.Signalr => DateTime.Now.AddMinutes(10),
             _ => DateTime.Now.AddMinutes(10)
         };
-    }
+    }*/
 }
