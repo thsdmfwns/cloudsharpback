@@ -1,8 +1,8 @@
 namespace cloudsharpback.Models;
 
-public class DownloadDto
+public class DownloadToken
 {
-    public DownloadDto(string fileDirectory, string fIlePath, DownloadType downloadType)
+    public DownloadToken(string fileDirectory, string fIlePath, DownloadType downloadType)
     {
         FileDirectory = fileDirectory;
         FIlePath = fIlePath;

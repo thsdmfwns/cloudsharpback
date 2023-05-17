@@ -22,11 +22,11 @@ public class FileStreamService : IFileStreamService
         try
         {
             fileStream = null;
-            if (ticket.TargetType != typeof(DownloadDto))
+            if (ticket.TargetType != typeof(DownloadToken))
             {
                 return new HttpErrorDto() { ErrorCode = 409, Message = "ticket type is not download" };
             }
-            var file = (DownloadDto)ticket.Target;
+            var file = (DownloadToken)ticket.Target;
             var targetPath = Path.Combine(MemberDirectory(file.FileDirectory), file.FIlePath ?? string.Empty);
             if (!FileExist(targetPath))
             {

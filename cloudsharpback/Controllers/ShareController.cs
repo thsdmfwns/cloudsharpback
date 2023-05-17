@@ -76,14 +76,14 @@ namespace cloudsharpback.Controllers
                 ipAddress = ipAddress.Substring(0, ipAddress.IndexOf("%", StringComparison.Ordinal));
             }
 
-            var dl = new DownloadDto(result.dto.Directory, result.dto.Target, DownloadType.Download);
+            var dl = new DownloadToken(result.dto.Directory, result.dto.Target, DownloadType.Download);
             var ticket = new Ticket(
                 token: Guid.NewGuid(),
                 requestIpAddress: ipAddress,
                 owner: member,
                 expireTime: DateTime.Now.AddMinutes(10),
                 target: dl,
-                targetType: typeof(DownloadDto)
+                targetType: typeof(DownloadToken)
             );
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());

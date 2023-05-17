@@ -12,11 +12,13 @@ namespace cloudsharpback.Controllers
     {
         private readonly IJWTService _jwtService;
         private readonly IMemberService _memberService;
+        private readonly ITicketStore _ticketStore;
 
-        public MemberController(IJWTService jwtService, IMemberService memberService)
+        public MemberController(IJWTService jwtService, IMemberService memberService, ITicketStore ticketStore)
         {
             this._jwtService = jwtService;
             this._memberService = memberService;
+            _ticketStore = ticketStore;
         }
 
         [AllowAnonymous]
@@ -114,5 +116,7 @@ namespace cloudsharpback.Controllers
             }
             return Ok();
         }
+
+        
     }
 }
