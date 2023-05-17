@@ -117,7 +117,16 @@ namespace cloudsharpback.Controllers
             }
             return Ok();
         }
-
+        
+        [HttpGet("signalr_token")]
+        public async Task<IActionResult> GetSignalrToken()
+        {
+            var ip = IpAdressUtil.Get(HttpContext);
+            var guid = Guid.NewGuid();
+            var ticket = new Ticket(guid, ip, Member, DateTime.Now.AddMinutes(10), typeof(MemberDto), Member);
+            _ticketStore.Add(ticket);
+            return Ok(guid);
+        }
 
     }
 }
