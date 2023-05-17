@@ -6,4 +6,5 @@ public interface ITicketStore
 {
     void Add(Ticket ticket);
     bool TryGet(Guid ticketToken, out Ticket? ticket);
+    public void Remove(Guid ticketToken);
 }

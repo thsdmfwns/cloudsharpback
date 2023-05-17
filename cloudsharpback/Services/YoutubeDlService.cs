@@ -59,6 +59,7 @@ namespace cloudsharpback.Services
                 return;
             }
             _signalrUsers.Add(ticket.Owner.Id, (connId, ticket.Owner));
+            _ticketStore.Remove(token);
             await SendHubConnected(connId, "connected");
         }
 

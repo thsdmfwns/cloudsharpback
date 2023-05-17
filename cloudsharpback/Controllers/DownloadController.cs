@@ -39,11 +39,11 @@ public class DownloadController : ControllerBase
         {
             EnableRangeProcessing = true
         };
-        if (((DownloadToken)ticket.Target).DownloadType == DownloadType.Download)
+        if (((DownloadToken)ticket.Target!).DownloadType == DownloadType.Download)
         {
             res.FileDownloadName = Path.GetFileName(fs.Name);
         }
-
+        _ticketStore.Remove(ticketToken);
         return res;
     }
 }
