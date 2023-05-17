@@ -5,7 +5,7 @@ namespace cloudsharpback.Services;
 
 public class TicketStore : ITicketStore
 {
-    private Dictionary<Guid, Ticket> _tickets = new Dictionary<Guid, Ticket>();
+    private Dictionary<Guid, Ticket> _tickets = new();
 
     private void RemoveExpired() => _tickets
         .Where(x => x.Value.ExpireTime < DateTime.Now)
@@ -20,7 +20,8 @@ public class TicketStore : ITicketStore
     {
         RemoveExpired();
         ticket = null;
-        if (!_tickets.Remove(ticketToken, out var value))
+        if (!_tickets.Remove(ticketToken, out var value) ||
+            value.ExpireTime < DateTime.Now)
         {
             return false;
         }

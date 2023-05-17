@@ -11,13 +11,13 @@ namespace cloudsharpback.Services
         private readonly IHubContext<YoutubeDlHub> _hubContext;
         private readonly IPathStore _pathStore;
         private readonly ILogger _logger;
-        private readonly IJWTService _jwtService;
-        public YoutubeDlService(IHubContext<YoutubeDlHub> hubContext, IPathStore pathStore, ILogger<IYoutubeDlService> logger, IJWTService jwtService)
+        private readonly ITicketStore _ticketStore;
+        public YoutubeDlService(IHubContext<YoutubeDlHub> hubContext, IPathStore pathStore, ILogger<IYoutubeDlService> logger, ITicketStore ticketStore)
         {
             _hubContext = hubContext;
             _pathStore = pathStore;
             _logger = logger;
-            _jwtService = jwtService;
+            _ticketStore = ticketStore;
         }
         private readonly Dictionary<ulong, (string signalrUserId, MemberDto member)> _signalrUsers = new();
 
@@ -51,13 +51,14 @@ namespace cloudsharpback.Services
 
         public async Task OnSignalrConnected(string connId, string auth)
         {
-            if (!_jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
+            if (!Guid.TryParse(auth, out var token) || 
+                !_ticketStore.TryGet(token, out var ticket) 
+                || ticket?.Owner is null || ticket.TicketType != TicketType.SignalrConnect)
             {
-                await SendHubAuthError(connId, "bad auth");
+                await SendHubAuthError(connId, "bad token");
                 return;
             }
-            _signalrUsers.Add(memberDto.Id, (connId, memberDto));
+            _signalrUsers.Add(ticket.Owner.Id, (connId, ticket.Owner));
             await SendHubConnected(connId, "connected");
         }
 

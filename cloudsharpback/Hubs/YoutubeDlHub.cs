@@ -17,13 +17,13 @@ namespace cloudsharpback.Hubs
             var connId = Context.ConnectionId;
             var httpctx = Context.GetHttpContext();
             if (httpctx is null
-                || !httpctx.Request.Query.TryGetValue("auth", out var auth)
-                || auth.FirstOrDefault() is null)
+                || !httpctx.Request.Query.TryGetValue("token", out var token)
+                || token.FirstOrDefault() is null)
             {
                 Context.Abort();
                 return;
             }
-            var authString = auth.First();
+            var authString = token.First();
             await _youtubeDlService.OnSignalrConnected(connId, authString);
         }
     }

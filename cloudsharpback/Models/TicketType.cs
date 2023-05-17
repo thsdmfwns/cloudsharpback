@@ -4,5 +4,5 @@ public enum TicketType
 {
     Download,
     ViewFile,
-    SignalrConnect
+    SignalrConnect,
 }
