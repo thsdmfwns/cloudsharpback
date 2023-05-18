@@ -21,6 +21,11 @@ namespace cloudsharpback.Services
         {
             try
             {
+                if (Directory.Exists(MemberDirectory(memberDto.Directory)))
+                {
+                    return;
+                }
+
                 string SubPath(string foldername) => Path.Combine(MemberDirectory(memberDto.Directory), foldername);
                 Directory.CreateDirectory(SubPath("Download"));
                 Directory.CreateDirectory(SubPath("Music"));
