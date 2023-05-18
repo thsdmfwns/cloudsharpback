@@ -22,8 +22,7 @@ public class TicketStore : ITicketStore
         RemoveExpired();
         ticket = null;
         if (!_tickets.TryGetValue(ticketToken, out var value)
-            || ticket is null
-            || ticket.ExpireTime < DateTime.Now)
+            || value.ExpireTime < DateTime.Now)
         {
             return false;    
         }

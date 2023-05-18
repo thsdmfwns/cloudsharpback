@@ -14,19 +14,21 @@ builder.Logging.AddConsole();
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IPathStore, PathStore>();
-builder.Services.AddScoped<IDBConnService, DBConnService>();
+//scope
 builder.Services.AddScoped<IJWTService, JWTService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMemberFileService, MemberFileService>();
 builder.Services.AddScoped<IShareService, ShareService>();
-builder.Services.AddScoped<ITusService, TusService>();
 builder.Services.AddScoped<IYoutubeDlService, YoutubeDlService>();
-builder.Services.AddScoped<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddScoped<IFileStreamService, FileStreamService>();
-//store
+//singleton
+builder.Services.AddSingleton<IDBConnService, DBConnService>();
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<ITicketStore, TicketStore>();
+builder.Services.AddSingleton<IPathStore, PathStore>();
+//transient
+builder.Services.AddTransient<ITusService, TusService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
