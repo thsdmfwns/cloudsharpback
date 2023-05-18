@@ -42,7 +42,6 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(res.err!.ErrorCode, res.err.Message);
             }
-            _memberFileService.MakeTemplateDirectory(res.directoryId);
             return Ok();
         }
         

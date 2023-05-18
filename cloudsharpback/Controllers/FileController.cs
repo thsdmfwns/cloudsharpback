@@ -12,32 +12,27 @@ namespace cloudsharpback.Controllers
         private readonly IMemberFileService _memberFileService;
         private readonly ITicketStore _ticketStore;
         private readonly IShareService _shareService;
-        private readonly ITusService _tusService;
 
-        public FileController(IMemberFileService memberFileService, IShareService shareService, ITusService tusService, ITicketStore ticketStore)
+        public FileController(IMemberFileService memberFileService, IShareService shareService, ITicketStore ticketStore)
         {
             this._memberFileService = memberFileService;
             this._shareService = shareService;
-            this._tusService = tusService;
             _ticketStore = ticketStore;
         }
 
         [HttpGet("files")]
         public IActionResult GetFiles(string? path)
         {
-            return Ok(_memberFileService.GetFiles(Member.Directory, path));
+            var err = _memberFileService.GetFiles(Member, path, out var files);
+            return err is not null ? StatusCode(err.ErrorCode, err.Message) : Ok(files);
         }
 
         [ProducesResponseType(404)]
         [HttpGet("file")]
         public IActionResult GetFile(string path)
         {
-            if (!_memberFileService.GetFile(Member, path, out var fileDto))
-            {
-                return NotFound();
-            }
-
-            return Ok(fileDto);
+            var err = _memberFileService.GetFile(Member, path, out var fileDto);
+            return err is not null ? StatusCode(err.ErrorCode, err.Message) : Ok(fileDto);
         }
 
         [HttpGet("dl_ticket")]
@@ -69,23 +64,23 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("tusToken")]
-        public IActionResult GetTusToken()
+        public IActionResult GetTusToken(FileUploadDto dto)
         {
-            var err = _tusService.GetTusToken(Member, out var token);
-            if (err is not null)
+            var token = new TusUploadToken()
             {
-                return StatusCode(err.ErrorCode, err.Message);
-            }
-            return Ok(token.ToString());
+                FileName = dto.FileName,
+                FileDirectory = Member.Directory,
+                FilePath = dto.FilePath
+            };
+            var ticket = new Ticket(HttpContext, DateTime.MaxValue, TicketType.TusUpload, token);
+            _ticketStore.Add(ticket);
+            return Ok(ticket.Token.ToString());
         }
 
         [HttpPost("delete")]
         public async Task<IActionResult> Delete(string path)
         {
-            if (!_memberFileService.DeleteFile(Member, path, out var fileDto))
-            {
-                return StatusCode(404);
-            }
+            var err = _memberFileService.DeleteFile(Member, path, out var fileDto);
             await _shareService.DeleteShareAsync(path, Member);
             return Ok(fileDto);
         }

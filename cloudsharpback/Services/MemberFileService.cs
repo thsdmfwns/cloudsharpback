@@ -17,11 +17,11 @@ namespace cloudsharpback.Services
 
         private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
 
-        public void MakeTemplateDirectory(string directoryId)
+        public void MakeBaseDirectory(MemberDto memberDto)
         {
             try
             {
-                string SubPath(string foldername) => Path.Combine(MemberDirectory(directoryId), foldername);
+                string SubPath(string foldername) => Path.Combine(MemberDirectory(memberDto.Directory), foldername);
                 Directory.CreateDirectory(SubPath("Download"));
                 Directory.CreateDirectory(SubPath("Music"));
                 Directory.CreateDirectory(SubPath("Video"));
@@ -40,17 +40,33 @@ namespace cloudsharpback.Services
 
         }
 
-        public List<FileDto> GetFiles(string id, string? path)
+        public HttpErrorDto? GetFiles(MemberDto memberDto, string? path, out List<FileDto>? files)
         {
+            files = null;
+            if (!Directory.Exists(MemberDirectory(memberDto.Directory)))
+            {
+                MakeBaseDirectory(memberDto);
+            }
+
+            var dirPath = Path.Combine(MemberDirectory(memberDto.Directory), path ?? string.Empty);
+            if (!Directory.Exists(dirPath))
+            {
+                var err = new HttpErrorDto()
+                {
+                    ErrorCode = 404,
+                    Message = "Directory Not Found"
+                };
+                return err;
+            }
             List<FileDto> fileDtos = new();
-            var dir = new DirectoryInfo(Path.Combine(MemberDirectory(id), path ?? string.Empty));
+            var dir = new DirectoryInfo(dirPath);
             foreach (var fol in dir.GetDirectories())
             {
                 fileDtos.Add(new FileDto
                 {
                     Name = fol.Name,
                     FileType = FileType.FOLDER,
-                    Path = fol.FullName.Substring(MemberDirectory(id).Length + 1),
+                    Path = fol.FullName.Substring(MemberDirectory(memberDto.Directory).Length + 1),
                 });
             }
             foreach (var file in dir.GetFiles())
@@ -62,19 +78,25 @@ namespace cloudsharpback.Services
                     Extention = file.Extension,
                     LastWriteTime = file.LastWriteTime.ToUniversalTime().Ticks,
                     Size = (ulong?)file.Length,
-                    Path = file.FullName.Substring(MemberDirectory(id).Length + 1),
+                    Path = file.FullName.Substring(MemberDirectory(memberDto.Directory).Length + 1),
                 });
             }
-            return fileDtos;
+
+            files = fileDtos;
+            return null;
         }
 
-        public bool GetFile(MemberDto member, string path, out FileDto? fileDto)
+        public HttpErrorDto? GetFile(MemberDto member, string path, out FileDto? fileDto)
         {
+            fileDto = null;
             var filepath = Path.Combine(MemberDirectory(member.Directory), path);
             if (!FileExist(filepath))
             {
-                fileDto = null;
-                return false;
+                return new HttpErrorDto()
+                {
+                    ErrorCode = 404,
+                    Message = "File Not Found"
+                };
             }
             var file = new FileInfo(filepath);
             fileDto = new FileDto
@@ -86,20 +108,24 @@ namespace cloudsharpback.Services
                 Size = (ulong?)file.Length,
                 Path = file.FullName.Substring(MemberDirectory(member.Directory).Length + 1),
             };
-            return true;
+            return null;
         }
 
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
 
-        public bool DeleteFile(MemberDto member, string path, out FileDto? fileDto)
+        public HttpErrorDto? DeleteFile(MemberDto member, string path, out FileDto? fileDto)
         {
             try
             {
+                fileDto = null;
                 var filepath = Path.Combine(MemberDirectory(member.Directory), path);
                 if (!FileExist(filepath))
                 {
-                    fileDto = null;
-                    return false;
+                    return new HttpErrorDto()
+                    {
+                        ErrorCode = 404,
+                        Message = "File Not Found"
+                    };
                 }
 
                 var file = new FileInfo(filepath);
@@ -112,7 +138,7 @@ namespace cloudsharpback.Services
                     Size = (ulong?)file.Length
                 };
                 System.IO.File.Delete(filepath);
-                return true;
+                return null;
             }
             catch (Exception ex)
             {

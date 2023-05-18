@@ -5,4 +5,5 @@ public enum TicketType
     Download,
     ViewFile,
     SignalrConnect,
+    TusUpload
 }

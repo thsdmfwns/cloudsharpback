@@ -24,6 +24,16 @@ public class Ticket
         TicketType = ticketType;
         Target = target;
     }
+    
+    public Ticket(HttpContext httpContext, DateTime expireTime, TicketType ticketType, object? target)
+    {
+        Token = Guid.NewGuid();
+        RequestIpAddress = IpAdressUtil.Get(httpContext) ?? string.Empty;
+        Owner = httpContext.Items["member"] as MemberDto;
+        ExpireTime = expireTime;
+        TicketType = ticketType;
+        Target = target;
+    }
 
     public Guid Token { get; }
     public DateTime ExpireTime { get;}
