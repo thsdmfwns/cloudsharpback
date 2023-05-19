@@ -125,7 +125,7 @@ namespace cloudsharpback.Controllers
             var guid = Guid.NewGuid();
             var ticket = new Ticket(HttpContext, TicketType.SignalrConnect, null);
             _ticketStore.Add(ticket);
-            return Ok(guid);
+            return Ok(guid.ToString());
         }
 
     }
