@@ -63,7 +63,7 @@ namespace cloudsharpback.Controllers
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpGet("tusToken")]
+        [HttpPost("tusToken")]
         public IActionResult GetTusToken(FileUploadDto dto)
         {
             var token = new TusUploadToken()

@@ -6,7 +6,7 @@ namespace cloudsharpback.Services;
 
 public class TicketStore : ITicketStore
 {
-    private ConcurrentDictionary<Guid, Ticket> _tickets = new();
+    private readonly ConcurrentDictionary<Guid, Ticket> _tickets = new();
 
     private void RemoveExpired() => _tickets
         .Where(x => x.Value.ExpireTime < DateTime.Now)
