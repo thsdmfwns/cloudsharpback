@@ -158,7 +158,7 @@ namespace cloudsharpback.Services
 
         }
         
-        public HttpErrorDto? CheckBeforeTicketAdd(MemberDto member, string targetPath, bool isView = false)
+        public HttpErrorDto? CheckBeforeDownloadTicketAdd(MemberDto member, string targetPath, bool isView = false)
         {
             var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
@@ -169,6 +169,23 @@ namespace cloudsharpback.Services
             {
                 return new HttpErrorDto() { ErrorCode = 415, Message = "file can not view" };
             }
+            return null;
+        }
+
+        public HttpErrorDto? CheckBeforeUploadTicketAdd(MemberDto member, FileUploadDto uploadDto)
+        {
+            var targetDir = Path.Combine(MemberDirectory(member.Directory), uploadDto.FilePath);
+            if (!Directory.Exists(targetDir))
+            {
+                return new HttpErrorDto() { ErrorCode = 404, Message = "Directory not found" };
+            }
+
+            var target = Path.Combine(targetDir, uploadDto.FileName);
+            if (FileExist(target))
+            {
+                return new HttpErrorDto() { ErrorCode = 409, Message = "File with the same name already exists" };
+            }
+
             return null;
         }
     }

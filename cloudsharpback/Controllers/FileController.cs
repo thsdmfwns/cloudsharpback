@@ -38,7 +38,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("dlTicket")]
         public IActionResult GetDownloadTicket(string path)
         {
-            var err = _memberFileService.CheckBeforeTicketAdd(Member, path);
+            var err = _memberFileService.CheckBeforeDownloadTicketAdd(Member, path);
             if (err is not null)
             {
                 return StatusCode(err!.ErrorCode, err.Message);
@@ -52,7 +52,7 @@ namespace cloudsharpback.Controllers
         [HttpGet("viewTicket")]
         public IActionResult GetViewTicket(string path)
         {
-            var err = _memberFileService.CheckBeforeTicketAdd(Member, path, true);
+            var err = _memberFileService.CheckBeforeDownloadTicketAdd(Member, path, true);
             if (err is not null)
             {
                 return StatusCode(err!.ErrorCode, err.Message);
@@ -66,6 +66,11 @@ namespace cloudsharpback.Controllers
         [HttpPost("getUploadTicket")]
         public IActionResult GetUploadToken(FileUploadDto dto)
         {
+            var err = _memberFileService.CheckBeforeUploadTicketAdd(Member, dto);
+            if (err is not null)
+            {
+                return StatusCode(err.ErrorCode, err.Message);
+            }
             var token = new TusUploadToken()
             {
                 FileName = dto.FileName,
