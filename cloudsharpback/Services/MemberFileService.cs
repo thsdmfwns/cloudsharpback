@@ -179,13 +179,11 @@ namespace cloudsharpback.Services
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "Directory not found" };
             }
-
             var target = Path.Combine(targetDir, uploadDto.FileName);
             if (FileExist(target))
             {
                 return new HttpErrorDto() { ErrorCode = 409, Message = "File with the same name already exists" };
             }
-
             return null;
         }
     }
