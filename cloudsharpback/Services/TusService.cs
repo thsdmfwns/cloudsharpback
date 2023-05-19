@@ -30,7 +30,7 @@ namespace cloudsharpback.Services
             return new DefaultTusConfiguration
             {
                 Store = new TusDiskStore(TusStorePath),
-                UrlPath = "/api/tus",
+                UrlPath = "/api/upload",
                 Events = new Events
                 {
                     OnFileCompleteAsync = OnFileCompleteAsync,

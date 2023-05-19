@@ -58,7 +58,7 @@ namespace cloudsharpback.Controllers
 
         [AllowAnonymous]
         [HttpPost("dlTicket")]
-        public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto, [FromHeader] string? auth)
+        public async Task<IActionResult> GetDownloadTicket(ShareDowonloadRequestDto requestDto, [FromHeader] string? auth)
         {
             var result = await _shareService.GetDownloadDtoAsync(requestDto);
             if (result.err is not null || result.dto is null)

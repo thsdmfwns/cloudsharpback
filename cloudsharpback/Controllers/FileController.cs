@@ -21,7 +21,7 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("files")]
-        public IActionResult GetFiles(string? path)
+        public IActionResult GetFileDtoList(string? path)
         {
             var err = _memberFileService.GetFiles(Member, path, out var files);
             return err is not null ? StatusCode(err.ErrorCode, err.Message) : Ok(files);
@@ -29,14 +29,14 @@ namespace cloudsharpback.Controllers
 
         [ProducesResponseType(404)]
         [HttpGet("file")]
-        public IActionResult GetFile(string path)
+        public IActionResult GetFileDto(string path)
         {
             var err = _memberFileService.GetFile(Member, path, out var fileDto);
             return err is not null ? StatusCode(err.ErrorCode, err.Message) : Ok(fileDto);
         }
 
         [HttpGet("dlTicket")]
-        public IActionResult GetDownloadToken(string path)
+        public IActionResult GetDownloadTicket(string path)
         {
             var err = _memberFileService.CheckBeforeTicketAdd(Member, path);
             if (err is not null)
@@ -50,7 +50,7 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("viewTicket")]
-        public IActionResult GetViewToken(string path)
+        public IActionResult GetViewTicket(string path)
         {
             var err = _memberFileService.CheckBeforeTicketAdd(Member, path, true);
             if (err is not null)
@@ -63,8 +63,8 @@ namespace cloudsharpback.Controllers
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpPost("tusTicket")]
-        public IActionResult GetTusToken(FileUploadDto dto)
+        [HttpPost("getUploadTicket")]
+        public IActionResult GetUploadToken(FileUploadDto dto)
         {
             var token = new TusUploadToken()
             {
@@ -78,7 +78,7 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpPost("del")]
-        public async Task<IActionResult> Delete(string path)
+        public async Task<IActionResult> DeleteFile(string path)
         {
             var err = _memberFileService.DeleteFile(Member, path, out var fileDto);
             await _shareService.DeleteShareAsync(path, Member);

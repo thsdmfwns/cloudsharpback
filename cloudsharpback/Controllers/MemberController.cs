@@ -46,7 +46,7 @@ namespace cloudsharpback.Controllers
             return Ok(Member);
         }
 
-        [HttpPost("updateImage")]
+        [HttpPost("uploadProfileImg")]
         public async Task<IActionResult> UploadProfileImage(IFormFile image)
         {
             var res = await _memberService.UploadProfileImage(image, Member);
