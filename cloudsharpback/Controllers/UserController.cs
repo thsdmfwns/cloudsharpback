@@ -45,7 +45,7 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
         
-        [HttpGet("id_check")]
+        [HttpGet("idCheck")]
         public async Task<IActionResult> IdCheck(string id)
         {
             return Ok(await _userService.IdCheck(id));

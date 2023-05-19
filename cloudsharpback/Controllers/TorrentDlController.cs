@@ -15,7 +15,7 @@ namespace cloudsharpback.Controllers
             this._dlService = dlService;
         }
 
-        [HttpPost("add_torrent")]
+        [HttpPost("addTorrent")]
         public async Task<IActionResult> AddTorrent(string torrentPath, string? dlPath)
         {
             var result = await _dlService.addTorrentAsync(Member!, torrentPath, dlPath ?? string.Empty);
@@ -27,7 +27,7 @@ namespace cloudsharpback.Controllers
             return Ok(result.torrentHash);
         }
 
-        [HttpPost("add_magnet")]
+        [HttpPost("addMagnet")]
         public async Task<IActionResult> AddMagnet(string magnetUrl, string? dlPath)
         {
             var result = await _dlService.addMagnetAsync(Member!, magnetUrl, dlPath ?? string.Empty);

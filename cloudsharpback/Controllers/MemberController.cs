@@ -58,7 +58,7 @@ namespace cloudsharpback.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("imageDL/{image}")]
+        [HttpGet("imageDl/{image}")]
         public IActionResult DownloadProfileImage(string image)
         {
             var err = _memberService.DownloadProfileImage(image, out var fileStream, out var contentType);
@@ -118,7 +118,7 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
         
-        [HttpGet("signalr_token")]
+        [HttpGet("signalrTicket")]
         public async Task<IActionResult> GetSignalrToken()
         {
             var ip = IpAdressUtil.Get(HttpContext);

@@ -18,14 +18,14 @@ public class DownloadController : ControllerBase
         _fileStreamService = fileStreamService;
     }
 
-    [HttpGet("{token}")]
-    public IActionResult Download(string token)
+    [HttpGet("{ticketToken}")]
+    public IActionResult Download(string ticketToken)
     {
-        if (!Guid.TryParse(token, out var ticketToken))
+        if (!Guid.TryParse(ticketToken, out var ticketGuidToken))
         {
             return StatusCode(400, "bad token");
         };
-        if (!_ticketStore.TryGet(ticketToken, out var ticket)
+        if (!_ticketStore.TryGet(ticketGuidToken, out var ticket)
             || ticket is null)
         {
             return StatusCode(404, "ticket not found");
@@ -43,7 +43,7 @@ public class DownloadController : ControllerBase
         {
             res.FileDownloadName = Path.GetFileName(fs.Name);
         }
-        _ticketStore.Remove(ticketToken);
+        _ticketStore.Remove(ticketGuidToken);
         return res;
     }
 }

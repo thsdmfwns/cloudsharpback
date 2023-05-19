@@ -35,7 +35,7 @@ namespace cloudsharpback.Controllers
             return err is not null ? StatusCode(err.ErrorCode, err.Message) : Ok(fileDto);
         }
 
-        [HttpGet("dl_ticket")]
+        [HttpGet("dlTicket")]
         public IActionResult GetDownloadToken(string path)
         {
             var err = _memberFileService.CheckBeforeTicketAdd(Member, path);
@@ -49,7 +49,7 @@ namespace cloudsharpback.Controllers
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpGet("view_ticket")]
+        [HttpGet("viewTicket")]
         public IActionResult GetViewToken(string path)
         {
             var err = _memberFileService.CheckBeforeTicketAdd(Member, path, true);
@@ -63,7 +63,7 @@ namespace cloudsharpback.Controllers
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpPost("tusToken")]
+        [HttpPost("tusTicket")]
         public IActionResult GetTusToken(FileUploadDto dto)
         {
             var token = new TusUploadToken()
@@ -77,7 +77,7 @@ namespace cloudsharpback.Controllers
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpPost("delete")]
+        [HttpPost("del")]
         public async Task<IActionResult> Delete(string path)
         {
             var err = _memberFileService.DeleteFile(Member, path, out var fileDto);

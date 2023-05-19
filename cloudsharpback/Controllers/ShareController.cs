@@ -57,7 +57,7 @@ namespace cloudsharpback.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("dl_ticket")]
+        [HttpPost("dlTicket")]
         public async Task<IActionResult> GetDownloadToken(ShareDowonloadRequestDto requestDto, [FromHeader] string? auth)
         {
             var result = await _shareService.GetDownloadDtoAsync(requestDto);
@@ -71,7 +71,7 @@ namespace cloudsharpback.Controllers
                 _jwtService.TryValidateAcessToken(auth, out member);
             }
             var dl = new DownloadToken(result.dto.Directory, result.dto.Target, DownloadType.Download);
-            var ticket = new Ticket(IpAdressUtil.Get(HttpContext), Member, TicketType.Download, dl);
+            var ticket = new Ticket(IpAdressUtil.Get(HttpContext), member, TicketType.Download, dl);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
@@ -99,7 +99,7 @@ namespace cloudsharpback.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("val")]
+        [HttpPost("validatePw")]
         public async Task<IActionResult> ValidatePassword(string token, string password)
         {
             if (!Guid.TryParse(token, out _))
@@ -115,7 +115,7 @@ namespace cloudsharpback.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("check")]
+        [HttpGet("checkPw")]
         public async Task<IActionResult> CheckPassword(string token)
         {
             if (!Guid.TryParse(token, out _))
