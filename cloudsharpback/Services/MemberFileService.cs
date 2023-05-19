@@ -174,7 +174,7 @@ namespace cloudsharpback.Services
 
         public HttpErrorDto? CheckBeforeUploadTicketAdd(MemberDto member, FileUploadDto uploadDto)
         {
-            var targetDir = Path.Combine(MemberDirectory(member.Directory), uploadDto.FilePath);
+            var targetDir = Path.Combine(MemberDirectory(member.Directory), uploadDto.FilePath ?? string.Empty);
             if (!Directory.Exists(targetDir))
             {
                 return new HttpErrorDto() { ErrorCode = 404, Message = "Directory not found" };

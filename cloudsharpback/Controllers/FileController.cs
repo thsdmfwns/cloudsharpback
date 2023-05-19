@@ -75,7 +75,7 @@ namespace cloudsharpback.Controllers
             {
                 FileName = dto.FileName,
                 FileDirectory = Member.Directory,
-                FilePath = dto.FilePath
+                FilePath = dto.FilePath ?? string.Empty
             };
             var ticket = new Ticket(HttpContext, DateTime.MaxValue, TicketType.TusUpload, token);
             _ticketStore.Add(ticket);
