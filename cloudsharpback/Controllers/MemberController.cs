@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers
 {
-    [Route("api/user")]
+    [Route("api/Member")]
     [ApiController]
     public class MemberController : AuthControllerBase
     {
