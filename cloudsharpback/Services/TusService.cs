@@ -60,6 +60,8 @@ namespace cloudsharpback.Services
             if (FileExist(target))
             {
                 context.FailRequest(System.Net.HttpStatusCode.Conflict);
+                _ticketStore.Remove(guidToken);
+                return Task.CompletedTask;
             }
             return Task.CompletedTask;
         }
