@@ -126,7 +126,7 @@ namespace cloudsharpback.Services
             {
                 var sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
                     "s.share_time shareTime, s.expire_time expireTime, s.target, " +
-                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token), s.password, s.file_size filesize " +
+                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
                     "FROM share AS s " +
                     "INNER JOIN member AS m " +
                     "ON s.member_id = m.member_id " +
