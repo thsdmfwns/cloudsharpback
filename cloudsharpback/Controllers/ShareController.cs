@@ -83,8 +83,8 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            var result = await _shareService.CloseShareAsync(Member, token);
-            return result ? Ok() : NotFound();
+            var err = await _shareService.CloseShareAsync(Member, token);
+            return err is null ? Ok() : StatusCode(err.ErrorCode, err.Message);
         }
 
         [HttpPost("update")]
@@ -94,8 +94,8 @@ namespace cloudsharpback.Controllers
             {
                 return BadRequest();
             }
-            var result = await _shareService.UpdateShareAsync(dto, token, Member);
-            return result ? Ok() : NotFound();
+            var err = await _shareService.UpdateShareAsync(dto, token, Member);
+            return err is null ? Ok() : StatusCode(err.ErrorCode, err.Message);
         }
 
         [AllowAnonymous]

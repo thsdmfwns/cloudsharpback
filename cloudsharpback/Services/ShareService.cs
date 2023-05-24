@@ -177,8 +177,7 @@ namespace cloudsharpback.Services
                 }
                 if (dto.Password is not null 
                     && (req.Password is null 
-                        || !PasswordEncrypt.VerifyPassword(req.Password, dto.Password))
-                    )
+                        || !PasswordEncrypt.VerifyPassword(req.Password, dto.Password)))
                 {
                     var res = new HttpErrorDto
                     {
@@ -211,7 +210,7 @@ namespace cloudsharpback.Services
                 });
             }
         }
-        public async Task<bool> CloseShareAsync(MemberDto member, string token)
+        public async Task<HttpErrorDto?> CloseShareAsync(MemberDto member, string token)
         {
             try
             {
@@ -223,7 +222,8 @@ namespace cloudsharpback.Services
                 {
                     Id = member.Id,
                     Token = token,
-                }) != 0;
+                }) != 0
+                    ? null : new HttpErrorDto{ErrorCode = 404, Message = "Share not found"};
             }
             catch (Exception ex)
             {
@@ -237,7 +237,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        public async Task<bool> UpdateShareAsync(ShareUpdateDto dto, string token, MemberDto member)
+        public async Task<HttpErrorDto?> UpdateShareAsync(ShareUpdateDto dto, string token, MemberDto member)
         {
             try
             {
@@ -258,7 +258,7 @@ namespace cloudsharpback.Services
                     ShareName = dto.ShareName,
                     Token = token,
                     Id = member.Id,
-                }) != 0;
+                }) != 0 ? null : new HttpErrorDto{ErrorCode = 404, Message = "share not found"};
             }
             catch (Exception ex)
             {
@@ -273,18 +273,19 @@ namespace cloudsharpback.Services
 
         }
 
-        public async Task DeleteShareAsync(string target, MemberDto member)
+        public async Task<HttpErrorDto?> DeleteShareAsync(string target, MemberDto member)
         {
             try
             {
                 var sql = "DELETE FROM share " +
                     "WHERE member_id = @Id AND target = @Target";
                 using var conn = _connService.Connection;
-                await conn.ExecuteAsync(sql, new
+                var row = await conn.ExecuteAsync(sql, new
                 {
                     Target = target,
                     Id = member.Id,
                 });
+                return row > 0 ? null : new HttpErrorDto { ErrorCode = 404, Message = "share not found" };
             }
             catch (Exception ex)
             {
