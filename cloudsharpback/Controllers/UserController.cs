@@ -28,7 +28,7 @@ namespace cloudsharpback.Controllers
             var result = await _userService.Login(loginDto);
             if (result.err is not null || result.result is null)
             {
-                return StatusCode(result.err!.ErrorCode, result.err.Message);
+                return StatusCode(result.err!.HttpCode, result.err.Message);
             }
             var res = new TokenDto(_jwtService.WriteAcessToken(result.result), _jwtService.WriteRefeshToken(result.result));
             return Ok(res);
@@ -40,7 +40,7 @@ namespace cloudsharpback.Controllers
             var res = await _userService.Register(registerDto, 2);
             if (res.err is not null || res.directoryId is null)
             {
-                return StatusCode(res.err!.ErrorCode, res.err.Message);
+                return StatusCode(res.err!.HttpCode, res.err.Message);
             }
             return Ok();
         }

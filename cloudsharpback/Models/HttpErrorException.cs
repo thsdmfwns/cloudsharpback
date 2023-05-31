@@ -3,9 +3,9 @@
     public class HttpErrorException : Exception
     {
         public int ErrorCode { get; set; }
-        public HttpErrorDto ErrorDetail => new HttpErrorDto()
+        public HttpResponseDto ResponseDetail => new HttpResponseDto()
         {
-            ErrorCode = ErrorCode,
+            HttpCode = ErrorCode,
             Message = base.Message,
         };
 
@@ -14,9 +14,9 @@
             ErrorCode = errorCode;
         }
 
-        public HttpErrorException(HttpErrorDto httpErrorDetail) : base(httpErrorDetail.Message)
+        public HttpErrorException(HttpResponseDto httpResponseDetail) : base(httpResponseDetail.Message)
         {
-            ErrorCode = httpErrorDetail.ErrorCode;
+            ErrorCode = httpResponseDetail.HttpCode;
         }
 
     }

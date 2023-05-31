@@ -33,7 +33,7 @@ public class DownloadController : ControllerBase
         var err = _fileStreamService.GetFileStream(ticket, out var fs);
         if (err is not null || fs is null)
         {
-            return StatusCode(err!.ErrorCode, err.Message);
+            return StatusCode(err!.HttpCode, err.Message);
         }
         var res = new FileStreamResult(fs, MimeTypeUtil.GetMimeType(fs.Name)?? "application/octet-stream")
         {

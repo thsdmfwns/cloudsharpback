@@ -4,5 +4,5 @@ namespace cloudsharpback.Services.Interfaces;
 
 public interface IFileStreamService
 {
-    HttpErrorDto? GetFileStream(Ticket ticket, out FileStream? fileStream);
+    HttpResponseDto? GetFileStream(Ticket ticket, out FileStream? fileStream);
 }

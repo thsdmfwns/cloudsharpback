@@ -4,11 +4,11 @@ namespace cloudsharpback.Services.Interfaces
 {
     public interface IMemberFileService
     {
-        HttpErrorDto? GetFiles(MemberDto memberDto, string? path, out List<FileDto>? files);
-        HttpErrorDto? GetFile(MemberDto member, string path, out FileDto? fileDto);
-        HttpErrorDto? DeleteFile(MemberDto member, string path, out FileDto? fileDto);
-        HttpErrorDto? CheckBeforeDownloadTicketAdd(MemberDto member, string targetPath, bool isView = false);
-        HttpErrorDto? CheckBeforeUploadTicketAdd(MemberDto member, FileUploadDto uploadDto);
+        HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileDto>? files);
+        HttpResponseDto? GetFile(MemberDto member, string path, out FileDto? fileDto);
+        HttpResponseDto? DeleteFile(MemberDto member, string path, out FileDto? fileDto);
+        HttpResponseDto? CheckBeforeDownloadTicketAdd(MemberDto member, string targetPath, bool isView = false);
+        HttpResponseDto? CheckBeforeUploadTicketAdd(MemberDto member, FileUploadDto uploadDto);
         
     }
 }

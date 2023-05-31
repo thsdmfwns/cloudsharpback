@@ -17,7 +17,7 @@ public class FileStreamService : IFileStreamService
     private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
     private bool FileExist(string filePath) => System.IO.File.Exists(filePath);
     
-    public HttpErrorDto? GetFileStream(Ticket ticket, out FileStream? fileStream)
+    public HttpResponseDto? GetFileStream(Ticket ticket, out FileStream? fileStream)
     {
         try
         {
@@ -26,12 +26,12 @@ public class FileStreamService : IFileStreamService
                 (ticket.TicketType != TicketType.Download && ticket.TicketType != TicketType.ViewFile) ||
                 ticket.Target is not DownloadToken file)
             {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "wrong ticket" };
+                return new HttpResponseDto() { HttpCode = 404, Message = "wrong ticket" };
             }
             var targetPath = Path.Combine(MemberDirectory(file.FileDirectory), file.FIlePath);
             if (!FileExist(targetPath))
             {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
             }
             fileStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read);
             return null;
@@ -40,9 +40,9 @@ public class FileStreamService : IFileStreamService
         {
             _logger.LogError(ex.StackTrace);
             _logger.LogError(ex.Message);
-            throw new HttpErrorException(new HttpErrorDto
+            throw new HttpErrorException(new HttpResponseDto
             {
-                ErrorCode = 500,
+                HttpCode = 500,
                 Message = "fail to get filestream",
             });
         }

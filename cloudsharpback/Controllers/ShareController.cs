@@ -28,7 +28,7 @@ namespace cloudsharpback.Controllers
             var result = await _shareService.Share(Member, req);
             if (result is not null)
             {
-                return StatusCode(result.ErrorCode, result.Message);
+                return StatusCode(result.HttpCode, result.Message);
             }
             return Ok();
         }
@@ -51,7 +51,7 @@ namespace cloudsharpback.Controllers
             var res = await _shareService.GetShareAsync(token);
             if (res.err is not null || res.result is null)
             {
-                return StatusCode(res.err!.ErrorCode, res.err.Message);
+                return StatusCode(res.err!.HttpCode, res.err.Message);
             }
             return Ok(res.result);
         }
@@ -63,7 +63,7 @@ namespace cloudsharpback.Controllers
             var result = await _shareService.GetDownloadDtoAsync(requestDto);
             if (result.err is not null || result.dto is null)
             {
-                return StatusCode(result.err!.ErrorCode, result);
+                return StatusCode(result.err!.HttpCode, result);
             }
             MemberDto? member = null;
             if (auth is not null)
@@ -84,9 +84,8 @@ namespace cloudsharpback.Controllers
                 return BadRequest();
             }
             var err = await _shareService.CloseShareAsync(Member, token);
-            return err is null ? Ok() : StatusCode(err.ErrorCode, err.Message);
+            return err is null ? Ok() : StatusCode(err.HttpCode, err.Message);
         }
-
         [HttpPost("update")]
         public async Task<IActionResult> UpdateShare(string token, [FromBody] ShareUpdateDto dto)
         {
@@ -95,21 +94,21 @@ namespace cloudsharpback.Controllers
                 return BadRequest();
             }
             var err = await _shareService.UpdateShareAsync(dto, token, Member);
-            return err is null ? Ok() : StatusCode(err.ErrorCode, err.Message);
+            return err is null ? Ok() : StatusCode(err.HttpCode, err.Message);
         }
 
         [AllowAnonymous]
         [HttpPost("validatePw")]
-        public async Task<IActionResult> ValidatePassword(string token, string password)
+        public async Task<IActionResult> ValidatePassword(ShareRequestValidatePasswordDto dto)
         {
-            if (!Guid.TryParse(token, out _))
+            if (!Guid.TryParse(dto.token, out _))
             {
                 return BadRequest();
             }
-            var result = await _shareService.ValidatePassword(password, token);
+            var result = await _shareService.ValidatePassword(dto.password, dto.token);
             if (result.err is not null || result.result is null)
             {
-                return StatusCode(result.err!.ErrorCode, result.err.Message);
+                return StatusCode(result.err!.HttpCode, result.err.Message);
             }
             return Ok(result.result);
         }

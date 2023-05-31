@@ -21,7 +21,7 @@ namespace cloudsharpback.Services
         }
 
         /// <returns>404 : fail to login</returns>
-        public async Task<(HttpErrorDto? err, MemberDto? result)> GetMemberById(ulong id)
+        public async Task<(HttpResponseDto? err, MemberDto? result)> GetMemberById(ulong id)
         {
             try
             {
@@ -33,7 +33,7 @@ namespace cloudsharpback.Services
                 var result = await conn.QuerySingleOrDefaultAsync<MemberDto>(query, new { Id = id });
                 if (result is null)
                 {
-                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    var err = new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
                     return (err, null);
                 }
                 return (null, result);
@@ -42,16 +42,16 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to get member",
                 });
             }
         }
 
         /// <returns>415 : bad type, 409 : try again, 404: member not found</returns>
-        public async Task<HttpErrorDto?> UploadProfileImage(IFormFile imageFile, MemberDto member)
+        public async Task<HttpResponseDto?> UploadProfileImage(IFormFile imageFile, MemberDto member)
         {
             try
             {
@@ -61,13 +61,13 @@ namespace cloudsharpback.Services
                 if (mime is null 
                     || mime.Split('/')[0] != "image")
                 {
-                    return new HttpErrorDto() { ErrorCode = 415, Message = "bad type" };
+                    return new HttpResponseDto() { HttpCode = 415, Message = "bad type" };
                 }
                 var filename = profileId.ToString() + extension;
                 var filepath = Path.Combine(_profilePath, filename);
                 if (File.Exists(filepath))
                 {
-                    return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
+                    return new HttpResponseDto() { HttpCode = 409, Message = "try again" };
                 }
                 using (var stream = System.IO.File.Create(filepath))
                 {
@@ -84,7 +84,7 @@ namespace cloudsharpback.Services
                 });
                 if (result <= 0)
                 {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
                 }
                 return null;
             }
@@ -92,15 +92,15 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to upload profile image",
                 });
             }
         }
 
-        public HttpErrorDto? DownloadProfileImage(string profileImage, out FileStream? fileStream, out string? contentType)
+        public HttpResponseDto? DownloadProfileImage(string profileImage, out FileStream? fileStream, out string? contentType)
         {
             try
             {
@@ -110,7 +110,7 @@ namespace cloudsharpback.Services
                 if (!File.Exists(filepath)
                     || contentType is null)
                 {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                    return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
                 }
                 fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
                 return null;
@@ -119,15 +119,15 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to download file",
                 });
             }
         }
 
-        public async Task<HttpErrorDto?> UpadteNickname(MemberDto member, string changeNick)
+        public async Task<HttpResponseDto?> UpadteNickname(MemberDto member, string changeNick)
         {
             try
             {
@@ -147,7 +147,7 @@ namespace cloudsharpback.Services
                 });
                 if (result <= 0)
                 {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
                 }
                 return null;
             }
@@ -155,15 +155,15 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to update nick",
                 });
             }
         }
 
-        public async Task<HttpErrorDto?> UpadteEmail(MemberDto member, string changeEmail)
+        public async Task<HttpResponseDto?> UpadteEmail(MemberDto member, string changeEmail)
         {
             try
             {
@@ -174,7 +174,7 @@ namespace cloudsharpback.Services
                 }
                 catch (Exception)
                 {
-                    return new HttpErrorDto() { ErrorCode = 400, Message = "bad email" };
+                    return new HttpResponseDto() { HttpCode = 400, Message = "bad email" };
                 }
 
                 var sql = "UPDATE member " +
@@ -188,7 +188,7 @@ namespace cloudsharpback.Services
                 });
                 if (result <= 0)
                 {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
                 }
                 return null;
             }
@@ -196,15 +196,15 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to update email",
                 });
             }
         }
 
-        public async Task<(HttpErrorDto? err, bool result)> CheckPassword(MemberDto member, string password)
+        public async Task<(HttpResponseDto? err, bool result)> CheckPassword(MemberDto member, string password)
         {
             try
             {
@@ -213,7 +213,7 @@ namespace cloudsharpback.Services
                 var passwordHash = await conn.QuerySingleOrDefaultAsync<string?>(sql, new { Id = member.Id });
                 if (passwordHash is null)
                 {
-                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    var err = new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
                     return (err, false);
                 }
                 return (null, PasswordEncrypt.VerifyPassword(password, passwordHash));
@@ -222,9 +222,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to check password",
                 });
                 throw;
@@ -232,7 +232,7 @@ namespace cloudsharpback.Services
 
         }
 
-        public async Task<HttpErrorDto?> UpdatePassword(MemberDto member, UpadtePasswordDto requset)
+        public async Task<HttpResponseDto?> UpdatePassword(MemberDto member, UpadtePasswordDto requset)
         {
             try
             {
@@ -243,7 +243,7 @@ namespace cloudsharpback.Services
                 }
                 if (!checkresult.result)
                 {
-                    return new HttpErrorDto() { ErrorCode = 400, Message = "check password" };
+                    return new HttpResponseDto() { HttpCode = 400, Message = "check password" };
                 }
 
                 var password = PasswordEncrypt.EncryptPassword(requset.ChangeTo);
@@ -252,7 +252,7 @@ namespace cloudsharpback.Services
                 var result = await conn.ExecuteAsync(sql, new { Password = password, Id = member.Id });
                 if (result <= 0)
                 {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
                 }
                 return null;
             }
@@ -260,9 +260,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to update password",
                 });
                 throw;

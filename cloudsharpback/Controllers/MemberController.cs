@@ -34,7 +34,7 @@ namespace cloudsharpback.Controllers
             var result = await _memberService.GetMemberById(memberId.Value);
             if (result.err is not null || result.result is null)
             {
-                return StatusCode(result.err!.ErrorCode, result.err.Message);
+                return StatusCode(result.err!.HttpCode, result.err.Message);
             }
             var acToken = _jwtService.WriteAcessToken(result.result);
             return Ok(acToken);
@@ -52,7 +52,7 @@ namespace cloudsharpback.Controllers
             var res = await _memberService.UploadProfileImage(image, Member);
             if (res is not null)
             {
-                return StatusCode(res.ErrorCode, res.Message);
+                return StatusCode(res.HttpCode, res.Message);
             }
             return Ok();
         }
@@ -64,7 +64,7 @@ namespace cloudsharpback.Controllers
             var err = _memberService.DownloadProfileImage(image, out var fileStream, out var contentType);
             if (err is not null || fileStream is null || contentType is null)
             {
-                return StatusCode(err!.ErrorCode, err.Message);
+                return StatusCode(err!.HttpCode, err.Message);
             }
             return new FileStreamResult(fileStream, contentType)
             {
@@ -80,7 +80,7 @@ namespace cloudsharpback.Controllers
             var err = await _memberService.UpadteNickname(Member, nickname);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
             return Ok();
         }
@@ -91,7 +91,7 @@ namespace cloudsharpback.Controllers
             var err = await _memberService.UpadteEmail(Member, email);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
             return Ok();
         }
@@ -102,7 +102,7 @@ namespace cloudsharpback.Controllers
             var result = await _memberService.CheckPassword(Member, password);
             if (result.err is not null)
             {
-                return StatusCode(result.err.ErrorCode, result.err.Message);
+                return StatusCode(result.err.HttpCode, result.err.Message);
             }
             return Ok(result.result);
         }
@@ -113,19 +113,17 @@ namespace cloudsharpback.Controllers
             var err = await _memberService.UpdatePassword(Member, dto);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
             return Ok();
         }
         
         [HttpGet("signalrTicket")]
-        public async Task<IActionResult> GetSignalrToken()
+        public IActionResult GetSignalrToken()
         {
-            var ip = IpAdressUtil.Get(HttpContext);
-            var guid = Guid.NewGuid();
             var ticket = new Ticket(HttpContext, TicketType.SignalrConnect, null);
             _ticketStore.Add(ticket);
-            return Ok(guid.ToString());
+            return Ok(ticket.Token.ToString());
         }
 
     }

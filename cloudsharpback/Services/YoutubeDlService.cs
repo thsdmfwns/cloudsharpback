@@ -1,8 +1,10 @@
-﻿using CliWrap;
+﻿using System.Text.Json.Serialization;
+using CliWrap;
 using cloudsharpback.Hubs;
 using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using Newtonsoft.Json;
 
 namespace cloudsharpback.Services
 {
@@ -23,11 +25,8 @@ namespace cloudsharpback.Services
 
         private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
 
-        private async Task SendHubAuthError(string id, string detail)
-            => await _hubContext.Clients.Client(id).SendAsync("AuthError", detail);
-
-        private async Task SendHubConnected(string id, string detail)
-            => await _hubContext.Clients.Client(id).SendAsync("Connected", detail);
+        private async Task SendHubConnectionResult(string id, string detail)
+            => await _hubContext.Clients.Client(id).SendAsync("ConnectionResult", detail);
 
         private async Task SendHubProgress(string id, Guid requestToken, string progress)
             => await _hubContext.Clients.Client(id).SendAsync("DlProgress", requestToken.ToString(), progress);
@@ -49,27 +48,48 @@ namespace cloudsharpback.Services
             await SendHubDone(userid, requestToken);
         }
 
-        public async Task OnSignalrConnected(string connId, string auth)
+        public async Task<bool> ValidateConnectionToken(string connId, string tokenString)
         {
-            if (!Guid.TryParse(auth, out var token) || 
-                !_ticketStore.TryGet(token, out var ticket) 
-                || ticket?.Owner is null || ticket.TicketType != TicketType.SignalrConnect)
+            if (!Guid.TryParse(tokenString, out var token) 
+                || !_ticketStore.TryGet(token, out var ticket))
             {
-                await SendHubAuthError(connId, "bad token");
-                return;
+                var err = new HttpResponseDto()
+                {
+                    HttpCode = 404,
+                    Message = "Token Not Found"
+                };
+                await SendHubConnectionResult(connId, JsonConvert.SerializeObject(err));
+                return false;   
+            }
+            if (ticket?.Owner is null 
+                || ticket.TicketType != TicketType.SignalrConnect)
+            {
+                var err = new HttpResponseDto()
+                {
+                    HttpCode = 400,
+                    Message = "Bad token"
+                };
+                await SendHubConnectionResult(connId, JsonConvert.SerializeObject(err));
+                return false;
             }
             _signalrUsers.Add(ticket.Owner.Id, (connId, ticket.Owner));
             _ticketStore.Remove(token);
-            await SendHubConnected(connId, "connected");
+            var res = new HttpResponseDto()
+            {
+                HttpCode = 200,
+                Message = "Connected"
+            };
+            await SendHubConnectionResult(connId, JsonConvert.SerializeObject(res));
+            return true;
         }
 
-        public HttpErrorDto? Download(MemberDto member, string youtubeUrl, string? path, Guid requestToken)
+        public HttpResponseDto? Download(MemberDto member, string youtubeUrl, string? path, Guid requestToken)
         {
             try
             {
                 if (!_signalrUsers.TryGetValue(member.Id, out var conn))
                 {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "connection not found" };
+                    return new HttpResponseDto() { HttpCode = 404, Message = "connection not found" };
                 }
                 var dir = Path.Combine(MemberDirectory(conn.member.Directory), path ?? string.Empty);
                 Task.Run(() => DlYoutube(youtubeUrl, dir, conn.signalrUserId, requestToken));
@@ -79,9 +99,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(exception.StackTrace);
                 _logger.LogError(exception.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to Download Youtube",
                 });
             }

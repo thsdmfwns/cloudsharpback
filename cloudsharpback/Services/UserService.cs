@@ -29,7 +29,7 @@ namespace cloudsharpback.Services
             return (await conn.QueryAsync(query, new { Id = id })).Any();
         }
 
-        public async Task<(HttpErrorDto? err, MemberDto? result)> Login(LoginDto loginDto)
+        public async Task<(HttpResponseDto? err, MemberDto? result)> Login(LoginDto loginDto)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace cloudsharpback.Services
                 if (passwordHash is null
                     || !PasswordEncrypt.VerifyPassword(loginDto.Password, passwordHash))
                 {
-                    var res = new HttpErrorDto() { ErrorCode = 401, Message = "login fail" };
+                    var res = new HttpResponseDto() { HttpCode = 401, Message = "login fail" };
                     return (res, null);
                 }
                 var query = "SELECT member_id id, role_id role, email, nickname, " +
@@ -48,7 +48,7 @@ namespace cloudsharpback.Services
                 var result = await conn.QuerySingleOrDefaultAsync<MemberDto>(query, new { Id = loginDto.Id });
                 if (result is null)
                 {
-                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
+                    var err = new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
                 }
                 return (null, result);
             }
@@ -56,9 +56,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to login",
                 });
             }
@@ -71,7 +71,7 @@ namespace cloudsharpback.Services
         /// <param name="role"></param>
         /// <returns>404 : bad json </returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpErrorDto? err, string? directoryId)> Register(RegisterDto registerDto, ulong role)
+        public async Task<(HttpResponseDto? err, string? directoryId)> Register(RegisterDto registerDto, ulong role)
         {
             try
             {
@@ -91,7 +91,7 @@ namespace cloudsharpback.Services
                 }) != 0;
                 if (!result)
                 {
-                    var res = new HttpErrorDto() { ErrorCode = 400 };
+                    var res = new HttpResponseDto() { HttpCode = 400 };
                     return (res, null);
                 }
                 return (null, directoryId);
@@ -100,9 +100,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to register",
                 });
             }

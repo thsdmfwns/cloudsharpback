@@ -25,7 +25,7 @@ namespace cloudsharpback.Controllers
             var err = _dlService.Download(Member, youtubeUrl, path ?? string.Empty, requestToken);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
             return Ok(requestToken.ToString());
         }

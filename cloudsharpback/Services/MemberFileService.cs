@@ -36,16 +36,16 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to make template directory",
                 });
             }
 
         }
 
-        public HttpErrorDto? GetFiles(MemberDto memberDto, string? path, out List<FileDto>? files)
+        public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileDto>? files)
         {
             files = null;
             if (!Directory.Exists(MemberDirectory(memberDto.Directory)))
@@ -56,9 +56,9 @@ namespace cloudsharpback.Services
             var dirPath = Path.Combine(MemberDirectory(memberDto.Directory), path ?? string.Empty);
             if (!Directory.Exists(dirPath))
             {
-                var err = new HttpErrorDto()
+                var err = new HttpResponseDto()
                 {
-                    ErrorCode = 404,
+                    HttpCode = 404,
                     Message = "Directory Not Found"
                 };
                 return err;
@@ -91,15 +91,15 @@ namespace cloudsharpback.Services
             return null;
         }
 
-        public HttpErrorDto? GetFile(MemberDto member, string path, out FileDto? fileDto)
+        public HttpResponseDto? GetFile(MemberDto member, string path, out FileDto? fileDto)
         {
             fileDto = null;
             var filepath = Path.Combine(MemberDirectory(member.Directory), path);
             if (!FileExist(filepath))
             {
-                return new HttpErrorDto()
+                return new HttpResponseDto()
                 {
-                    ErrorCode = 404,
+                    HttpCode = 404,
                     Message = "File Not Found"
                 };
             }
@@ -118,7 +118,7 @@ namespace cloudsharpback.Services
 
         bool FileExist(string filePath) => System.IO.File.Exists(filePath);
 
-        public HttpErrorDto? DeleteFile(MemberDto member, string path, out FileDto? fileDto)
+        public HttpResponseDto? DeleteFile(MemberDto member, string path, out FileDto? fileDto)
         {
             try
             {
@@ -126,9 +126,9 @@ namespace cloudsharpback.Services
                 var filepath = Path.Combine(MemberDirectory(member.Directory), path);
                 if (!FileExist(filepath))
                 {
-                    return new HttpErrorDto()
+                    return new HttpResponseDto()
                     {
-                        ErrorCode = 404,
+                        HttpCode = 404,
                         Message = "File Not Found"
                     };
                 }
@@ -149,40 +149,40 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to delete file",
                 });
             }
 
         }
         
-        public HttpErrorDto? CheckBeforeDownloadTicketAdd(MemberDto member, string targetPath, bool isView = false)
+        public HttpResponseDto? CheckBeforeDownloadTicketAdd(MemberDto member, string targetPath, bool isView = false)
         {
             var target = Path.Combine(MemberDirectory(member.Directory), targetPath);
             if (!FileExist(target))
             {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
             }
             if (isView && !MimeTypeUtil.CanViewInFront(Path.GetExtension(targetPath)))
             {
-                return new HttpErrorDto() { ErrorCode = 415, Message = "file can not view" };
+                return new HttpResponseDto() { HttpCode = 415, Message = "file can not view" };
             }
             return null;
         }
 
-        public HttpErrorDto? CheckBeforeUploadTicketAdd(MemberDto member, FileUploadDto uploadDto)
+        public HttpResponseDto? CheckBeforeUploadTicketAdd(MemberDto member, FileUploadDto uploadDto)
         {
             var targetDir = Path.Combine(MemberDirectory(member.Directory), uploadDto.FilePath ?? string.Empty);
             if (!Directory.Exists(targetDir))
             {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "Directory not found" };
+                return new HttpResponseDto() { HttpCode = 404, Message = "Directory not found" };
             }
             var target = Path.Combine(targetDir, uploadDto.FileName);
             if (FileExist(target))
             {
-                return new HttpErrorDto() { ErrorCode = 409, Message = "File with the same name already exists" };
+                return new HttpResponseDto() { HttpCode = 409, Message = "File with the same name already exists" };
             }
             return null;
         }

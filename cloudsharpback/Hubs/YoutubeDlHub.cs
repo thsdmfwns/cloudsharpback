@@ -24,7 +24,11 @@ namespace cloudsharpback.Hubs
                 return;
             }
             var authString = token.First();
-            await _youtubeDlService.OnSignalrConnected(connId, authString);
+            if (!await _youtubeDlService.ValidateConnectionToken(connId, authString))
+            {
+                Context.Abort();
+                return;
+            }
         }
     }
 }

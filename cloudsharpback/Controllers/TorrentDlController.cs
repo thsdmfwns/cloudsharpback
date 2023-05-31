@@ -21,7 +21,7 @@ namespace cloudsharpback.Controllers
             var result = await _torrentDlService.addTorrentAsync(Member!, torrentPath, dlPath ?? string.Empty);
             if (result.err is not null)
             {
-                return StatusCode(result.err.ErrorCode, result.err.Message);
+                return StatusCode(result.err.HttpCode, result.err.Message);
             }
 
             return Ok(result.torrentHash);
@@ -33,7 +33,7 @@ namespace cloudsharpback.Controllers
             var result = await _torrentDlService.addMagnetAsync(Member!, magnetUrl, dlPath ?? string.Empty);
             if (result.err is not null)
             {
-                return StatusCode(result.err.ErrorCode, result.err.Message);
+                return StatusCode(result.err.HttpCode, result.err.Message);
             }
             return Ok(result.torrentHash);
         }
@@ -50,7 +50,7 @@ namespace cloudsharpback.Controllers
             var err = await _torrentDlService.removeTorrent(Member!, torrent_hash);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message); 
+                return StatusCode(err.HttpCode, err.Message); 
             }
             return Ok();
         }
@@ -61,7 +61,7 @@ namespace cloudsharpback.Controllers
             var err = await _torrentDlService.StartTorrent(Member!, torrent_hash);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
             return Ok();
         }

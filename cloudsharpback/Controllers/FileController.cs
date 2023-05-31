@@ -24,7 +24,7 @@ namespace cloudsharpback.Controllers
         public IActionResult GetFileDtoList(string? path)
         {
             var err = _memberFileService.GetFiles(Member, path, out var files);
-            return err is not null ? StatusCode(err.ErrorCode, err.Message) : Ok(files);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(files);
         }
 
         [ProducesResponseType(404)]
@@ -32,7 +32,7 @@ namespace cloudsharpback.Controllers
         public IActionResult GetFileDto(string path)
         {
             var err = _memberFileService.GetFile(Member, path, out var fileDto);
-            return err is not null ? StatusCode(err.ErrorCode, err.Message) : Ok(fileDto);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
 
         [HttpGet("dlTicket")]
@@ -41,7 +41,7 @@ namespace cloudsharpback.Controllers
             var err = _memberFileService.CheckBeforeDownloadTicketAdd(Member, path);
             if (err is not null)
             {
-                return StatusCode(err!.ErrorCode, err.Message);
+                return StatusCode(err!.HttpCode, err.Message);
             }
             var dl = new DownloadToken(Member.Directory, path, DownloadType.Download);
             var ticket = new Ticket(HttpContext, TicketType.Download, dl);
@@ -55,7 +55,7 @@ namespace cloudsharpback.Controllers
             var err = _memberFileService.CheckBeforeDownloadTicketAdd(Member, path, true);
             if (err is not null)
             {
-                return StatusCode(err!.ErrorCode, err.Message);
+                return StatusCode(err!.HttpCode, err.Message);
             }
             var dl = new DownloadToken(Member.Directory, path, DownloadType.View);
             var ticket = new Ticket(HttpContext, TicketType.ViewFile, dl);
@@ -69,7 +69,7 @@ namespace cloudsharpback.Controllers
             var err = _memberFileService.CheckBeforeUploadTicketAdd(Member, dto);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
             var token = new TusUploadToken()
             {
