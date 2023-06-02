@@ -99,12 +99,11 @@ namespace cloudsharpback.Services
                 var result = await conn.QueryFirstOrDefaultAsync<ShareResponseDto>(sql, new { Token = token });
                 if (result.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
                 {
-                    var err = new HttpResponseDto()
+                    return (new HttpResponseDto()
                     {
                         HttpCode = 410,
                         Message = "expired share",
-                    };
-                    return (err, null);
+                    }, null);
                 }
                 return (null, result);
             }
@@ -189,14 +188,22 @@ namespace cloudsharpback.Services
                 if (dto.ExpireTime is not null 
                     && dto.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
                 {
-                var res = new HttpResponseDto
+                    return (new HttpResponseDto
                     {
                         HttpCode = 410,
                         Message = "expired share",
-                    };
-                    return (res, null);
+                    }, null);
                 }
-                
+
+                var filePath = Path.Combine(MemberDirectory(dto.Directory), dto.Target);
+                if (!File.Exists(filePath))
+                {
+                    return (new HttpResponseDto
+                    {
+                        HttpCode = 404,
+                        Message = "File Notfound",
+                    }, null);
+                }
                 return (null, dto);
             }
             catch (Exception ex)
