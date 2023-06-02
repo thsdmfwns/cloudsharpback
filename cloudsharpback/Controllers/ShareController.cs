@@ -33,7 +33,7 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
-        [HttpGet("getList")]
+        [HttpGet("ls")]
         public async Task<IActionResult> GetShares()
         {
             var res = await _shareService.GetSharesAsync(Member);

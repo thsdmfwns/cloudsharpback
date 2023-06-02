@@ -1,6 +1,5 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers
@@ -12,14 +11,12 @@ namespace cloudsharpback.Controllers
 
         private readonly IUserService _userService;
         private readonly IJWTService _jwtService;
-        private readonly IMemberFileService _memberFileService;
 
 
-        public UserController(IUserService userService, IJWTService jwtService, IMemberFileService memberFileService)
+        public UserController(IUserService userService, IJWTService jwtService)
         {
             this._userService = userService;
             this._jwtService = jwtService;
-            this._memberFileService = memberFileService;
         }
         
         [HttpPost("login")]

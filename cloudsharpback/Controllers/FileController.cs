@@ -20,7 +20,7 @@ namespace cloudsharpback.Controllers
             _ticketStore = ticketStore;
         }
 
-        [HttpGet("files")]
+        [HttpGet("ls")]
         public IActionResult GetFileDtoList(string? path)
         {
             var err = _memberFileService.GetFiles(Member, path, out var files);
@@ -28,7 +28,7 @@ namespace cloudsharpback.Controllers
         }
 
         [ProducesResponseType(404)]
-        [HttpGet("file")]
+        [HttpGet("get")]
         public IActionResult GetFileDto(string path)
         {
             var err = _memberFileService.GetFile(Member, path, out var fileDto);
@@ -49,7 +49,7 @@ namespace cloudsharpback.Controllers
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpGet("viewTicket")]
+        [HttpGet("viTicket")]
         public IActionResult GetViewTicket(string path)
         {
             var err = _memberFileService.CheckBeforeDownloadTicketAdd(Member, path, true);
@@ -63,7 +63,7 @@ namespace cloudsharpback.Controllers
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpPost("getUploadTicket")]
+        [HttpPost("ulTicket")]
         public IActionResult GetUploadToken(FileUploadDto dto)
         {
             var err = _memberFileService.CheckBeforeUploadTicketAdd(Member, dto);
@@ -75,19 +75,26 @@ namespace cloudsharpback.Controllers
             {
                 FileName = dto.FileName,
                 FileDirectory = Member.Directory,
-                FilePath = dto.FilePath ?? string.Empty
+                FilePath = dto.UploadDirectory ?? string.Empty
             };
             var ticket = new Ticket(HttpContext, DateTime.Now.AddDays(3), TicketType.TusUpload, token);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
 
-        [HttpPost("del")]
+        [HttpPost("rm")]
         public async Task<IActionResult> DeleteFile(string path)
         {
             var err = _memberFileService.DeleteFile(Member, path, out var fileDto);
             await _shareService.DeleteShareAsync(path, Member);
             return Ok(fileDto);
+        }
+
+        [HttpPost("mkdir")]
+        public IActionResult MakeDirectory(string? rootDir, string dirName)
+        {
+            var err = _memberFileService.MakeDirectory(Member, rootDir, dirName, out var fileDtos);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDtos);
         }
     }
 }

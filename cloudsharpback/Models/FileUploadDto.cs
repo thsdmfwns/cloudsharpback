@@ -2,12 +2,12 @@ namespace cloudsharpback.Models;
 
 public class FileUploadDto
 {
-    public FileUploadDto(string fileName, string? filePath)
+    public FileUploadDto(string fileName, string? uploadDirectory)
     {
         FileName = fileName;
-        FilePath = filePath;
+        UploadDirectory = uploadDirectory;
     }
 
     public string FileName { get; }
-    public string? FilePath { get; }
+    public string? UploadDirectory { get; }
 }

@@ -38,7 +38,7 @@ namespace cloudsharpback.Controllers
             return Ok(result.torrentHash);
         }
 
-        [HttpGet("all")]
+        [HttpGet("ls")]
         public async Task<IActionResult> GetAll()
         {
             return Ok(await _torrentDlService.GetAllAsync(Member!));

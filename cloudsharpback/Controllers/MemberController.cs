@@ -24,9 +24,9 @@ namespace cloudsharpback.Controllers
 
         [AllowAnonymous]
         [HttpPost("token")]
-        public async Task<IActionResult> GetAccessToken([FromHeader] string rf_token)
+        public async Task<IActionResult> GetAccessToken([FromHeader] string auth)
         {
-            if (!_jwtService.TryValidateRefeshToken(rf_token, out var memberId)
+            if (!_jwtService.TryValidateRefeshToken(auth, out var memberId)
                 || memberId is null)
             {
                 return StatusCode(403, "bad token");
@@ -40,13 +40,13 @@ namespace cloudsharpback.Controllers
             return Ok(acToken);
         }
 
-        [HttpGet("member")]
+        [HttpGet("get")]
         public IActionResult GetMember()
         {
             return Ok(Member);
         }
 
-        [HttpPost("uploadProfileImg")]
+        [HttpPost("updateProfile")]
         public async Task<IActionResult> UploadProfileImage(IFormFile image)
         {
             var res = await _memberService.UploadProfileImage(image, Member);
@@ -58,7 +58,7 @@ namespace cloudsharpback.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("imageDl/{image}")]
+        [HttpGet("profile/{image}")]
         public IActionResult DownloadProfileImage(string image)
         {
             var err = _memberService.DownloadProfileImage(image, out var fileStream, out var contentType);
