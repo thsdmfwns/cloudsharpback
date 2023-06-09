@@ -146,8 +146,8 @@ namespace cloudsharpback.Services
                         Message = "Directory Not Found"
                     };
                 }
-                fileDtos = GetFileDtos(memberDto: member, targetDir);
                 File.Delete(filepath);
+                fileDtos = GetFileDtos(memberDto: member, targetDir);
                 return null;
             }
             catch (Exception ex)
