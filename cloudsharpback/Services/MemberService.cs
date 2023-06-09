@@ -1,23 +1,22 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
-using Dapper;
 using System.Net.Mail;
+using cloudsharpback.Repository.Interface;
 
 namespace cloudsharpback.Services
 {
     public class MemberService : IMemberService
     {
-        private readonly IDBConnService _connService;
         private readonly ILogger _logger;
         private readonly string _profilePath;
-
-        public MemberService(IDBConnService connService, ILogger<IMemberService> logger, IPathStore pathStore)
+        private readonly IMemberRepository _memberRepository;
+        public MemberService(ILogger<IMemberService> logger, IPathStore pathStore, IMemberRepository memberRepository)
         {
             _profilePath = pathStore.ProfilePath;
             if (!Directory.Exists(_profilePath)) Directory.CreateDirectory(_profilePath);
-            _connService = connService;
             _logger = logger;
+            _memberRepository = memberRepository;
         }
 
         /// <returns>404 : fail to login</returns>
@@ -25,19 +24,10 @@ namespace cloudsharpback.Services
         {
             try
             {
-                //todo 레파지토리로 대체
-                var query = "SELECT member_id id, role_id role, email, nickname, " +
-                            "BIN_TO_UUID(directory) directory, profile_image profileImage " +
-                            "FROM member " +
-                            "WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.QuerySingleOrDefaultAsync<MemberDto>(query, new { Id = id });
-                if (result is null)
-                {
-                    var err = new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
-                    return (err, null);
-                }
-                return (null, result);
+                var res = await _memberRepository.GetMemberById(id);
+                return res is null
+                    ? (new HttpResponseDto() { HttpCode = 404, Message = "member not found" }, null)
+                    : (null, res);
             }
             catch (Exception ex)
             {
@@ -64,31 +54,18 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 415, Message = "bad type" };
                 }
-                var filename = profileId.ToString() + extension;
+                var filename = profileId + extension;
                 var filepath = Path.Combine(_profilePath, filename);
                 if (File.Exists(filepath))
                 {
                     return new HttpResponseDto() { HttpCode = 409, Message = "try again" };
                 }
-                using (var stream = System.IO.File.Create(filepath))
+                using (var stream = File.Create(filepath))
                 {
                     await imageFile.CopyToAsync(stream);
                 }
-                //todo 레파지토리로 대체
-                using var conn = _connService.Connection;
-                var sql = "UPDATE member " +
-                    "SET profile_image = @Filename " +
-                    "WHERE member_id = @Id";
-                var result = await conn.ExecuteAsync(sql, new
-                {
-                    Filename = filename,
-                    Id = member.Id,
-                });
-                if (result <= 0)
-                {
-                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
-                }
-                return null;
+                var res = await _memberRepository.TryUpdateMemberProfileImage(member.Id, filename);
+                return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
@@ -133,25 +110,12 @@ namespace cloudsharpback.Services
         {
             try
             {
-                if (member.Email.Equals(changeNick))
+                if (member.Nickname.Equals(changeNick))
                 {
                     return null;
                 }
-                //todo 레파지토리로 대체
-                var sql = "UPDATE member " +
-                          "SET nickname = @ChangeNick " +
-                          "WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.ExecuteAsync(sql, new
-                {
-                    ChangeNick = changeNick,
-                    Id = member.Id
-                });
-                if (result <= 0)
-                {
-                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
-                }
-                return null;
+                var res = await _memberRepository.TryUpdateMemberNickname(member.Id, changeNick);
+                return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
@@ -172,28 +136,14 @@ namespace cloudsharpback.Services
                 // validate email
                 try
                 {
-                    var temp = new MailAddress(changeEmail);
+                    var _ = new MailAddress(changeEmail);
                 }
                 catch (Exception)
                 {
                     return new HttpResponseDto() { HttpCode = 400, Message = "bad email" };
                 }
-                
-                //todo 레파지토리로 대체
-                var sql = "UPDATE member " +
-                          "SET email = @ChangeEmail " +
-                          "WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.ExecuteAsync(sql, new
-                {
-                    ChangeEmail = changeEmail,
-                    Id = member.Id
-                });
-                if (result <= 0)
-                {
-                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
-                }
-                return null;
+                var res = await _memberRepository.TryUpdateMemberEmail(member.Id, changeEmail);
+                return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
@@ -211,16 +161,10 @@ namespace cloudsharpback.Services
         {
             try
             {
-                //todo 레파지토리로 대체
-                var sql = "SELECT password FROM member WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var passwordHash = await conn.QuerySingleOrDefaultAsync<string?>(sql, new { Id = member.Id });
-                if (passwordHash is null)
-                {
-                    var err = new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
-                    return (err, false);
-                }
-                return (null, PasswordEncrypt.VerifyPassword(password, passwordHash));
+                var passwordHash = await _memberRepository.GetMemberPasswordHashById(member.Id);
+                return passwordHash is null 
+                    ? (new HttpResponseDto() { HttpCode = 404, Message = "member not found" }, false)
+                    : (null, PasswordEncrypt.VerifyPassword(password, passwordHash));
             }
             catch (Exception ex)
             {
@@ -231,7 +175,6 @@ namespace cloudsharpback.Services
                     HttpCode = 500,
                     Message = "fail to check password",
                 });
-                throw;
             }
 
         }
@@ -250,16 +193,9 @@ namespace cloudsharpback.Services
                     return new HttpResponseDto() { HttpCode = 400, Message = "check password" };
                 }
                 
-                //todo 레파지토리로 대체
                 var password = PasswordEncrypt.EncryptPassword(requset.ChangeTo);
-                var sql = "UPDATE member SET password = @Password WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.ExecuteAsync(sql, new { Password = password, Id = member.Id });
-                if (result <= 0)
-                {
-                    return new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
-                }
-                return null;
+                var result = await _memberRepository.TryUpdateMemberPassword(member.Id, password);
+                return result ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
@@ -270,7 +206,6 @@ namespace cloudsharpback.Services
                     HttpCode = 500,
                     Message = "fail to update password",
                 });
-                throw;
             }
         }
     }

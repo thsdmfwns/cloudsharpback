@@ -34,12 +34,8 @@ namespace cloudsharpback.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {
-            var res = await _userService.Register(registerDto, 2);
-            if (res.err is not null || res.directoryId is null)
-            {
-                return StatusCode(res.err!.HttpCode, res.err.Message);
-            }
-            return Ok();
+            var err = await _userService.Register(registerDto, 2);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
         }
         
         [HttpGet("idCheck")]
