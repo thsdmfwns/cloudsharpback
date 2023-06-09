@@ -34,7 +34,7 @@ namespace cloudsharpback.Filter
                 context.Result = StatusCode(401);
                 return;
             }
-            if (!_jwtService.TryValidateAcessToken(auth, out var memberDto)
+            if (!_jwtService.TryValidateAccessToken(auth, out var memberDto)
                  || memberDto is null)
             {
                 context.Result = StatusCode(403, "bad auth");

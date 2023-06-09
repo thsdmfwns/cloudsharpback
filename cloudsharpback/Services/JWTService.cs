@@ -15,7 +15,7 @@ namespace cloudsharpback.Services
             _logger = logger;
         }
 
-        public string WriteAcessToken(MemberDto data)
+        public string WriteAccessToken(MemberDto data)
         {
             try
             {
@@ -49,7 +49,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        public string WriteRefeshToken(MemberDto data)
+        string IJWTService.WriteRefreshToken(MemberDto data)
         {
             try
             {
@@ -76,7 +76,7 @@ namespace cloudsharpback.Services
         }
 
 
-        public bool TryValidateAcessToken(string token, out MemberDto? member)
+        public bool TryValidateAccessToken(string token, out MemberDto? member)
         {
             try
             {
@@ -107,7 +107,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        public bool TryValidateRefeshToken(string token, out ulong? memberId)
+        public bool TryValidateRefreshToken(string token, out ulong? memberId)
         {
             try
             {
