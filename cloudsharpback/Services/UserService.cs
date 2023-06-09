@@ -24,7 +24,7 @@ namespace cloudsharpback.Services
         }
         public async Task<bool> IdCheck(string id)
         {
-            var query = "SELECT password FROM member WHERE id = @Id";
+            var query = "SELECT member_id FROM member WHERE id = @Id";
             using var conn = _connService.Connection;
             return (await conn.QueryAsync(query, new { Id = id })).Any();
         }
@@ -40,6 +40,7 @@ namespace cloudsharpback.Services
                     var res = new HttpResponseDto() { HttpCode = 401, Message = "login fail" };
                     return (res, null);
                 }
+                //todo 레파지토리 사용
                 var query = "SELECT member_id id, role_id role, email, nickname, " +
                     "BIN_TO_UUID(directory) directory, profile_image profileImage " +
                     "FROM member " +
@@ -77,6 +78,7 @@ namespace cloudsharpback.Services
             {
                 registerDto.Pw = PasswordEncrypt.EncryptPassword(registerDto.Pw);
                 var directoryId = Guid.NewGuid().ToString();
+                //todo 레파지토리 사용
                 using var conn = _connService.Connection;
                 var query = "INSERT INTO member(id, password, nickname, role_id, email, directory) " +
                     "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory))";

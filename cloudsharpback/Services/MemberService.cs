@@ -25,10 +25,11 @@ namespace cloudsharpback.Services
         {
             try
             {
+                //todo 레파지토리로 대체
                 var query = "SELECT member_id id, role_id role, email, nickname, " +
-                    "BIN_TO_UUID(directory) directory, profile_image profileImage " +
-                    "FROM member " +
-                    "WHERE member_id = @Id";
+                            "BIN_TO_UUID(directory) directory, profile_image profileImage " +
+                            "FROM member " +
+                            "WHERE member_id = @Id";
                 using var conn = _connService.Connection;
                 var result = await conn.QuerySingleOrDefaultAsync<MemberDto>(query, new { Id = id });
                 if (result is null)
@@ -73,6 +74,7 @@ namespace cloudsharpback.Services
                 {
                     await imageFile.CopyToAsync(stream);
                 }
+                //todo 레파지토리로 대체
                 using var conn = _connService.Connection;
                 var sql = "UPDATE member " +
                     "SET profile_image = @Filename " +
@@ -135,10 +137,10 @@ namespace cloudsharpback.Services
                 {
                     return null;
                 }
-
+                //todo 레파지토리로 대체
                 var sql = "UPDATE member " +
-                "SET nickname = @ChangeNick " +
-                "WHERE member_id = @Id";
+                          "SET nickname = @ChangeNick " +
+                          "WHERE member_id = @Id";
                 using var conn = _connService.Connection;
                 var result = await conn.ExecuteAsync(sql, new
                 {
@@ -176,10 +178,11 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 400, Message = "bad email" };
                 }
-
+                
+                //todo 레파지토리로 대체
                 var sql = "UPDATE member " +
-                "SET email = @ChangeEmail " +
-                "WHERE member_id = @Id";
+                          "SET email = @ChangeEmail " +
+                          "WHERE member_id = @Id";
                 using var conn = _connService.Connection;
                 var result = await conn.ExecuteAsync(sql, new
                 {
@@ -208,6 +211,7 @@ namespace cloudsharpback.Services
         {
             try
             {
+                //todo 레파지토리로 대체
                 var sql = "SELECT password FROM member WHERE member_id = @Id";
                 using var conn = _connService.Connection;
                 var passwordHash = await conn.QuerySingleOrDefaultAsync<string?>(sql, new { Id = member.Id });
@@ -245,7 +249,8 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 400, Message = "check password" };
                 }
-
+                
+                //todo 레파지토리로 대체
                 var password = PasswordEncrypt.EncryptPassword(requset.ChangeTo);
                 var sql = "UPDATE member SET password = @Password WHERE member_id = @Id";
                 using var conn = _connService.Connection;

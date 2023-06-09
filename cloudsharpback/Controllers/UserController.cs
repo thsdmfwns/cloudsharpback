@@ -27,7 +27,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(result.err!.HttpCode, result.err.Message);
             }
-            var res = new TokenDto(_jwtService.WriteAcessToken(result.result), _jwtService.WriteRefeshToken(result.result));
+            var res = new TokenDto(_jwtService.WriteAccessToken(result.result), _jwtService.WriteRefreshToken(result.result));
             return Ok(res);
         }
         

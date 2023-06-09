@@ -1,6 +1,8 @@
 using cloudsharpback.Filter;
 using cloudsharpback.Hubs;
 using cloudsharpback.Middleware;
+using cloudsharpback.Repository;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Features;
@@ -22,6 +24,7 @@ builder.Services.AddScoped<IMemberFileService, MemberFileService>();
 builder.Services.AddScoped<IShareService, ShareService>();
 builder.Services.AddScoped<IYoutubeDlService, YoutubeDlService>();
 builder.Services.AddScoped<IFileStreamService, FileStreamService>();
+builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 //singleton
 builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();

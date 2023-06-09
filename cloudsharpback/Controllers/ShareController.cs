@@ -68,7 +68,7 @@ namespace cloudsharpback.Controllers
             MemberDto? member = null;
             if (auth is not null)
             {
-                _jwtService.TryValidateAcessToken(auth, out member);
+                _jwtService.TryValidateAccessToken(auth, out member);
             }
             var dl = new DownloadToken(result.dto.Directory, result.dto.Target, DownloadType.Download);
             var ticket = new Ticket(IpAdressUtil.Get(HttpContext), member, TicketType.Download, dl);

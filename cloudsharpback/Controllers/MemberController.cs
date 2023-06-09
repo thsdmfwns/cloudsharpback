@@ -26,7 +26,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("token")]
         public async Task<IActionResult> GetAccessToken([FromHeader] string auth)
         {
-            if (!_jwtService.TryValidateRefeshToken(auth, out var memberId)
+            if (!_jwtService.TryValidateRefreshToken(auth, out var memberId)
                 || memberId is null)
             {
                 return StatusCode(403, "bad token");
@@ -36,7 +36,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(result.err!.HttpCode, result.err.Message);
             }
-            var acToken = _jwtService.WriteAcessToken(result.result);
+            var acToken = _jwtService.WriteAccessToken(result.result);
             return Ok(acToken);
         }
 
