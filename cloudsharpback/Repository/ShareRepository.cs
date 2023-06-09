@@ -14,7 +14,7 @@ public class ShareRepository : IShareRepository
         _connService = connService;
     }
 
-    public async Task<bool> TryAddShare(ulong memberId, ShareRequestDto req, string password, FileInfo fileinfo)
+    public async Task<bool> TryAddShare(ulong memberId, ShareRequestDto req, string? password, FileInfo fileinfo)
     {
         const string sql = "INSERT INTO share(member_id, target, password, expire_time, comment, share_time, share_name, token, file_size) " +
                            "VALUES(@MemberID, @Target, @Password, @ExpireTime, @Comment, @ShareTime, @ShareName, UUID_TO_BIN(@Token), @FileSize)";
@@ -88,7 +88,7 @@ public class ShareRepository : IShareRepository
         return result > 0;
     }
 
-    public async Task<bool> TryUpdateShare(ulong memberId, string token, ShareUpdateDto dto, string password)
+    public async Task<bool> TryUpdateShare(ulong memberId, string token, ShareUpdateDto dto, string? password)
     {
         const string sql = "UPDATE share " +
                            "SET password = @Password, expire_time = @Expire, comment = @Comment, share_name = @ShareName " +

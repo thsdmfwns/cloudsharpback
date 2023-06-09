@@ -1,4 +1,5 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using Dapper;
@@ -7,14 +8,14 @@ namespace cloudsharpback.Services
 {
     public class ShareService : IShareService
     {
-        private readonly IDBConnService _connService;
+        private readonly IShareRepository _shareRepository;
         private readonly ILogger _logger;
         private readonly IPathStore _pathStore;
 
-        public ShareService(IDBConnService connService, ILogger<IShareService> logger, IPathStore pathStore)
+        public ShareService(ILogger<IShareService> logger, IPathStore pathStore, IShareRepository shareRepository)
         {
             _pathStore = pathStore;
-            _connService = connService;
+            _shareRepository = shareRepository;
             _logger = logger;
         }
 
@@ -47,23 +48,8 @@ namespace cloudsharpback.Services
                 {
                     password = PasswordEncrypt.EncryptPassword(password);
                 }
-                var sql = "INSERT INTO share(member_id, target, password, expire_time, comment, share_time, share_name, token, file_size) " +
-                    "VALUES(@MemberID, @Target, @Password, @ExpireTime, @Comment, @ShareTime, @ShareName, UUID_TO_BIN(@Token), @FileSize)";
-                using var conn = _connService.Connection;
-                var token = Guid.NewGuid().ToString();
-                await conn.ExecuteAsync(sql, new
-                {
-                    MemberId = member.Id,
-                    Target = req.Target,
-                    Password = password,
-                    ExpireTime = req.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
-                    Comment = req.Comment,
-                    ShareTime = DateTime.UtcNow.Ticks,
-                    ShareName = req.ShareName,
-                    Token = token,
-                    FileSize = (ulong)fileinfo.Length,
-                });
-                return null;
+                var res = await _shareRepository.TryAddShare(member.Id, req, password, fileinfo);
+                return res ? null : new HttpResponseDto(){HttpCode = 400};
             }
             catch (Exception ex)
             {
@@ -87,17 +73,12 @@ namespace cloudsharpback.Services
         {
             try
             {
-                //ulong id, ulong ownerId, string ownerNick, ulong shareTime, ulong? expireTime, string target, string? shareName, string? comment
-                var sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                    "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
-                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
-                    "FROM share AS s " +
-                    "INNER JOIN member AS m " +
-                    "ON s.member_id = m.member_id " +
-                    "WHERE s.token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var result = await conn.QueryFirstOrDefaultAsync<ShareResponseDto>(sql, new { Token = token });
-                if (result.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
+                var res = await _shareRepository.GetShareByToken(token);
+                if (res is null)
+                {
+                    return (new HttpResponseDto() { HttpCode = 404, Message = "Share Not Found" }, null);
+                } 
+                if (res.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
                 {
                     return (new HttpResponseDto()
                     {
@@ -105,7 +86,7 @@ namespace cloudsharpback.Services
                         Message = "expired share",
                     }, null);
                 }
-                return (null, result);
+                return (null, res);
             }
             catch (Exception ex)
             {
@@ -123,16 +104,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                    "s.share_time shareTime, s.expire_time expireTime, s.target, " +
-                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
-                    "FROM share AS s " +
-                    "INNER JOIN member AS m " +
-                    "ON s.member_id = m.member_id " +
-                    "WHERE s.member_id = @ID AND s.expire_time >= @Now";
-                using var conn = _connService.Connection;
-                var result = await conn.QueryAsync<ShareResponseDto>(sql, new { ID = member.Id, Now = (ulong)DateTime.UtcNow.Ticks });
-                return result.ToList();
+                return await _shareRepository.GetSharesListByMemberId(member.Id);
             }
             catch (Exception ex)
             {
@@ -158,13 +130,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "Select BIN_TO_UUID(m.directory) directory , s.target, s.expire_time expireTime, s.password " +
-                    "FROM share AS s " +
-                    "INNER JOIN member AS m " +
-                    "ON s.member_id = m.member_id " +
-                    "WHERE s.token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var dto = await conn.QueryFirstOrDefaultAsync<ShareDownloadDto?>(sql, new { Token = req.Token });
+                var dto = await _shareRepository.GetShareDownloadDtoByToken(req.Token);
                 if (dto is null)
                 {
                     var res = new HttpResponseDto
@@ -221,16 +187,8 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "UPDATE share " +
-                    "SET expire_time = 0 " +
-                    "WHERE member_id = @Id AND token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                return await conn.ExecuteAsync(sql, new
-                {
-                    Id = member.Id,
-                    Token = token,
-                }) != 0
-                    ? null : new HttpResponseDto{HttpCode = 404, Message = "Share not found"};
+                var res = await _shareRepository.TrySetShareExpireTimeToZero(member.Id, token);
+                return res ? null : new HttpResponseDto{HttpCode = 404, Message = "Share not found"};
             }
             catch (Exception ex)
             {
@@ -248,24 +206,13 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "UPDATE share " +
-                "SET password = @Password, expire_time = @Expire, comment = @Comment, share_name = @ShareName " +
-                "WHERE member_id = @Id AND token = UUID_TO_BIN(@Token)";
                 var password = dto.Password;
                 if (password is not null)
                 {
                     password = PasswordEncrypt.EncryptPassword(password);
                 }
-                using var conn = _connService.Connection;
-                return await conn.ExecuteAsync(sql, new
-                {
-                    Password = password,
-                    Expire = dto.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
-                    Comment = dto.Comment,
-                    ShareName = dto.ShareName,
-                    Token = token,
-                    Id = member.Id,
-                }) != 0 ? null : new HttpResponseDto{HttpCode = 404, Message = "share not found"};
+                var res = await _shareRepository.TryUpdateShare(member.Id, token, dto, password);
+                return res ? null : new HttpResponseDto{HttpCode = 404, Message = "share not found"};
             }
             catch (Exception ex)
             {
@@ -284,15 +231,8 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "DELETE FROM share " +
-                    "WHERE member_id = @Id AND target = @Target";
-                using var conn = _connService.Connection;
-                var row = await conn.ExecuteAsync(sql, new
-                {
-                    Target = target,
-                    Id = member.Id,
-                });
-                return row > 0 ? null : new HttpResponseDto { HttpCode = 404, Message = "share not found" };
+                var res = await _shareRepository.TryDeleteShare(member.Id, target);
+                return res ? null : new HttpResponseDto { HttpCode = 404, Message = "share not found" };
             }
             catch (Exception ex)
             {
@@ -318,12 +258,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var hash = await conn.QueryFirstOrDefaultAsync<string>(sql, new
-                {
-                    Token = token,
-                });
+                var hash = await _shareRepository.GetPasswordHashByToken(token);
                 if (hash is null)
                 {
                     var err = new HttpResponseDto()
@@ -350,12 +285,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var hash = await conn.QueryFirstOrDefaultAsync<string>(sql, new
-                {
-                    Token = token,
-                });
+                var hash = await _shareRepository.GetPasswordHashByToken(token);
                 return hash is not null;
             }
             catch (Exception ex)
