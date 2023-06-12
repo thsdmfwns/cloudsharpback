@@ -2,6 +2,7 @@
 using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace cloudsharpback.Controllers
 {
@@ -85,10 +86,31 @@ namespace cloudsharpback.Controllers
         [HttpPost("rm")]
         public async Task<IActionResult> DeleteFile(string path)
         {
-            var err = _memberFileService.DeleteFile(Member, path, out var fileDto);
-            await _shareService.DeleteShareAsync(path, Member);
-            return Ok(fileDto);
+            HttpResponseDto? err;
+            if (await _shareService.CheckExistShareByTargetPath(path, Member))
+            {
+                err =await _shareService.DeleteShareAsync(path, Member);
+                if (err is not null)
+                {
+                    return StatusCode(err.HttpCode, err.Message);
+                }
+            }
+            err = _memberFileService.DeleteFile(Member, path, out var fileDto);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
+        
+        [HttpPost("rmdir")]
+        public async Task<IActionResult> DeleteDirectory(string path)
+        {
+            var err =await _shareService.DeleteSharesInDirectory(Member, path);
+            if (err is not null)
+            {
+                return StatusCode(err.HttpCode, err.Message);
+            }
+            err = _memberFileService.RemoveDirectory(Member, path, out var fileDto);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
+        }
+        
 
         [HttpPost("mkdir")]
         public IActionResult MakeDirectory(string? rootDir, string dirName)

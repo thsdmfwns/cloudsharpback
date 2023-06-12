@@ -106,6 +106,33 @@ public class ShareRepository : IShareRepository
         return res > 0;
     }
 
+    public async Task<List<ShareResponseDto>> GetSharesByTargetFilePath(ulong memberid, string targetFilePath)
+    {
+        const string sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
+                           "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
+                           "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
+                           "FROM share AS s " +
+                           "INNER JOIN member AS m " +
+                           "ON s.member_id = m.member_id " +
+                           "WHERE s.member_id = @Id AND target = @Target ";
+        using var conn = _connService.Connection;
+        return (await conn.QueryAsync<ShareResponseDto>(sql, new { Id = memberid, Target = targetFilePath })).ToList();
+    }
+    
+    public async Task<List<ShareResponseDto>> GetSharesInDirectory(ulong memberid, string targetDirectoryPath)
+    {
+        var targetPath = Path.Combine(targetDirectoryPath, "%");
+        const string sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
+                           "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
+                           "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
+                           "FROM share AS s " +
+                           "INNER JOIN member AS m " +
+                           "ON s.member_id = m.member_id " +
+                           "WHERE s.member_id = @Id AND target Like @Target ";
+        using var conn = _connService.Connection;
+        return (await conn.QueryAsync<ShareResponseDto>(sql, new { Id = memberid, Target = targetPath })).ToList();
+    }
+
     public async Task<bool> TryDeleteShare(ulong memberId, string targetFilePath)
     {
         const string sql = "DELETE FROM share " +
@@ -117,6 +144,20 @@ public class ShareRepository : IShareRepository
             Id = memberId,
         });
         return res > 0;
+    }
+    
+    public async Task<bool> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath, int sharesCount)
+    {
+        var targetPath = Path.Combine(targetDirectoryPath, "%");
+        const string sql = "DELETE FROM share " +
+                           "WHERE member_id = @Id AND target Like @Target";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(sql, new
+        {
+            Target = targetPath,
+            Id = memberId,
+        });
+        return res == sharesCount;
     }
 
     public async Task<string?> GetPasswordHashByToken(string token)

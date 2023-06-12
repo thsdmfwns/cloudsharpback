@@ -245,14 +245,22 @@ namespace cloudsharpback.Services
             try
             {
                 fileDtos = null;
+                if (string.IsNullOrEmpty(targetPath.Trim()) || targetPath.Equals("/"))
+                {
+                    return new HttpResponseDto() { HttpCode = 400 };
+                }
                 var targetDirPath = Path.Combine(MemberDirectory(memberDto.Directory), targetPath);
                 var targetdir = new DirectoryInfo(targetDirPath);
                 if (!targetdir.Exists)
                 {
                     return new HttpResponseDto() { HttpCode = 404, Message = "Directory not found" };
                 }
-                fileDtos = GetFileDtos(memberDto, targetdir.Root);
-                targetdir.Delete();
+                targetdir.Delete(true);
+                if (targetdir.Parent is null)
+                {
+                    return null;
+                }
+                fileDtos = GetFileDtos(memberDto, targetdir.Parent);
                 return null;
             }
             catch (Exception ex)

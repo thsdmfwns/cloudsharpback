@@ -227,10 +227,32 @@ namespace cloudsharpback.Services
 
         }
 
+        public async Task<bool> CheckExistShareByTargetPath(string target, MemberDto member)
+        {
+            try
+            {
+                return (await _shareRepository.GetSharesByTargetFilePath(member.Id, target)).Any();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpResponseDto
+                {
+                    HttpCode = 500,
+                    Message = "fail to check exist share by file path",
+                });
+            }
+        }
+
         public async Task<HttpResponseDto?> DeleteShareAsync(string target, MemberDto member)
         {
             try
             {
+                if (!(await _shareRepository.GetSharesByTargetFilePath(member.Id, target)).Any())
+                {
+                    return null;
+                }
                 var res = await _shareRepository.TryDeleteShare(member.Id, target);
                 return res ? null : new HttpResponseDto { HttpCode = 404, Message = "share not found" };
             }
@@ -244,7 +266,23 @@ namespace cloudsharpback.Services
                     Message = "fail to delete share",
                 });
             }
+        }
 
+        public async Task<HttpResponseDto?> DeleteSharesInDirectory(MemberDto memberDto, string targetDirectoryPath)
+        {
+            var targetDirPath = Path.Combine(MemberDirectory(memberDto.Directory), targetDirectoryPath);
+            var targetdir = new DirectoryInfo(targetDirPath);
+            if (!targetdir.Exists)
+            {
+                return new HttpResponseDto() { HttpCode = 404, Message = "Directory not found" };
+            }
+            var shares = await _shareRepository.GetSharesInDirectory(memberDto.Id, targetDirectoryPath);
+            if (shares.Count < 1)
+            {
+                return null;
+            }
+            var res = await _shareRepository.TryDeleteShareInDirectory(memberDto.Id, targetDirectoryPath, shares.Count);
+            return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "few shares not found"};
         }
 
         /// <summary>

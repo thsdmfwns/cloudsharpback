@@ -16,12 +16,17 @@
         public string? Path { get; set; }
 
         public static FileDto FromDirectoryInfo(DirectoryInfo directoryInfo, string memberDirectoryPath)
-            => new() {
+        {
+            return new()
+            {
                 Name = directoryInfo.Name,
                 FileType = Models.FileType.FOLDER,
-                Path = directoryInfo.FullName.Substring(memberDirectoryPath.Length + 1),
+                Path = directoryInfo.FullName.Substring(directoryInfo.FullName.Last() == '/'
+                    ? memberDirectoryPath.Length + 1
+                    : memberDirectoryPath.Length)
             };
-        
+        }
+
         public static FileDto FromFileInfo(FileInfo fileInfo, string memberDirectoryPath)
             => new() {
                 Name = fileInfo.Name,
