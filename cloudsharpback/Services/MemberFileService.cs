@@ -45,11 +45,11 @@ namespace cloudsharpback.Services
 
         }
 
-        public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileDto>? files)
+        public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileDto> files)
         {
             try
             {
-                files = null;
+                files = new List<FileDto>();
                 if (!Directory.Exists(MemberDirectory(memberDto.Directory)))
                 {
                     MakeBaseDirectory(memberDto);
@@ -65,7 +65,7 @@ namespace cloudsharpback.Services
                         Message = "Directory Not Found"
                     };
                 }
-                files = GetFileDtos(memberDto, targetDir);;
+                files = GetFileDtos(memberDto, targetDir);
                 return null;
             }
             catch (Exception ex)
@@ -120,13 +120,13 @@ namespace cloudsharpback.Services
             }
         }
 
-        bool FileExist(string filePath) => System.IO.File.Exists(filePath);
+        bool FileExist(string filePath) => File.Exists(filePath);
 
-        public HttpResponseDto? DeleteFile(MemberDto member, string path, out List<FileDto>? fileDtos)
+        public HttpResponseDto? DeleteFile(MemberDto member, string path, out List<FileDto> fileDtos)
         {
             try
             {
-                fileDtos = null;
+                fileDtos = new List<FileDto>();
                 var filepath = Path.Combine(MemberDirectory(member.Directory), path);
                 if (!FileExist(filepath))
                 {
@@ -207,11 +207,11 @@ namespace cloudsharpback.Services
         }
         
         /// <returns> 404 => Root Directory not found, 409 => Directory already exist</returns>
-        public HttpResponseDto? MakeDirectory(MemberDto memberDto, string? targetPath, string dirName, out List<FileDto>? fileDtos)
+        public HttpResponseDto? MakeDirectory(MemberDto memberDto, string? targetPath, string dirName, out List<FileDto> fileDtos)
         {
             try
             {
-                fileDtos = null;
+                fileDtos = new List<FileDto>();
                 var targetDirPath = Path.Combine(MemberDirectory(memberDto.Directory), targetPath ?? string.Empty);
                 var makingDirPath = Path.Combine(targetDirPath, dirName);
                 var targetDir = new DirectoryInfo(targetDirPath);
@@ -240,11 +240,11 @@ namespace cloudsharpback.Services
         }
 
         /// <returns> 404 => Root Directory not found</returns>
-        public HttpResponseDto? RemoveDirectory(MemberDto memberDto, string targetPath, out List<FileDto>? fileDtos)
+        public HttpResponseDto? RemoveDirectory(MemberDto memberDto, string targetPath, out List<FileDto> fileDtos)
         {
             try
             {
-                fileDtos = null;
+                fileDtos = new List<FileDto>();
                 if (string.IsNullOrEmpty(targetPath.Trim()) || targetPath.Equals("/"))
                 {
                     return new HttpResponseDto() { HttpCode = 400 };
