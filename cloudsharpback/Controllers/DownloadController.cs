@@ -24,7 +24,7 @@ public class DownloadController : ControllerBase
         if (!Guid.TryParse(ticketToken, out var ticketGuidToken))
         {
             return StatusCode(400, "bad token");
-        };
+        }
         if (!_ticketStore.TryGet(ticketGuidToken, out var ticket)
             || ticket is null)
         {

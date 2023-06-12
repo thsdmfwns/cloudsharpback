@@ -22,7 +22,7 @@ namespace cloudsharpback.Services
         
         private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
         private string TusStorePath => _pathStore.TusStorePath;
-        bool FileExist(string filePath) => System.IO.File.Exists(filePath);
+        bool FileExist(string filePath) => File.Exists(filePath);
 
         public DefaultTusConfiguration GetTusConfiguration()
         {

@@ -17,7 +17,7 @@ namespace cloudsharpback.Services
 
         private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
 
-        public void MakeBaseDirectory(MemberDto memberDto)
+        private void MakeBaseDirectory(MemberDto memberDto)
         {
             try
             {

@@ -18,7 +18,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("addTorrent")]
         public async Task<IActionResult> AddTorrent(string torrentPath, string? dlPath)
         {
-            var result = await _torrentDlService.addTorrentAsync(Member!, torrentPath, dlPath ?? string.Empty);
+            var result = await _torrentDlService.addTorrentAsync(Member, torrentPath, dlPath ?? string.Empty);
             if (result.err is not null)
             {
                 return StatusCode(result.err.HttpCode, result.err.Message);
@@ -30,7 +30,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("addMagnet")]
         public async Task<IActionResult> AddMagnet(string magnetUrl, string? dlPath)
         {
-            var result = await _torrentDlService.addMagnetAsync(Member!, magnetUrl, dlPath ?? string.Empty);
+            var result = await _torrentDlService.addMagnetAsync(Member, magnetUrl, dlPath ?? string.Empty);
             if (result.err is not null)
             {
                 return StatusCode(result.err.HttpCode, result.err.Message);
@@ -41,13 +41,13 @@ namespace cloudsharpback.Controllers
         [HttpGet("ls")]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _torrentDlService.GetAllAsync(Member!));
+            return Ok(await _torrentDlService.GetAllAsync(Member));
         }
 
         [HttpPost("rm")]
-        public async Task<IActionResult> Remove(string torrent_hash)
+        public async Task<IActionResult> Remove(string torrentHash)
         {
-            var err = await _torrentDlService.removeTorrent(Member!, torrent_hash);
+            var err = await _torrentDlService.removeTorrent(Member, torrentHash);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message); 
@@ -56,9 +56,9 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpPost("run")]
-        public async Task<IActionResult> Run(string torrent_hash)
+        public async Task<IActionResult> Run(string torrentHash)
         {
-            var err = await _torrentDlService.StartTorrent(Member!, torrent_hash);
+            var err = await _torrentDlService.StartTorrent(Member, torrentHash);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);

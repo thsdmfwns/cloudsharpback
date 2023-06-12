@@ -6,12 +6,12 @@ namespace cloudsharpback.Services
 {
     public class JWTService : IJWTService
     {
-        private readonly SymmetricJwk jwtKey;
+        private readonly SymmetricJwk _jwtKey;
         private readonly ILogger _logger;
 
         public JWTService(IConfiguration configuration, ILogger<IJWTService> logger)
         {
-            jwtKey = new SymmetricJwk(configuration["JWT:key"], SignatureAlgorithm.HmacSha512);
+            _jwtKey = new SymmetricJwk(configuration["JWT:key"], SignatureAlgorithm.HmacSha512);
             _logger = logger;
         }
 
@@ -22,7 +22,7 @@ namespace cloudsharpback.Services
                 var descriptor = new JwsDescriptor()
                 {
                     Algorithm = SignatureAlgorithm.HmacSha512,
-                    SigningKey = jwtKey,
+                    SigningKey = _jwtKey,
                     IssuedAt = DateTime.UtcNow,
                     ExpirationTime = DateTime.UtcNow.AddDays(1),
                 };
@@ -56,7 +56,7 @@ namespace cloudsharpback.Services
                 var descriptor = new JwsDescriptor()
                 {
                     Algorithm = SignatureAlgorithm.HmacSha512,
-                    SigningKey = jwtKey,
+                    SigningKey = _jwtKey,
                     IssuedAt = DateTime.UtcNow,
                     ExpirationTime = DateTime.UtcNow.AddDays(30),
                 };
@@ -81,7 +81,7 @@ namespace cloudsharpback.Services
             try
             {
                 var policy = new TokenValidationPolicyBuilder()
-                .RequireSignature(jwtKey, SignatureAlgorithm.HmacSha512)
+                .RequireSignature(_jwtKey, SignatureAlgorithm.HmacSha512)
                 .EnableLifetimeValidation()
                 .Build();
                 var reader = new JwtReader();
@@ -113,7 +113,7 @@ namespace cloudsharpback.Services
             {
                 memberId = null;
                 var policy = new TokenValidationPolicyBuilder()
-                .RequireSignature(jwtKey, SignatureAlgorithm.HmacSha512)
+                .RequireSignature(_jwtKey, SignatureAlgorithm.HmacSha512)
                 .EnableLifetimeValidation()
                 .Build();
                 var reader = new JwtReader();

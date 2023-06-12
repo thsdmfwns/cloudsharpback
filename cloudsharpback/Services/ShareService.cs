@@ -2,7 +2,6 @@
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
-using Dapper;
 
 namespace cloudsharpback.Services
 {
@@ -121,8 +120,6 @@ namespace cloudsharpback.Services
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="token"></param>
-        /// <param name="password"></param>
         /// <param name="req"></param>
         /// <returns>404 : file doesnt exist , 403 : bad password, 410 : expired share</returns>
         /// <exception cref="HttpErrorException"></exception>

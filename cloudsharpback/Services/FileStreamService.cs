@@ -15,7 +15,7 @@ public class FileStreamService : IFileStreamService
     }
 
     private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
-    private bool FileExist(string filePath) => System.IO.File.Exists(filePath);
+    private bool FileExist(string filePath) => File.Exists(filePath);
     
     public HttpResponseDto? GetFileStream(Ticket ticket, out FileStream? fileStream)
     {
