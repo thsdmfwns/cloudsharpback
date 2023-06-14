@@ -20,5 +20,8 @@ namespace cloudsharpback.Services.Interfaces
         Task<(HttpResponseDto? err, bool? result)> ValidatePassword(string password, string token);
 
         Task<bool> CheckExistShareByTargetPath(string target, MemberDto member);
+
+        Task<(HttpResponseDto? err, List<ShareResponseDto> shares)> FindSharesInDirectory(MemberDto memberDto,
+            string targetDir);
     }
 }

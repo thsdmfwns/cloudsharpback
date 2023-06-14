@@ -124,5 +124,12 @@ namespace cloudsharpback.Controllers
             var result = await _shareService.CheckPassword(token);
             return Ok(result);
         }
+
+        [HttpGet("find")]
+        public async Task<IActionResult> FindSharesInDirectory(string path)
+        {
+            var res = await _shareService.FindSharesInDirectory(Member, path);
+            return res.err is null ? Ok(res.shares) : StatusCode(res.err.HttpCode, res.err.Message);
+        }
     }
 }

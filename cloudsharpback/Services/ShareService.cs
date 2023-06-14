@@ -242,6 +242,30 @@ namespace cloudsharpback.Services
             }
         }
 
+        public async Task<(HttpResponseDto? err, List<ShareResponseDto> shares)> FindSharesInDirectory(MemberDto memberDto, string targetDir)
+        {
+            try
+            {
+                if (!Directory.Exists(Path.Combine(MemberDirectory(memberDto.Directory), targetDir)))
+                {
+                    return (new HttpResponseDto() { HttpCode = 404, Message = "Directory Not Found" }, new List<ShareResponseDto>());
+                }
+
+                var res = await _shareRepository.GetSharesInDirectory(memberDto.Id, targetDir);
+                return (null, res);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpResponseDto
+                {
+                    HttpCode = 500,
+                    Message = "fail to find share",
+                });
+            }
+        }
+
         public async Task<HttpResponseDto?> DeleteShareAsync(string target, MemberDto member)
         {
             try
