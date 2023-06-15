@@ -50,13 +50,18 @@ namespace cloudsharpback.Services
             }
             if (!_ticketStore.TryGet(guidToken, out var ticket) ||
                 ticket?.TicketType != TicketType.TusUpload || 
-                ticket.Target is not TusUploadToken uploadTarget)
+                ticket.Value is not FileUploadTicketValue uploadTarget)
             {
                 context.FailRequest(System.Net.HttpStatusCode.BadRequest, "bad token");
                 return Task.CompletedTask;
             }
-            var directory = MemberDirectory(uploadTarget.FileDirectory);
-            var target = Path.Combine(directory, uploadTarget.FilePath, uploadTarget.FileName);
+            if (!Directory.Exists(uploadTarget.UploadDirectoryPath))
+            {
+                context.FailRequest(System.Net.HttpStatusCode.NotFound);
+                _ticketStore.Remove(guidToken);
+                return Task.CompletedTask;
+            }
+            var target = Path.Combine(uploadTarget.UploadDirectoryPath, uploadTarget.FileName);
             if (FileExist(target))
             {
                 context.FailRequest(System.Net.HttpStatusCode.Conflict);
@@ -77,12 +82,12 @@ namespace cloudsharpback.Services
                     !Guid.TryParse(token, out var guidToken) ||
                     !_ticketStore.TryGet(guidToken, out var ticket) ||
                     ticket?.TicketType != TicketType.TusUpload || 
-                    ticket.Target is not TusUploadToken uploadTarget)
+                    ticket.Value is not FileUploadTicketValue uploadTarget)
                 {
                     await terminationStore.DeleteFileAsync(file.Id, ctx.CancellationToken);
                     throw new Exception("Can not find directoryId");
                 }
-                var target = Path.Combine(MemberDirectory(uploadTarget.FileDirectory), uploadTarget.FilePath, uploadTarget.FileName);
+                var target = Path.Combine(uploadTarget.UploadDirectoryPath, uploadTarget.FileName);
                 using (var targetStream = File.Create(target))
                 using (Stream content = await file.GetContentAsync(ctx.CancellationToken))
                 {

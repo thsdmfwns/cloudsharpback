@@ -2,6 +2,6 @@ namespace cloudsharpback.Models;
 
 public class ShareRequestValidatePasswordDto
 {
-    public string token { get; set; }
-    public string password { get; set; }
+    public required string Token { get; set; }
+    public required string Password { get; set; }
 }

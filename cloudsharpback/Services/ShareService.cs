@@ -123,7 +123,7 @@ namespace cloudsharpback.Services
         /// <param name="req"></param>
         /// <returns>404 : file doesnt exist , 403 : bad password, 410 : expired share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpResponseDto? err, ShareDownloadDto? dto)> GetDownloadDtoAsync(ShareDowonloadRequestDto req)
+        public async Task<(HttpResponseDto? err, FileDownloadTicketValue? ticketValue)> GetDownloadTicketValue(ShareDowonloadRequestDto req)
         {
             try
             {
@@ -167,7 +167,13 @@ namespace cloudsharpback.Services
                         Message = "File Notfound",
                     }, null);
                 }
-                return (null, dto);
+
+                var val = new FileDownloadTicketValue()
+                {
+                    FileDownloadType = FileDownloadType.Download,
+                    TargetFilePath = filePath
+                };
+                return (null, val);
             }
             catch (Exception ex)
             {

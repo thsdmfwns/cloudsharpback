@@ -38,13 +38,12 @@ namespace cloudsharpback.Controllers
         [HttpGet("dlTicket")]
         public IActionResult GetDownloadTicket(string path)
         {
-            var err = _memberFileService.CheckBeforeDownloadTicketAdd(Member, path);
+            var err = _memberFileService.GetDownloadTicketValue(Member, path, out var ticketValue);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);
             }
-            var dl = new DownloadToken(Member.Directory, path, DownloadType.Download);
-            var ticket = new Ticket(HttpContext, TicketType.Download, dl);
+            var ticket = new Ticket(HttpContext, TicketType.Download, ticketValue);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
@@ -52,32 +51,26 @@ namespace cloudsharpback.Controllers
         [HttpGet("viTicket")]
         public IActionResult GetViewTicket(string path)
         {
-            var err = _memberFileService.CheckBeforeDownloadTicketAdd(Member, path, true);
+            var err = _memberFileService.GetDownloadTicketValue(Member, path, out var ticketValue, true);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);
             }
-            var dl = new DownloadToken(Member.Directory, path, DownloadType.View);
-            var ticket = new Ticket(HttpContext, TicketType.ViewFile, dl);
+            
+            var ticket = new Ticket(HttpContext, TicketType.ViewFile, ticketValue);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
 
         [HttpPost("ulTicket")]
-        public IActionResult GetUploadToken(FileUploadDto dto)
+        public IActionResult GetUploadToken(FileUploadRequestDto requestDto)
         {
-            var err = _memberFileService.CheckBeforeUploadTicketAdd(Member, dto);
+            var err = _memberFileService.GetUploadTicketValue(Member, requestDto, out var ticketValue);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);
             }
-            var token = new TusUploadToken()
-            {
-                FileName = dto.FileName,
-                FileDirectory = Member.Directory,
-                FilePath = dto.UploadDirectory ?? string.Empty
-            };
-            var ticket = new Ticket(HttpContext, DateTime.Now.AddDays(3), TicketType.TusUpload, token);
+            var ticket = new Ticket(HttpContext, DateTime.Now.AddDays(3), TicketType.TusUpload, ticketValue);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }

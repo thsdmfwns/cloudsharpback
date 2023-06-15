@@ -22,18 +22,17 @@ public class FileStreamService : IFileStreamService
         try
         {
             fileStream = null;
-            if (ticket.Target is null ||
+            if (ticket.Value is null ||
                 (ticket.TicketType != TicketType.Download && ticket.TicketType != TicketType.ViewFile) ||
-                ticket.Target is not DownloadToken file)
+                ticket.Value is not FileDownloadTicketValue downloadToken)
             {
                 return new HttpResponseDto() { HttpCode = 404, Message = "wrong ticket" };
             }
-            var targetPath = Path.Combine(MemberDirectory(file.FileDirectory), file.FIlePath);
-            if (!FileExist(targetPath))
+            if (!FileExist(downloadToken.TargetFilePath))
             {
                 return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
             }
-            fileStream = new FileStream(targetPath, FileMode.Open, FileAccess.Read);
+            fileStream = new FileStream(downloadToken.TargetFilePath, FileMode.Open, FileAccess.Read);
             return null;
         }
         catch (Exception ex)

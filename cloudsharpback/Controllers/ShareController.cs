@@ -60,18 +60,19 @@ namespace cloudsharpback.Controllers
         [HttpPost("dlTicket")]
         public async Task<IActionResult> GetDownloadTicket(ShareDowonloadRequestDto requestDto, [FromHeader] string? auth)
         {
-            var result = await _shareService.GetDownloadDtoAsync(requestDto);
-            if (result.err is not null || result.dto is null)
-            {
-                return StatusCode(result.err!.HttpCode, result);
-            }
+            
             MemberDto? member = null;
             if (auth is not null)
             {
                 _jwtService.TryValidateAccessToken(auth, out member);
             }
-            var dl = new DownloadToken(result.dto.Directory, result.dto.Target, DownloadType.Download);
-            var ticket = new Ticket(IpAdressUtil.Get(HttpContext), member, TicketType.Download, dl);
+            
+            var result = await _shareService.GetDownloadTicketValue(requestDto);
+            if (result.err is not null || result.ticketValue is null)
+            {
+                return StatusCode(result.err!.HttpCode, result);
+            }
+            var ticket = new Ticket(IpAdressUtil.Get(HttpContext), member, TicketType.Download, result.ticketValue);
             _ticketStore.Add(ticket);
             return Ok(ticket.Token.ToString());
         }
@@ -101,11 +102,11 @@ namespace cloudsharpback.Controllers
         [HttpPost("validatePw")]
         public async Task<IActionResult> ValidatePassword(ShareRequestValidatePasswordDto dto)
         {
-            if (!Guid.TryParse(dto.token, out _))
+            if (!Guid.TryParse(dto.Token, out _))
             {
                 return BadRequest();
             }
-            var result = await _shareService.ValidatePassword(dto.password, dto.token);
+            var result = await _shareService.ValidatePassword(dto.Password, dto.Token);
             if (result.err is not null || result.result is null)
             {
                 return StatusCode(result.err!.HttpCode, result.err.Message);

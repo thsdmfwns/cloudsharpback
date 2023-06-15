@@ -1,6 +1,6 @@
 namespace cloudsharpback.Models;
 
-public enum DownloadType
+public enum FileDownloadType
 {
     Download,
     View,

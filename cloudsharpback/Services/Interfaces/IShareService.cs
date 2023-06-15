@@ -9,7 +9,7 @@ namespace cloudsharpback.Services.Interfaces
         Task<HttpResponseDto?> DeleteShareAsync(string target, MemberDto member);
         Task<HttpResponseDto?> DeleteSharesInDirectory(MemberDto memberDto, string targetDirectoryPath);
         /// <returns>404 : share doesnt exist , 403 : bad password, 410 : expired share</returns>
-        Task<(HttpResponseDto? err, ShareDownloadDto? dto)> GetDownloadDtoAsync(ShareDowonloadRequestDto req);
+        Task<(HttpResponseDto? err, FileDownloadTicketValue? ticketValue)> GetDownloadTicketValue(ShareDowonloadRequestDto req);
         /// <returns>410 : expired share </returns>
         Task<(HttpResponseDto? err, ShareResponseDto? result)> GetShareAsync(string token);
         Task<List<ShareResponseDto>> GetSharesAsync(MemberDto member);

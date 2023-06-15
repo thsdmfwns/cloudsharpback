@@ -39,7 +39,7 @@ public class DownloadController : ControllerBase
         {
             EnableRangeProcessing = true
         };
-        if (((DownloadToken)ticket.Target!).DownloadType == DownloadType.Download)
+        if (((FileDownloadTicketValue)ticket.Value!).FileDownloadType == FileDownloadType.Download)
         {
             res.FileDownloadName = Path.GetFileName(fs.Name);
         }
