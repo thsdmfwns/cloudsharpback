@@ -21,9 +21,9 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("ls")]
-        public IActionResult GetFileDtoList(string? path)
+        public IActionResult GetFileDtoList(string? path, bool? onlyDir)
         {
-            var err = _memberFileService.GetFiles(Member, path, out var files);
+            var err = _memberFileService.GetFiles(Member, path, out var files, onlyDir ?? false);
             return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(files);
         }
 

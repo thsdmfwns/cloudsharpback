@@ -46,7 +46,7 @@ namespace cloudsharpback.Services
 
         }
 
-        public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileInfoDto> files)
+        public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileInfoDto> files, bool onlyDir = false)
         {
             try
             {
@@ -66,7 +66,7 @@ namespace cloudsharpback.Services
                         Message = "Directory Not Found"
                     };
                 }
-                files = GetFileDtos(memberDto, targetDir);
+                files = GetFileDtos(memberDto, targetDir, onlyDir);
                 return null;
             }
             catch (Exception ex)
@@ -82,16 +82,20 @@ namespace cloudsharpback.Services
             
         }
 
-        private List<FileInfoDto> GetFileDtos(MemberDto memberDto, DirectoryInfo targetDirectoryInfo)
+        private List<FileInfoDto> GetFileDtos(MemberDto memberDto, DirectoryInfo targetDirectoryInfo, bool onlyDir = false)
         {
             List<FileInfoDto> fileDtos = new();
             targetDirectoryInfo.GetDirectories().ToList()
                 .ForEach(x => fileDtos.Add(FileInfoDto.FromDirectoryInfo(x, MemberDirectory(memberDto.Directory))));
+            if (onlyDir)
+            {
+                return fileDtos;
+            }
             targetDirectoryInfo.GetFiles().ToList()
                 .ForEach(x => fileDtos.Add(FileInfoDto.FromFileInfo(x, MemberDirectory(memberDto.Directory))));
             return fileDtos;
         }
-
+        
         public HttpResponseDto? GetFile(MemberDto member, string path, out FileInfoDto? fileDto)
         {
             try
