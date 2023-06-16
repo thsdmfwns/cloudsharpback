@@ -21,7 +21,7 @@ namespace cloudsharpback.Middleware
                 var response = context.Response;
                 response.ContentType = "application/json";
                 response.StatusCode = ex.ErrorCode;
-                await response.WriteAsync(ex.ErrorDetail.ToString());
+                await response.WriteAsync(ex.ResponseDetail.ToString());
             }
             catch (Exception)
             {

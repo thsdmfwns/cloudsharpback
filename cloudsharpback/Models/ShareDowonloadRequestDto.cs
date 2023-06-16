@@ -2,13 +2,7 @@
 {
     public class ShareDowonloadRequestDto
     {
-        public ShareDowonloadRequestDto(string token, string? password)
-        {
-            Token = token;
-            Password = password;
-        }
-
-        public string Token { get; set; }
+        public required string Token { get; set; }
         public string? Password { get; set; }
     }
 }

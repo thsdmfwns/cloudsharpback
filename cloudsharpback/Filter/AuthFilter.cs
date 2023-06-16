@@ -8,11 +8,11 @@ namespace cloudsharpback.Filter
 {
     public class AuthFilter : IAuthorizationFilter
     {
-        private readonly IJWTService jwtService;
+        private readonly IJWTService _jwtService;
 
         public AuthFilter(IJWTService jwtService)
         {
-            this.jwtService = jwtService;
+            _jwtService = jwtService;
         }
 
         private ObjectResult StatusCode(int statusCode, object value) => new ObjectResult(value) { StatusCode = statusCode };
@@ -34,7 +34,7 @@ namespace cloudsharpback.Filter
                 context.Result = StatusCode(401);
                 return;
             }
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
+            if (!_jwtService.TryValidateAccessToken(auth, out var memberDto)
                  || memberDto is null)
             {
                 context.Result = StatusCode(403, "bad auth");

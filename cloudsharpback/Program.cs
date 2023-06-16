@@ -1,11 +1,12 @@
 using cloudsharpback.Filter;
 using cloudsharpback.Hubs;
 using cloudsharpback.Middleware;
+using cloudsharpback.Repository;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.DependencyInjection;
 using tusdotnet;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,17 +16,24 @@ builder.Logging.AddConsole();
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton<IJWTService, JWTService>();
-builder.Services.AddSingleton<IMemberService, MemberService>();
-builder.Services.AddSingleton<IUserService, UserService>();
+//scope
+builder.Services.AddScoped<IJWTService, JWTService>();
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IMemberFileService, MemberFileService>();
+builder.Services.AddScoped<IShareService, ShareService>();
+builder.Services.AddScoped<IYoutubeDlService, YoutubeDlService>();
+builder.Services.AddScoped<IFileStreamService, FileStreamService>();
+builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+builder.Services.AddScoped<IShareRepository, ShareRepository>();
+//singleton
 builder.Services.AddSingleton<IDBConnService, DBConnService>();
-builder.Services.AddSingleton<IFileService, FileService>();
-builder.Services.AddSingleton<IShareService, ShareService>();
-builder.Services.AddSingleton<ITusService, TusService>();
-builder.Services.AddSingleton<IYoutubeDlService, YoutubeDlService>();
-builder.Services.AddSingleton<ITorrentDlService, TorrentDlService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddSingleton<ITicketStore, TicketStore>();
+builder.Services.AddSingleton<IPathStore, PathStore>();
+//transient
+builder.Services.AddTransient<ITusService, TusService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
 builder.Services.AddSwaggerGen(x => x.OperationFilter<AddAuthHeaderOperationFilter>());

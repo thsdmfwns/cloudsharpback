@@ -1,29 +1,28 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using JsonWebToken;
-using Microsoft.Extensions.Logging;
 
 namespace cloudsharpback.Services
 {
     public class JWTService : IJWTService
     {
-        private readonly SymmetricJwk jwtKey;
+        private readonly SymmetricJwk _jwtKey;
         private readonly ILogger _logger;
 
         public JWTService(IConfiguration configuration, ILogger<IJWTService> logger)
         {
-            jwtKey = new SymmetricJwk(configuration["JWT:key"], SignatureAlgorithm.HmacSha512);
+            _jwtKey = new SymmetricJwk(configuration["JWT:key"], SignatureAlgorithm.HmacSha512);
             _logger = logger;
         }
 
-        public string WriteAcessToken(MemberDto data)
+        public string WriteAccessToken(MemberDto data)
         {
             try
             {
                 var descriptor = new JwsDescriptor()
                 {
                     Algorithm = SignatureAlgorithm.HmacSha512,
-                    SigningKey = jwtKey,
+                    SigningKey = _jwtKey,
                     IssuedAt = DateTime.UtcNow,
                     ExpirationTime = DateTime.UtcNow.AddDays(1),
                 };
@@ -42,22 +41,22 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to write ac token",
                 });
             }
         }
 
-        public string WriteRefeshToken(MemberDto data)
+        string IJWTService.WriteRefreshToken(MemberDto data)
         {
             try
             {
                 var descriptor = new JwsDescriptor()
                 {
                     Algorithm = SignatureAlgorithm.HmacSha512,
-                    SigningKey = jwtKey,
+                    SigningKey = _jwtKey,
                     IssuedAt = DateTime.UtcNow,
                     ExpirationTime = DateTime.UtcNow.AddDays(30),
                 };
@@ -68,21 +67,21 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to write rf token",
                 });
             }
         }
 
 
-        public bool TryValidateAcessToken(string token, out MemberDto? member)
+        public bool TryValidateAccessToken(string token, out MemberDto? member)
         {
             try
             {
                 var policy = new TokenValidationPolicyBuilder()
-                .RequireSignature(jwtKey, SignatureAlgorithm.HmacSha512)
+                .RequireSignature(_jwtKey, SignatureAlgorithm.HmacSha512)
                 .EnableLifetimeValidation()
                 .Build();
                 var reader = new JwtReader();
@@ -100,21 +99,21 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to validate token",
                 });
             }
         }
 
-        public bool TryValidateRefeshToken(string token, out ulong? memberId)
+        public bool TryValidateRefreshToken(string token, out ulong? memberId)
         {
             try
             {
                 memberId = null;
                 var policy = new TokenValidationPolicyBuilder()
-                .RequireSignature(jwtKey, SignatureAlgorithm.HmacSha512)
+                .RequireSignature(_jwtKey, SignatureAlgorithm.HmacSha512)
                 .EnableLifetimeValidation()
                 .Build();
                 var reader = new JwtReader();
@@ -137,9 +136,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to validate token",
                 });
             }

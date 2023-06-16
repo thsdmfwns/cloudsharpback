@@ -1,5 +1,4 @@
 ﻿using cloudsharpback.Services.Interfaces;
-using JsonWebToken;
 using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Services

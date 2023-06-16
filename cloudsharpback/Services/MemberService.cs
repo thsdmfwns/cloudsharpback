@@ -1,59 +1,48 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
-using Dapper;
-using System.Diagnostics.Metrics;
 using System.Net.Mail;
-using Ubiety.Dns.Core;
+using cloudsharpback.Repository.Interface;
 
 namespace cloudsharpback.Services
 {
     public class MemberService : IMemberService
     {
-        private readonly IDBConnService _connService;
         private readonly ILogger _logger;
-        private string ProfilePath;
-
-        public MemberService(IConfiguration configuration, IDBConnService connService, ILogger<IMemberService> logger)
+        private readonly string _profilePath;
+        private readonly IMemberRepository _memberRepository;
+        public MemberService(ILogger<IMemberService> logger, IPathStore pathStore, IMemberRepository memberRepository)
         {
-            ProfilePath = configuration["File:ProfileImagePath"];
-            if (!Directory.Exists(ProfilePath)) Directory.CreateDirectory(ProfilePath);
-            _connService = connService;
+            _profilePath = pathStore.ProfilePath;
+            if (!Directory.Exists(_profilePath)) Directory.CreateDirectory(_profilePath);
             _logger = logger;
+            _memberRepository = memberRepository;
         }
 
         /// <returns>404 : fail to login</returns>
-        public async Task<(HttpErrorDto? err, MemberDto? result)> GetMemberById(ulong id)
+        public async Task<(HttpResponseDto? err, MemberDto? result)> GetMemberById(ulong id)
         {
             try
             {
-                var query = "SELECT member_id id, role_id role, email, nickname, " +
-                    "BIN_TO_UUID(directory) directory, profile_image profileImage " +
-                    "FROM member " +
-                    "WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.QuerySingleOrDefaultAsync<MemberDto>(query, new { Id = id });
-                if (result is null)
-                {
-                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
-                    return (err, null);
-                }
-                return (null, result);
+                var res = await _memberRepository.GetMemberById(id);
+                return res is null
+                    ? (new HttpResponseDto() { HttpCode = 404, Message = "member not found" }, null)
+                    : (null, res);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to get member",
                 });
             }
         }
 
         /// <returns>415 : bad type, 409 : try again, 404: member not found</returns>
-        public async Task<HttpErrorDto?> UploadProfileImage(IFormFile imageFile, MemberDto member)
+        public async Task<HttpResponseDto?> UploadProfileImage(IFormFile imageFile, MemberDto member)
         {
             try
             {
@@ -63,56 +52,44 @@ namespace cloudsharpback.Services
                 if (mime is null 
                     || mime.Split('/')[0] != "image")
                 {
-                    return new HttpErrorDto() { ErrorCode = 415, Message = "bad type" };
+                    return new HttpResponseDto() { HttpCode = 415, Message = "bad type" };
                 }
-                var filename = profileId.ToString() + extension;
-                var filepath = Path.Combine(ProfilePath, filename);
+                var filename = profileId + extension;
+                var filepath = Path.Combine(_profilePath, filename);
                 if (File.Exists(filepath))
                 {
-                    return new HttpErrorDto() { ErrorCode = 409, Message = "try again" };
+                    return new HttpResponseDto() { HttpCode = 409, Message = "try again" };
                 }
-                using (var stream = System.IO.File.Create(filepath))
+                using (var stream = File.Create(filepath))
                 {
                     await imageFile.CopyToAsync(stream);
                 }
-                using var conn = _connService.Connection;
-                var sql = "UPDATE member " +
-                    "SET profile_image = @Filename " +
-                    "WHERE member_id = @Id";
-                var result = await conn.ExecuteAsync(sql, new
-                {
-                    Filename = filename,
-                    Id = member.Id,
-                });
-                if (result <= 0)
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
-                }
-                return null;
+                var res = await _memberRepository.TryUpdateMemberProfileImage(member.Id, filename);
+                return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to upload profile image",
                 });
             }
         }
 
-        public HttpErrorDto? DownloadProfileImage(string profileImage, out FileStream? fileStream, out string? contentType)
+        public HttpResponseDto? DownloadProfileImage(string profileImage, out FileStream? fileStream, out string? contentType)
         {
             try
             {
                 fileStream = null;
-                var filepath = Path.Combine(ProfilePath, profileImage);
+                var filepath = Path.Combine(_profilePath, profileImage);
                 contentType = MimeTypeUtil.GetMimeType(profileImage);
                 if (!File.Exists(filepath)
                     || contentType is null)
                 {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
+                    return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
                 }
                 fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
                 return null;
@@ -121,120 +98,88 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to download file",
                 });
             }
         }
 
-        public async Task<HttpErrorDto?> UpadteNickname(MemberDto member, string changeNick)
+        public async Task<HttpResponseDto?> UpadteNickname(MemberDto member, string changeNick)
         {
             try
             {
-                if (member.Email.Equals(changeNick))
+                if (member.Nickname.Equals(changeNick))
                 {
                     return null;
                 }
-
-                var sql = "UPDATE member " +
-                "SET nickname = @ChangeNick " +
-                "WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.ExecuteAsync(sql, new
-                {
-                    ChangeNick = changeNick,
-                    Id = member.Id
-                });
-                if (result <= 0)
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
-                }
-                return null;
+                var res = await _memberRepository.TryUpdateMemberNickname(member.Id, changeNick);
+                return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to update nick",
                 });
             }
         }
 
-        public async Task<HttpErrorDto?> UpadteEmail(MemberDto member, string changeEmail)
+        public async Task<HttpResponseDto?> UpadteEmail(MemberDto member, string changeEmail)
         {
             try
             {
                 // validate email
                 try
                 {
-                    var temp = new MailAddress(changeEmail);
+                    var _ = new MailAddress(changeEmail);
                 }
                 catch (Exception)
                 {
-                    return new HttpErrorDto() { ErrorCode = 400, Message = "bad email" };
+                    return new HttpResponseDto() { HttpCode = 400, Message = "bad email" };
                 }
-
-                var sql = "UPDATE member " +
-                "SET email = @ChangeEmail " +
-                "WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.ExecuteAsync(sql, new
-                {
-                    ChangeEmail = changeEmail,
-                    Id = member.Id
-                });
-                if (result <= 0)
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
-                }
-                return null;
+                var res = await _memberRepository.TryUpdateMemberEmail(member.Id, changeEmail);
+                return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to update email",
                 });
             }
         }
 
-        public async Task<(HttpErrorDto? err, bool result)> CheckPassword(MemberDto member, string password)
+        public async Task<(HttpResponseDto? err, bool result)> CheckPassword(MemberDto member, string password)
         {
             try
             {
-                var sql = "SELECT password FROM member WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var passwordHash = await conn.QuerySingleOrDefaultAsync<string?>(sql, new { Id = member.Id });
-                if (passwordHash is null)
-                {
-                    var err = new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
-                    return (err, false);
-                }
-                return (null, PasswordEncrypt.VerifyPassword(password, passwordHash));
+                var passwordHash = await _memberRepository.GetMemberPasswordHashById(member.Id);
+                return passwordHash is null 
+                    ? (new HttpResponseDto() { HttpCode = 404, Message = "member not found" }, false)
+                    : (null, PasswordEncrypt.VerifyPassword(password, passwordHash));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to check password",
                 });
-                throw;
             }
 
         }
 
-        public async Task<HttpErrorDto?> UpdatePassword(MemberDto member, UpadtePasswordDto requset)
+        public async Task<HttpResponseDto?> UpdatePassword(MemberDto member, UpadtePasswordDto requset)
         {
             try
             {
@@ -245,29 +190,22 @@ namespace cloudsharpback.Services
                 }
                 if (!checkresult.result)
                 {
-                    return new HttpErrorDto() { ErrorCode = 400, Message = "check password" };
+                    return new HttpResponseDto() { HttpCode = 400, Message = "check password" };
                 }
-
+                
                 var password = PasswordEncrypt.EncryptPassword(requset.ChangeTo);
-                var sql = "UPDATE member SET password = @Password WHERE member_id = @Id";
-                using var conn = _connService.Connection;
-                var result = await conn.ExecuteAsync(sql, new { Password = password, Id = member.Id });
-                if (result <= 0)
-                {
-                    return new HttpErrorDto() { ErrorCode = 404, Message = "member not found" };
-                }
-                return null;
+                var result = await _memberRepository.TryUpdateMemberPassword(member.Id, password);
+                return result ? null : new HttpResponseDto() { HttpCode = 404, Message = "member not found" };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to update password",
                 });
-                throw;
             }
         }
     }

@@ -1,33 +1,25 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
-using Dapper;
-using MySqlX.XDevAPI.Relational;
-using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Ocsp;
-using System.Diagnostics.Metrics;
-using System.IO;
-using Ubiety.Dns.Core;
 
 namespace cloudsharpback.Services
 {
     public class ShareService : IShareService
     {
-        private readonly IDBConnService _connService;
+        private readonly IShareRepository _shareRepository;
         private readonly ILogger _logger;
-        private string DirectoryPath;
+        private readonly IPathStore _pathStore;
 
-        public ShareService(IConfiguration configuration, IDBConnService connService, ILogger<IShareService> logger)
+        public ShareService(ILogger<IShareService> logger, IPathStore pathStore, IShareRepository shareRepository)
         {
-            DirectoryPath = configuration["File:DirectoryPath"];
-            _connService = connService;
+            _pathStore = pathStore;
+            _shareRepository = shareRepository;
             _logger = logger;
         }
 
-        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
-        bool FileExist(string filePath) => System.IO.File.Exists(filePath);
-        Dictionary<Guid, ShareDownloadDto> downloadTokens = new();
+        string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
+        bool FileExist(string filePath) => File.Exists(filePath);
 
         /// <summary>
         /// 
@@ -36,16 +28,16 @@ namespace cloudsharpback.Services
         /// <param name="req"></param>
         /// <returns>404 : no file for share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<HttpErrorDto?> Share(MemberDto member, ShareRequestDto req)
+        public async Task<HttpResponseDto?> Share(MemberDto member, ShareRequestDto req)
         {
             try
             {
-                var filepath = Path.Combine(userPath(member.Directory), req.Target);
+                var filepath = Path.Combine(MemberDirectory(member.Directory), req.Target);
                 if (!FileExist(filepath))
                 {
-                    return new HttpErrorDto
+                    return new HttpResponseDto
                     {
-                        ErrorCode = 404,
+                        HttpCode = 404,
                         Message = $"no file for share",
                     };
                 }
@@ -55,31 +47,16 @@ namespace cloudsharpback.Services
                 {
                     password = PasswordEncrypt.EncryptPassword(password);
                 }
-                var sql = "INSERT INTO share(member_id, target, password, expire_time, comment, share_time, share_name, token, file_size) " +
-                    "VALUES(@MemberID, @Target, @Password, @ExpireTime, @Comment, @ShareTime, @ShareName, UUID_TO_BIN(@Token), @FileSize)";
-                using var conn = _connService.Connection;
-                var token = Guid.NewGuid().ToString();
-                await conn.ExecuteAsync(sql, new
-                {
-                    MemberId = member.Id,
-                    Target = req.Target,
-                    Password = password,
-                    ExpireTime = req.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
-                    Comment = req.Comment,
-                    ShareTime = DateTime.UtcNow.Ticks,
-                    ShareName = req.ShareName,
-                    Token = token,
-                    FileSize = (ulong)fileinfo.Length,
-                });
-                return null;
+                var res = await _shareRepository.TryAddShare(member.Id, req, password, fileinfo);
+                return res ? null : new HttpResponseDto(){HttpCode = 400};
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to sharing",
                 });
             }
@@ -91,38 +68,32 @@ namespace cloudsharpback.Services
         /// <param name="token"></param>
         /// <returns>410 : expired share </returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpErrorDto? err, ShareResponseDto? result)> GetShareAsync(string token)
+        public async Task<(HttpResponseDto? err, ShareResponseDto? result)> GetShareAsync(string token)
         {
             try
             {
-                //ulong id, ulong ownerId, string ownerNick, ulong shareTime, ulong? expireTime, string target, string? shareName, string? comment
-                var sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                    "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
-                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
-                    "FROM share AS s " +
-                    "INNER JOIN member AS m " +
-                    "ON s.member_id = m.member_id " +
-                    "WHERE s.token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var result = await conn.QueryFirstOrDefaultAsync<ShareResponseDto>(sql, new { Token = token });
-                if (result.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
+                var res = await _shareRepository.GetShareByToken(token);
+                if (res is null)
                 {
-                    var err = new HttpErrorDto()
+                    return (new HttpResponseDto() { HttpCode = 404, Message = "Share Not Found" }, null);
+                } 
+                if (res.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
+                {
+                    return (new HttpResponseDto()
                     {
-                        ErrorCode = 410,
+                        HttpCode = 410,
                         Message = "expired share",
-                    };
-                    return (err, null);
+                    }, null);
                 }
-                return (null, result);
+                return (null, res);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to get shares",
                 });
             }
@@ -132,24 +103,15 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                    "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
-                    "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
-                    "FROM share AS s " +
-                    "INNER JOIN member AS m " +
-                    "ON s.member_id = m.member_id " +
-                    "WHERE s.member_id = @ID AND s.expire_time >= @Now";
-                using var conn = _connService.Connection;
-                var result = await conn.QueryAsync<ShareResponseDto>(sql, new { ID = member.Id, Now = (ulong)DateTime.UtcNow.Ticks });
-                return result.ToList();
+                return await _shareRepository.GetSharesListByMemberId(member.Id);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to get share",
                 });
             }
@@ -158,177 +120,196 @@ namespace cloudsharpback.Services
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="token"></param>
-        /// <param name="password"></param>
+        /// <param name="req"></param>
         /// <returns>404 : file doesnt exist , 403 : bad password, 410 : expired share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpErrorDto? err, Guid? dlToken)> GetDownloadTokenAsync(ShareDowonloadRequestDto requestDto)
+        public async Task<(HttpResponseDto? err, FileDownloadTicketValue? ticketValue)> GetDownloadTicketValue(ShareDowonloadRequestDto req)
         {
             try
             {
-                var sql = "Select BIN_TO_UUID(m.directory) directory , s.target, s.expire_time expireTime, s.password " +
-                    "FROM share AS s " +
-                    "INNER JOIN member AS m " +
-                    "ON s.member_id = m.member_id " +
-                    "WHERE s.token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var dto = await conn.QueryFirstOrDefaultAsync<ShareDownloadDto?>(sql, new { Token = requestDto.Token });
+                var dto = await _shareRepository.GetShareDownloadDtoByToken(req.Token);
                 if (dto is null)
                 {
-                    var res = new HttpErrorDto
+                    var res = new HttpResponseDto
                     {
-                        ErrorCode = 404,
+                        HttpCode = 404,
                         Message = "share not found"
                     };
                     return (res, null);
                 }
-                if (dto.Password is not null)
+                if (dto.Password is not null 
+                    && (req.Password is null 
+                        || !PasswordEncrypt.VerifyPassword(req.Password, dto.Password)))
                 {
-                    if (requestDto.Password is null 
-                        || !PasswordEncrypt.VerifyPassword(requestDto.Password, dto.Password))
+                    var res = new HttpResponseDto
                     {
-                        var res = new HttpErrorDto
-                        {
-                            ErrorCode = 403,
-                            Message = "bad password",
-                        };
-                        return (res, null);
-                    }
+                        HttpCode = 403,
+                        Message = "bad password",
+                    };
+                    return (res, null);
                 }
-                if (dto.ExpireTime is not null)
+                if (dto.ExpireTime is not null 
+                    && dto.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
                 {
-                    if (dto.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
+                    return (new HttpResponseDto
                     {
-                        var res = new HttpErrorDto
-                        {
-                            ErrorCode = 410,
-                            Message = "expired share",
-                        };
-                        return (res, null);
-                    }
+                        HttpCode = 410,
+                        Message = "expired share",
+                    }, null);
                 }
-                var downloadtoken = Guid.NewGuid();
-                downloadTokens.TryAdd(downloadtoken, dto);
-                return (null, downloadtoken);
+
+                var filePath = Path.Combine(MemberDirectory(dto.Directory), dto.Target);
+                if (!File.Exists(filePath))
+                {
+                    return (new HttpResponseDto
+                    {
+                        HttpCode = 404,
+                        Message = "File Notfound",
+                    }, null);
+                }
+
+                var val = new FileDownloadTicketValue()
+                {
+                    FileDownloadType = FileDownloadType.Download,
+                    TargetFilePath = filePath
+                };
+                return (null, val);
             }
-            catch (HttpErrorException) { throw; }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to download share",
                 });
             }
         }
-        /// <returns>400 : bad token , 404 : file not found</returns>
-        public HttpErrorDto? DownloadShare(string token, out FileStream? fileStream)
-        {
-            fileStream = null;
-            if (!Guid.TryParse(token, out var dlToken)
-                || !downloadTokens.Remove(dlToken, out var dlDto)
-                || DateTime.Now > dlDto.DtoExpireTime)
-            {
-                return new HttpErrorDto() { ErrorCode = 400, Message = "bad token" };
-               
-            }
-            var filepath = Path.Combine(userPath(dlDto.Directory), dlDto.Target);
-            if (!FileExist(filepath))
-            {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "file not found" };
-            }
-            fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
-            return null;
-        }
-
-        public async Task<bool> CloseShareAsync(MemberDto member, string token)
+        public async Task<HttpResponseDto?> CloseShareAsync(MemberDto member, string token)
         {
             try
             {
-                var sql = "UPDATE share " +
-                    "SET expire_time = 0 " +
-                    "WHERE member_id = @Id AND token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                return await conn.ExecuteAsync(sql, new
-                {
-                    Id = member.Id,
-                    Token = token,
-                }) != 0;
+                var res = await _shareRepository.TrySetShareExpireTimeToZero(member.Id, token);
+                return res ? null : new HttpResponseDto{HttpCode = 404, Message = "Share not found"};
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to close share",
                 });
             }
         }
 
-        public async Task<bool> UpdateShareAsync(ShareUpdateDto dto, string token, MemberDto member)
+        public async Task<HttpResponseDto?> UpdateShareAsync(ShareUpdateDto dto, string token, MemberDto member)
         {
             try
             {
-                var sql = "UPDATE share " +
-                "SET password = @Password, expire_time = @Expire, comment = @Comment, share_name = @ShareName " +
-                "WHERE member_id = @Id AND token = UUID_TO_BIN(@Token)";
                 var password = dto.Password;
                 if (password is not null)
                 {
                     password = PasswordEncrypt.EncryptPassword(password);
                 }
-                using var conn = _connService.Connection;
-                return await conn.ExecuteAsync(sql, new
-                {
-                    Password = password,
-                    Expire = dto.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
-                    Comment = dto.Comment,
-                    ShareName = dto.ShareName,
-                    Token = token,
-                    Id = member.Id,
-                }) != 0;
+                var res = await _shareRepository.TryUpdateShare(member.Id, token, dto, password);
+                return res ? null : new HttpResponseDto{HttpCode = 404, Message = "share not found"};
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to update share",
                 });
             }
 
         }
 
-        public async Task DeleteShareAsync(string target, MemberDto member)
+        public async Task<bool> CheckExistShareByTargetPath(string target, MemberDto member)
         {
             try
             {
-                var sql = "DELETE FROM share " +
-                    "WHERE member_id = @Id AND target = @Target";
-                using var conn = _connService.Connection;
-                await conn.ExecuteAsync(sql, new
-                {
-                    Target = target,
-                    Id = member.Id,
-                });
+                return (await _shareRepository.GetSharesByTargetFilePath(member.Id, target)).Any();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
+                    Message = "fail to check exist share by file path",
+                });
+            }
+        }
+
+        public async Task<(HttpResponseDto? err, List<ShareResponseDto> shares)> FindSharesInDirectory(MemberDto memberDto, string targetDir)
+        {
+            try
+            {
+                if (!Directory.Exists(Path.Combine(MemberDirectory(memberDto.Directory), targetDir)))
+                {
+                    return (new HttpResponseDto() { HttpCode = 404, Message = "Directory Not Found" }, new List<ShareResponseDto>());
+                }
+
+                var res = await _shareRepository.GetSharesInDirectory(memberDto.Id, targetDir);
+                return (null, res);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpResponseDto
+                {
+                    HttpCode = 500,
+                    Message = "fail to find share",
+                });
+            }
+        }
+
+        public async Task<HttpResponseDto?> DeleteShareAsync(string target, MemberDto member)
+        {
+            try
+            {
+                if (!(await _shareRepository.GetSharesByTargetFilePath(member.Id, target)).Any())
+                {
+                    return null;
+                }
+                var res = await _shareRepository.TryDeleteShare(member.Id, target);
+                return res ? null : new HttpResponseDto { HttpCode = 404, Message = "share not found" };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.StackTrace);
+                _logger.LogError(ex.Message);
+                throw new HttpErrorException(new HttpResponseDto
+                {
+                    HttpCode = 500,
                     Message = "fail to delete share",
                 });
             }
+        }
 
+        public async Task<HttpResponseDto?> DeleteSharesInDirectory(MemberDto memberDto, string targetDirectoryPath)
+        {
+            var targetDirPath = Path.Combine(MemberDirectory(memberDto.Directory), targetDirectoryPath);
+            var targetdir = new DirectoryInfo(targetDirPath);
+            if (!targetdir.Exists)
+            {
+                return new HttpResponseDto() { HttpCode = 404, Message = "Directory not found" };
+            }
+            var shares = await _shareRepository.GetSharesInDirectory(memberDto.Id, targetDirectoryPath);
+            if (shares.Count < 1)
+            {
+                return null;
+            }
+            var res = await _shareRepository.TryDeleteShareInDirectory(memberDto.Id, targetDirectoryPath, shares.Count);
+            return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "few shares not found"};
         }
 
         /// <summary>
@@ -338,21 +319,16 @@ namespace cloudsharpback.Services
         /// <param name="token"></param>
         /// <returns>404 : NotFound Share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpErrorDto? err, bool? result)> ValidatePassword(string password, string token)
+        public async Task<(HttpResponseDto? err, bool? result)> ValidatePassword(string password, string token)
         {
             try
             {
-                var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var hash = await conn.QueryFirstOrDefaultAsync<string>(sql, new
-                {
-                    Token = token,
-                });
+                var hash = await _shareRepository.GetPasswordHashByToken(token);
                 if (hash is null)
                 {
-                    var err = new HttpErrorDto()
+                    var err = new HttpResponseDto()
                     {
-                        ErrorCode = 404,
+                        HttpCode = 404,
                     };
                     return (err, null);
                 }
@@ -362,9 +338,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to Validate Password",
                 });
             }
@@ -374,21 +350,16 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
-                using var conn = _connService.Connection;
-                var hash = await conn.QueryFirstOrDefaultAsync<string>(sql, new
-                {
-                    Token = token,
-                });
+                var hash = await _shareRepository.GetPasswordHashByToken(token);
                 return hash is not null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to check Password",
                 });
             }

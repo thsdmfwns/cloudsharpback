@@ -1,12 +1,7 @@
-﻿using cloudsharpback.Attribute;
-using cloudsharpback.Controllers.Base;
+﻿using cloudsharpback.Controllers.Base;
 using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utills;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Mime;
 
 namespace cloudsharpback.Controllers
 {
@@ -14,127 +9,106 @@ namespace cloudsharpback.Controllers
     [ApiController]
     public class FileController : AuthControllerBase
     {
-        private readonly IFileService fileService;
-        private readonly IShareService shareService;
-        private readonly ITusService tusService;
+        private readonly IMemberFileService _memberFileService;
+        private readonly ITicketStore _ticketStore;
+        private readonly IShareService _shareService;
 
-        public FileController(IFileService fileService, IShareService shareService, ITusService tusService)
+        public FileController(IMemberFileService memberFileService, IShareService shareService, ITicketStore ticketStore)
         {
-            this.fileService = fileService;
-            this.shareService = shareService;
-            this.tusService = tusService;
+            this._memberFileService = memberFileService;
+            this._shareService = shareService;
+            _ticketStore = ticketStore;
         }
 
-        [HttpGet("files")]
-        public IActionResult GetFiles(string? path)
+        [HttpGet("ls")]
+        public IActionResult GetFileDtoList(string? path, bool? onlyDir)
         {
-            return Ok(fileService.GetFiles(Member!.Directory, path));
+            var err = _memberFileService.GetFiles(Member, path, out var files, onlyDir ?? false);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(files);
         }
 
         [ProducesResponseType(404)]
-        [HttpGet("file")]
-        public IActionResult GetFile(string path)
+        [HttpGet("get")]
+        public IActionResult GetFileDto(string path)
         {
-            if (!fileService.GetFile(Member!, path, out var fileDto))
-            {
-                return NotFound();
-            }
-
-            return Ok(fileDto);
+            var err = _memberFileService.GetFile(Member, path, out var fileDto);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
 
-        [HttpGet("dlToken")]
-        public IActionResult GetDownloadToken(string path)
+        [HttpGet("dlTicket")]
+        public IActionResult GetDownloadTicket(string path)
         {
-            var err = fileService.GetDownloadToken(Member!, path, out var token);
+            var err = _memberFileService.GetDownloadTicketValue(Member, path, out var ticketValue);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
-            return Ok(token.ToString());
+            var ticket = new Ticket(HttpContext, TicketType.Download, ticketValue);
+            _ticketStore.Add(ticket);
+            return Ok(ticket.Token.ToString());
         }
 
-        [HttpGet("viewToken")]
-        public IActionResult GetViewToken(string path)
+        [HttpGet("viTicket")]
+        public IActionResult GetViewTicket(string path)
         {
-            var err = fileService.GetViewToken(Member!, path, out var token);
+            var err = _memberFileService.GetDownloadTicketValue(Member, path, out var ticketValue, true);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
-            return Ok(token.ToString());
+            
+            var ticket = new Ticket(HttpContext, TicketType.ViewFile, ticketValue);
+            _ticketStore.Add(ticket);
+            return Ok(ticket.Token.ToString());
         }
 
-        [HttpGet("tusToken")]
-        public IActionResult GetTusToken()
+        [HttpPost("ulTicket")]
+        public IActionResult GetUploadToken(FileUploadRequestDto requestDto)
         {
-            var err = tusService.GetTusToken(Member!, out var token);
+            var err = _memberFileService.GetUploadTicketValue(Member, requestDto, out var ticketValue);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
-            return Ok(token.ToString());
+            var ticket = new Ticket(HttpContext, DateTime.Now.AddDays(3), TicketType.TusUpload, ticketValue);
+            _ticketStore.Add(ticket);
+            return Ok(ticket.Token.ToString());
         }
 
-        [AllowAnonymous]
-        [HttpGet("dl/{token}")]
-        public IActionResult DownLoad(string token)
+        [HttpPost("rm")]
+        public async Task<IActionResult> DeleteFile(string path)
         {
-            if (!Guid.TryParse(token, out var id))
+            HttpResponseDto? err;
+            if (await _shareService.CheckExistShareByTargetPath(path, Member))
             {
-                return StatusCode(400, "bad token");
-            };
-            var err = fileService.DownloadFile(id, out var fileStream);
-            if (err is not null || fileStream is null)
-            {
-                return StatusCode(err!.ErrorCode, err.Message);
+                err =await _shareService.DeleteShareAsync(path, Member);
+                if (err is not null)
+                {
+                    return StatusCode(err.HttpCode, err.Message);
+                }
             }
-            return new FileStreamResult(fileStream, MimeTypeUtil.GetMimeType(fileStream.Name) ?? "application/octet-stream")
-            {
-                FileDownloadName = Path.GetFileName(fileStream.Name),
-                EnableRangeProcessing = true
-            };
+            err = _memberFileService.DeleteFile(Member, path, out var fileDto);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
-
-        [AllowAnonymous]
-        [HttpGet("view/{token}")]
-        public IActionResult View(string token)
+        
+        [HttpPost("rmdir")]
+        public async Task<IActionResult> DeleteDirectory(string path)
         {
-            if (!Guid.TryParse(token, out var id))
+            var err =await _shareService.DeleteSharesInDirectory(Member, path);
+            if (err is not null)
             {
-                return StatusCode(403, "bad token");
-            };
-            var err = fileService.ViewFile(id, out var fileStream);
-            if (err is not null || fileStream is null)
-            {
-                return StatusCode(err!.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
-            return new FileStreamResult(fileStream, MimeTypeUtil.GetMimeType(fileStream.Name) ?? "application/octet-stream")
-            {
-                EnableRangeProcessing = true
-            };
+            err = _memberFileService.RemoveDirectory(Member, path, out var fileDto);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
+        
 
-        [HttpPost("delete")]
-        public async Task<IActionResult> Delete(string path)
+        [HttpPost("mkdir")]
+        public IActionResult MakeDirectory(string? rootDir, string dirName)
         {
-            if (!fileService.DeleteFile(Member!, path, out var fileDto))
-            {
-                return StatusCode(404);
-            }
-            await shareService.DeleteShareAsync(path, Member!);
-            return Ok(fileDto);
-        }
-
-        [HttpGet("view/zip")]
-        public IActionResult ViewZip(string target)
-        {
-            var err = fileService.ViewZip(Member!, target, out var entries);
-            if (err is not null || entries is null)
-            {
-                return StatusCode(err!.ErrorCode, err.Message);
-            }
-            return Ok(entries);
+            var err = _memberFileService.MakeDirectory(Member, rootDir, dirName, out var fileDtos);
+            return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDtos);
         }
     }
 }

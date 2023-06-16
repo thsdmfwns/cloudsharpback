@@ -1,10 +1,6 @@
-﻿using CliWrap;
-using cloudsharpback.Models;
+﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
-using Microsoft.AspNetCore.Mvc.Routing;
-using System.Diagnostics.Metrics;
-using System.IO;
 using Transmission.API.RPC;
 using Transmission.API.RPC.Entity;
 
@@ -12,36 +8,36 @@ namespace cloudsharpback.Services
 {
     public class TorrentDlService : ITorrentDlService
     {
-        private string DirectoryPath;
         private readonly ILogger _logger;
         private readonly IDBConnService _connService;
+        private readonly IPathStore _pathStore;
 
-        public TorrentDlService(IConfiguration configuration, ILogger<ITorrentDlService> logger, IDBConnService connService)
+        public TorrentDlService(IPathStore pathStore, ILogger<ITorrentDlService> logger, IDBConnService connService)
         {
-            DirectoryPath = configuration["File:DirectoryPath"];
+            _pathStore = pathStore;
             _logger = logger;
             _connService = connService;
         }
 
-        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
+        private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
         async Task<TorrentInfo?> FindTorrentByHash(string hash) 
             => (await client.TorrentGetAsync(TorrentFields.ALL_FIELDS)).Torrents.ToList().FirstOrDefault(x => x.HashString == hash);
         async Task<List<TorrentInfo>> FindTorrentByHash(List<string> fields, List<string> hashes)
             => (await client.TorrentGetAsync(fields.ToArray())).Torrents.ToList().Where(x => hashes.Contains(x.HashString)).ToList();
         private Client client => new Client("http://127.0.0.1:9091/transmission/rpc", "", login: "transmission", password: "transmission");
 
-        public async Task<(HttpErrorDto? err, string? torrentHash)> addTorrentAsync(MemberDto member, string torrentFilePath, string downloadPath)
+        public async Task<(HttpResponseDto? err, string? torrentHash)> addTorrentAsync(MemberDto member, string torrentFilePath, string downloadPath)
         {
             try
             {
-                var userDir = userPath(member.Directory);
+                var userDir = MemberDirectory(member.Directory);
                 var filepath = Path.Combine(userDir, torrentFilePath);
                 if (!File.Exists(filepath)
                     || Path.GetExtension(filepath) != ".torrent")
                 {
-                    var err = new HttpErrorDto()
+                    var err = new HttpResponseDto()
                     {
-                        ErrorCode = 404,
+                        HttpCode = 404,
                         Message = "torrent not found"
                     };
                     return (err, null);
@@ -68,24 +64,24 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to add Torrent",
                 });
             }
         }
 
-        public async Task<(HttpErrorDto? err, string? torrentHash)> addMagnetAsync(MemberDto member, string magnetUrl, string downloadPath)
+        public async Task<(HttpResponseDto? err, string? torrentHash)> addMagnetAsync(MemberDto member, string magnetUrl, string downloadPath)
         {
             try
             {
-                var userDir = userPath(member.Directory);
+                var userDir = MemberDirectory(member.Directory);
                 if (!magnetUrl.StartsWith("magnet:"))
                 {
-                    var err = new HttpErrorDto()
+                    var err = new HttpResponseDto()
                     {
-                        ErrorCode = 400,
+                        HttpCode = 400,
                         Message = "bad magnet"
                     };
                     return (err, null);
@@ -112,9 +108,9 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to add Torrent",
                 });
             }
@@ -156,15 +152,15 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to get Torrent",
                 });
             }
         }
 
-        public async ValueTask<HttpErrorDto?> removeTorrent(MemberDto member, string hash)
+        public async ValueTask<HttpResponseDto?> removeTorrent(MemberDto member, string hash)
         {
             try
             {
@@ -177,9 +173,9 @@ namespace cloudsharpback.Services
                 if (!(await conn.QueryAsync<long>(sql, new { memberId = member.Id, torrentHash = hash})).Any()
                     || info is null)
                 {
-                    return new HttpErrorDto
+                    return new HttpResponseDto
                     {
-                        ErrorCode = 404,
+                        HttpCode = 404,
                         Message = $"torrent:{hash} is not found",
                     };
                 }
@@ -192,15 +188,15 @@ namespace cloudsharpback.Services
             {
                 _logger.LogError(ex.StackTrace);
                 _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpErrorDto
+                throw new HttpErrorException(new HttpResponseDto
                 {
-                    ErrorCode = 500,
+                    HttpCode = 500,
                     Message = "fail to remove Torrent",
                 });
             }
         }
 
-        public async Task<HttpErrorDto?> StartTorrent(MemberDto member, string hash)
+        public async Task<HttpResponseDto?> StartTorrent(MemberDto member, string hash)
         {
             var sql = "SELECT torrent_id " +
             "FROM torrent " +
@@ -210,9 +206,9 @@ namespace cloudsharpback.Services
             if (!(await conn.QueryAsync<long>(sql, new { memberId = member.Id, torrentHash = hash })).Any()
                 || info is null)
             {
-                return new HttpErrorDto
+                return new HttpResponseDto
                 {
-                    ErrorCode = 404,
+                    HttpCode = 404,
                     Message = $"torrent:{hash} is not found",
                 };
             }

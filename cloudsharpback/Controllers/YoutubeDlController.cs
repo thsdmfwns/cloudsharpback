@@ -1,7 +1,5 @@
-﻿using CliWrap;
-using cloudsharpback.Controllers.Base;
+﻿using cloudsharpback.Controllers.Base;
 using cloudsharpback.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers
@@ -10,26 +8,26 @@ namespace cloudsharpback.Controllers
     [ApiController]
     public class YoutubeDlController : AuthControllerBase
     {
-        private readonly IYoutubeDlService dlService;
+        private readonly IYoutubeDlService _dlService;
 
         public YoutubeDlController(IYoutubeDlService dlService)
         {
-            this.dlService = dlService;
+            this._dlService = dlService;
         }
 
         [HttpPost("dl")]
-        public IActionResult DownloadYoutube([FromHeader] string req_token, string youtubeUrl, string? path)
+        public IActionResult DownloadYoutube([FromHeader] string reqToken, string youtubeUrl, string? path)
         {
-            if (!Guid.TryParse(req_token, out var requsetToken))
+            if (!Guid.TryParse(reqToken, out var requestToken))
             {
                 return StatusCode(400, "bad request token");
             }
-            var err = dlService.Download(Member, youtubeUrl, path ?? string.Empty, requsetToken);
+            var err = _dlService.Download(Member, youtubeUrl, path ?? string.Empty, requestToken);
             if (err is not null)
             {
-                return StatusCode(err.ErrorCode, err.Message);
+                return StatusCode(err.HttpCode, err.Message);
             }
-            return Ok(requsetToken.ToString());
+            return Ok(requestToken.ToString());
         }
     }
 }

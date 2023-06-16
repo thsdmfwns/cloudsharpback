@@ -2,9 +2,9 @@
 
 namespace cloudsharpback.Models
 {
-    public class HttpErrorDto
+    public class HttpResponseDto
     {
-        public int ErrorCode { get; set; }
+        public int HttpCode { get; set; }
         public string? Message { get; set; }
         public override string ToString()
         {

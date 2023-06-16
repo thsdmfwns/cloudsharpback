@@ -13,10 +13,10 @@ namespace cloudsharpback.Controllers.Base
                 var member = HttpContext.Items["member"] as MemberDto;
                 if (member is null)
                 {
-                    throw new HttpErrorException(new HttpErrorDto
+                    throw new HttpErrorException(new HttpResponseDto
                     {
-                        ErrorCode = 500,
-                        Message = "Can not found memberDto in Controller"
+                        HttpCode = 500,
+                        Message = "Can not found memberDto in HttpContext"
                     });
                 }
                 return member;

@@ -1,4 +1,5 @@
-﻿using CliWrap;
+﻿using System.Text.Json.Serialization;
+using CliWrap;
 using cloudsharpback.Hubs;
 using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
@@ -10,67 +11,100 @@ namespace cloudsharpback.Services
     public class YoutubeDlService : IYoutubeDlService
     {
         private readonly IHubContext<YoutubeDlHub> _hubContext;
-        private string DirectoryPath;
+        private readonly IPathStore _pathStore;
         private readonly ILogger _logger;
-        private readonly IJWTService jwtService;
-        public YoutubeDlService(IHubContext<YoutubeDlHub> hubContext, IConfiguration configuration, ILogger<IYoutubeDlService> logger, IJWTService jwtService)
+        private readonly ITicketStore _ticketStore;
+        public YoutubeDlService(IHubContext<YoutubeDlHub> hubContext, IPathStore pathStore, ILogger<IYoutubeDlService> logger, ITicketStore ticketStore)
         {
             _hubContext = hubContext;
-            DirectoryPath = configuration["File:DirectoryPath"];
+            _pathStore = pathStore;
             _logger = logger;
-            this.jwtService = jwtService;
+            _ticketStore = ticketStore;
         }
-        private readonly Dictionary<ulong, (string id, MemberDto member)> SignalrUsers = new();
+        private readonly Dictionary<ulong, (string signalrUserId, MemberDto member)> _signalrUsers = new();
 
-        string userPath(string directoryId) => Path.Combine(DirectoryPath, directoryId);
+        private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
 
-        private async Task SendHubAuthError(string id, string detail)
-            => await _hubContext.Clients.Client(id).SendAsync("AuthError", detail);
+        private async Task SendHubConnectionResult(string id, string detail)
+            => await _hubContext.Clients.Client(id).SendAsync("ConnectionResult", detail);
 
-        private async Task SendHubConnected(string id, string detail)
-            => await _hubContext.Clients.Client(id).SendAsync("Connected", detail);
+        private async Task SendHubProgress(string id, Guid requestToken, string progress)
+            => await _hubContext.Clients.Client(id).SendAsync("DlProgress", requestToken.ToString(), progress);
 
-        private async Task SendHubProgress(string id, Guid requsestToken, string progress)
-            => await _hubContext.Clients.Client(id).SendAsync("DlProgress", requsestToken.ToString(), progress);
+        private async Task SendHubDone(string id, Guid requestToken)
+            => await _hubContext.Clients.Client(id).SendAsync("DlDone", requestToken.ToString());
 
-        private async Task SendHubDone(string id, Guid requsestToken)
-            => await _hubContext.Clients.Client(id).SendAsync("DlDone", requsestToken.ToString());
+        private async Task SendHubError(string id, Guid requestToken, string detail)
+            => await _hubContext.Clients.Client(id).SendAsync("DlError", requestToken.ToString(), detail);
 
-        private async Task SendHubError(string id, Guid requsestToken, string detail)
-            => await _hubContext.Clients.Client(id).SendAsync("DlError", requsestToken.ToString(), detail);
-
-        private async Task DLYoutube(string youtubeUrl, string directory, string userid, Guid requsestToken)
+        private async Task DlYoutube(string youtubeUrl, string directory, string userid, Guid requestToken)
         {
             await Cli.Wrap("yt-dlp")
             .WithArguments(youtubeUrl)
-            .WithStandardOutputPipe(PipeTarget.ToDelegate((text) => SendHubProgress(userid, requsestToken, text)))
-            .WithStandardErrorPipe(PipeTarget.ToDelegate((text) => SendHubError(userid, requsestToken, text)))
+            .WithStandardOutputPipe(PipeTarget.ToDelegate((text) => SendHubProgress(userid, requestToken, text)))
+            .WithStandardErrorPipe(PipeTarget.ToDelegate((text) => SendHubError(userid, requestToken, text)))
             .WithWorkingDirectory(directory)
             .ExecuteAsync();
-            await SendHubDone(userid, requsestToken);
+            await SendHubDone(userid, requestToken);
         }
 
-        public async Task OnSignalrConnected(string connId, string auth)
+        public async Task<bool> ValidateConnectionToken(string connId, string tokenString)
         {
-            if (!jwtService.TryValidateAcessToken(auth, out var memberDto)
-                || memberDto is null)
+            if (!Guid.TryParse(tokenString, out var token) 
+                || !_ticketStore.TryGet(token, out var ticket))
             {
-                await SendHubAuthError(connId, "bad auth");
-                return;
+                var err = new HttpResponseDto()
+                {
+                    HttpCode = 404,
+                    Message = "Token Not Found"
+                };
+                await SendHubConnectionResult(connId, JsonConvert.SerializeObject(err));
+                return false;   
             }
-            SignalrUsers.Add(memberDto.Id, (connId, memberDto));
-            await SendHubConnected(connId, "connected");
+            if (ticket?.Owner is null 
+                || ticket.TicketType != TicketType.SignalrConnect)
+            {
+                var err = new HttpResponseDto()
+                {
+                    HttpCode = 400,
+                    Message = "Bad token"
+                };
+                await SendHubConnectionResult(connId, JsonConvert.SerializeObject(err));
+                return false;
+            }
+            _signalrUsers.Add(ticket.Owner.Id, (connId, ticket.Owner));
+            _ticketStore.Remove(token);
+            var res = new HttpResponseDto()
+            {
+                HttpCode = 200,
+                Message = "Connected"
+            };
+            await SendHubConnectionResult(connId, JsonConvert.SerializeObject(res));
+            return true;
         }
 
-        public HttpErrorDto? Download(MemberDto member, string youtubeUrl, string path, Guid requsestToken)
+        public HttpResponseDto? Download(MemberDto member, string youtubeUrl, string? path, Guid requestToken)
         {
-            if (!SignalrUsers.TryGetValue(member.Id, out var conn))
+            try
             {
-                return new HttpErrorDto() { ErrorCode = 404, Message = "connection not found" };
+                if (!_signalrUsers.TryGetValue(member.Id, out var conn))
+                {
+                    return new HttpResponseDto() { HttpCode = 404, Message = "connection not found" };
+                }
+                var dir = Path.Combine(MemberDirectory(conn.member.Directory), path ?? string.Empty);
+                Task.Run(() => DlYoutube(youtubeUrl, dir, conn.signalrUserId, requestToken));
+                return null;
             }
-            var dir = Path.Combine(userPath(conn.member.Directory), path ?? string.Empty);
-            Task.Run(() => DLYoutube(youtubeUrl, dir, conn.id, requsestToken));
-            return null;
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.StackTrace);
+                _logger.LogError(exception.Message);
+                throw new HttpErrorException(new HttpResponseDto
+                {
+                    HttpCode = 500,
+                    Message = "fail to Download Youtube",
+                });
+            }
         }
     }
 }
