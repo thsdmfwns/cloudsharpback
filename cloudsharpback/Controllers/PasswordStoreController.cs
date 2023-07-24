@@ -1,4 +1,6 @@
 using cloudsharpback.Controllers.Base;
+using cloudsharpback.Services;
+using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers;
@@ -7,11 +9,17 @@ namespace cloudsharpback.Controllers;
 [ApiController]
 public class PasswordStoreController : AuthControllerBase
 {
-    [HttpGet("dir/ls")]
-    public IActionResult GetDirList()
+    private IPasswordStoreService _passwordStoreService;
+
+    public PasswordStoreController(IPasswordStoreService passwordStoreService)
     {
-        //todo 디렉토리 조회
-        return Ok();
+        _passwordStoreService = passwordStoreService;
+    }
+
+    [HttpGet("dir/ls")]
+    public async Task<IActionResult> GetDirList()
+    {
+        return Ok(await _passwordStoreService.GetDirList(Member));
     }
 
     [HttpPost("dir/new")]

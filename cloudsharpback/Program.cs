@@ -26,6 +26,8 @@ builder.Services.AddScoped<IYoutubeDlService, YoutubeDlService>();
 builder.Services.AddScoped<IFileStreamService, FileStreamService>();
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<IShareRepository, ShareRepository>();
+builder.Services.AddScoped<IPasswordStoreService, PasswordStoreService>();
+builder.Services.AddScoped<IPasswordStoreDirectoryRepository, PasswordStoreDirectoryRepository>();
 //singleton
 builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
