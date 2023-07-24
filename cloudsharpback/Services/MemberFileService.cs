@@ -85,14 +85,15 @@ namespace cloudsharpback.Services
         private List<FileInfoDto> GetFileDtos(MemberDto memberDto, DirectoryInfo targetDirectoryInfo, bool onlyDir = false)
         {
             List<FileInfoDto> fileDtos = new();
+            var memberDir = MemberDirectory(memberDto.Directory);
             targetDirectoryInfo.GetDirectories().ToList()
-                .ForEach(x => fileDtos.Add(FileInfoDto.FromDirectoryInfo(x, MemberDirectory(memberDto.Directory))));
+                .ForEach(x => fileDtos.Add(FileInfoDto.FromDirectoryInfo(x, memberDir)));
             if (onlyDir)
             {
                 return fileDtos;
             }
             targetDirectoryInfo.GetFiles().ToList()
-                .ForEach(x => fileDtos.Add(FileInfoDto.FromFileInfo(x, MemberDirectory(memberDto.Directory))));
+                .ForEach(x => fileDtos.Add(FileInfoDto.FromFileInfo(x, memberDir)));
             return fileDtos;
         }
         
@@ -165,7 +166,6 @@ namespace cloudsharpback.Services
                     Message = "fail to delete file",
                 });
             }
-
         }
         
         public HttpResponseDto? GetDownloadTicketValue(MemberDto member, string targetPath, out FileDownloadTicketValue? ticketValue, bool isView = false)

@@ -33,6 +33,10 @@
     <Folder Include="SQL" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Models\RoleDto.cs" />
+  </ItemGroup>
+
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 
 </Project>
