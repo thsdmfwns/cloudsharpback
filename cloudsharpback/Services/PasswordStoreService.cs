@@ -7,12 +7,14 @@ namespace cloudsharpback.Services;
 public class PasswordStoreService : IPasswordStoreService
 {
     private readonly IPasswordStoreDirectoryRepository _directoryRepository;
+    private readonly IPasswordStoreValueRepository _valueRepository;
     private readonly ILogger _logger;
 
-    public PasswordStoreService(IPasswordStoreDirectoryRepository directoryRepository, ILogger<IPasswordStoreService> logger)
+    public PasswordStoreService(IPasswordStoreDirectoryRepository directoryRepository, ILogger<IPasswordStoreService> logger, IPasswordStoreValueRepository valueRepository)
     {
         _directoryRepository = directoryRepository;
         _logger = logger;
+        _valueRepository = valueRepository;
     }
 
 
@@ -65,7 +67,6 @@ public class PasswordStoreService : IPasswordStoreService
             {
                 return new HttpResponseDto() { HttpCode = 404 };
             }
-
             return null;
         }
         catch (Exception exception)
@@ -101,5 +102,34 @@ public class PasswordStoreService : IPasswordStoreService
                 Message = "fail to UpdateDir",
             });
         }
+    }
+
+    public async Task<(List<PasswordStoreValueDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto, ulong? keyId, ulong? dirId)
+    {
+        var empty = new List<PasswordStoreValueDto>();
+        if (!keyId.HasValue && dirId.HasValue)
+        {
+            var id = dirId.Value;
+            if (!await CheckDirIsMine(memberDto, id))
+            {
+                return (empty, new HttpResponseDto() { HttpCode = 403 });
+            }
+            return (await _valueRepository.GetPasswordStoreValuesByDirectoryId(id), null);
+        }
+
+        if (keyId.HasValue && !dirId.HasValue)
+        {
+            //todo 키값 리턴
+            return (empty, null);
+        }
+        
+        //todo 키값 + 디렉토리 리턴
+        return (empty, null);
+    }
+
+    private async Task<bool> CheckDirIsMine(MemberDto memberDto, ulong dirId)
+    {
+        var dir = await _directoryRepository.GetDirById(dirId);
+        return dir is not null && dir.OwnerId == memberDto.Id;
     }
 }

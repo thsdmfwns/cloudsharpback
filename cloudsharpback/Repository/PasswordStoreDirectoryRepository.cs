@@ -31,6 +31,23 @@ WHERE member_id = @memberId ;
         return (await conn.QueryAsync<PasswordStoreDirDto>(sql, new { memberId })).ToList();
     }
 
+    public async Task<PasswordStoreDirDto?> GetDirById(ulong dirId)
+    {
+        const string sql = @"
+SELECT password_directory_id Id, 
+       name as Name, 
+       comment as Comment, 
+       icon as Icon, 
+       last_edited_time LastEditTIme, 
+       created_time CreatedTIme, 
+       member_id OwnerId
+FROM password_store_directory 
+WHERE password_directory_id = @dirId ;
+";
+        using var conn = _connService.Connection;
+        return await conn.QueryFirstOrDefaultAsync<PasswordStoreDirDto?>(sql, new { dirId });
+    }
+
     public async Task<bool> InstertDir(ulong memberId, string name, string? comment, string? icon)
     {
         const string sql = @"
