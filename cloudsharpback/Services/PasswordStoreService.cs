@@ -8,13 +8,15 @@ public class PasswordStoreService : IPasswordStoreService
 {
     private readonly IPasswordStoreDirectoryRepository _directoryRepository;
     private readonly IPasswordStoreValueRepository _valueRepository;
+    private readonly IPasswordStoreKeyRepository _keyRepository;
     private readonly ILogger _logger;
 
-    public PasswordStoreService(IPasswordStoreDirectoryRepository directoryRepository, ILogger<IPasswordStoreService> logger, IPasswordStoreValueRepository valueRepository)
+    public PasswordStoreService(IPasswordStoreDirectoryRepository directoryRepository, ILogger<IPasswordStoreService> logger, IPasswordStoreValueRepository valueRepository, IPasswordStoreKeyRepository keyRepository)
     {
         _directoryRepository = directoryRepository;
         _logger = logger;
         _valueRepository = valueRepository;
+        _keyRepository = keyRepository;
     }
 
 
@@ -119,17 +121,31 @@ public class PasswordStoreService : IPasswordStoreService
 
         if (keyId.HasValue && !dirId.HasValue)
         {
-            //todo 키값 리턴
-            return (empty, null);
+            var id = keyId.Value;
+            if (!await CheckKeyIsMine(memberDto, id))
+            {
+                return (empty, new HttpResponseDto() { HttpCode = 403 });
+            }
+            return (await _valueRepository.GetPasswordStoreValuesByKeyId(id), null);
         }
         
-        //todo 키값 + 디렉토리 리턴
-        return (empty, null);
+        if (! await CheckDirIsMine(memberDto, dirId!.Value)
+            || ! await CheckKeyIsMine(memberDto, keyId!.Value))
+        {
+            return (empty, new HttpResponseDto() { HttpCode = 403 });
+        }
+        return (await _valueRepository.GetPasswordStoreValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
     }
 
     private async Task<bool> CheckDirIsMine(MemberDto memberDto, ulong dirId)
     {
         var dir = await _directoryRepository.GetDirById(dirId);
+        return dir is not null && dir.OwnerId == memberDto.Id;
+    }
+    
+    private async Task<bool> CheckKeyIsMine(MemberDto memberDto, ulong keyId)
+    {
+        var dir = await _keyRepository.GetKeyById(keyId);
         return dir is not null && dir.OwnerId == memberDto.Id;
     }
 }

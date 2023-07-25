@@ -58,11 +58,17 @@ public class PasswordStoreController : AuthControllerBase
     
     
     [HttpGet("val/ls")]
-    public IActionResult GetValues(ulong? directoryId, ulong? keyId)
+    public async Task<IActionResult> GetValues(ulong? directoryId, ulong? keyId)
     {
+        if (!directoryId.HasValue && !keyId.HasValue)
+        {
+            return BadRequest();
+        }
         //todo 비밀번호 조회 
-        return Ok(directoryId + keyId);
+        var result = await _passwordStoreService.GetValuesList(Member, keyId, directoryId);
+        return result.err is not null ? StatusCode(result.err.HttpCode, result.err.Message) : Ok(result.value);
     }
+    
 
     [HttpPost("val/new")]
     public IActionResult MakeNewValues()
@@ -97,7 +103,7 @@ public class PasswordStoreController : AuthControllerBase
     [HttpPost("key/new")]
     public IActionResult MakeNewKey()
     {
-        //todo val 생성
+        //todo key 생성
 
         return Ok();
     }
@@ -105,7 +111,7 @@ public class PasswordStoreController : AuthControllerBase
     [HttpPost("key/rm")]
     public IActionResult RemoveKey()
     {
-        //todo val 삭제
+        //todo key 삭제
 
         return Ok();
     }
@@ -113,7 +119,7 @@ public class PasswordStoreController : AuthControllerBase
     [HttpPost("key/re")]
     public IActionResult UpdateKey()
     {
-        //todo val 업데이트
+        //todo key 업데이트
         return Ok();
     }
 }
