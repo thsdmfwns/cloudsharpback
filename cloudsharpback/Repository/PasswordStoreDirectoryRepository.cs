@@ -16,7 +16,7 @@ public class PasswordStoreDirectoryRepository : IPasswordStoreDirectoryRepositor
 
     public async Task<List<PasswordStoreDirDto>> GetDirListByMemberId(ulong memberId)
     {
-        const string SQL = @"
+        const string sql = @"
 SELECT password_directory_id Id, 
        name as Name, 
        comment as Comment, 
@@ -28,17 +28,17 @@ FROM password_store_directory
 WHERE member_id = @memberId ;
 ";
         using var conn = _connService.Connection;
-        return (await conn.QueryAsync<PasswordStoreDirDto>(SQL, new { memberId })).ToList();
+        return (await conn.QueryAsync<PasswordStoreDirDto>(sql, new { memberId })).ToList();
     }
 
     public async Task<bool> InstertDir(ulong memberId, string name, string? comment, string? icon)
     {
-        const string SQL = @"
+        const string sql = @"
 INSERT INTO password_store_directory(name, comment, icon, last_edited_time, created_time, member_id)
 VALUES (@name, @comment, @icon, @lastEdit, @created, @memberId);
 ";
         using var conn = _connService.Connection;
-        var res = await conn.ExecuteAsync(SQL, new
+        var res = await conn.ExecuteAsync(sql, new
         {
             name,
             comment,
@@ -47,6 +47,17 @@ VALUES (@name, @comment, @icon, @lastEdit, @created, @memberId);
             created = DateTime.UtcNow.Ticks,
             memberId
         });
+        return res > 0;
+    }
+
+    public async Task<bool> DeleteDir(ulong memberId, ulong id)
+    {
+        const string sql = @"
+DELETE FROM password_store_directory
+WHERE password_directory_id = @id AND member_id = @memberId ;
+";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(sql, new { id, memberId });
         return res > 0;
     }
 }

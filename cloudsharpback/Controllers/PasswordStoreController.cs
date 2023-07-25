@@ -35,9 +35,13 @@ public class PasswordStoreController : AuthControllerBase
     }
     
     [HttpPost("dir/rm")]
-    public IActionResult MakeNewDIr(ulong id)
+    public async Task<IActionResult> RemoveDir(ulong id)
     {
-        //todo dir 삭제
+        var err = await _passwordStoreService.RemoveDir(Member, id);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
 
