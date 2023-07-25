@@ -60,4 +60,18 @@ WHERE password_directory_id = @id AND member_id = @memberId ;
         var res = await conn.ExecuteAsync(sql, new { id, memberId });
         return res > 0;
     }
+
+    public async Task<bool> UpdateDir(ulong memberId, ulong itemId, string name, string? comment, string? icon)
+    {
+        const string sql = @"
+UPDATE password_store_directory 
+SET name = @name, comment = @comment, icon = @icon, last_edited_time = @last
+WHERE password_directory_id = @itemId AND member_id = @memberId ;
+";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(sql,
+            new { name, comment, icon, itemId, memberId, last = DateTime.UtcNow.Ticks });
+        
+        return res > 0;
+    }
 }

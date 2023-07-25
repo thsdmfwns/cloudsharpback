@@ -79,4 +79,27 @@ public class PasswordStoreService : IPasswordStoreService
             });
         }
     }
+
+    public async Task<HttpResponseDto?> UpdateDir(MemberDto memberDto, PasswordStoreDirInsertDto dto, ulong itemId)
+    {
+        try
+        {
+            if (!await  _directoryRepository.UpdateDir(memberDto.Id, itemId, dto.Name, dto.Comment, dto.Icon))
+            {
+                return new HttpResponseDto() { HttpCode = 404 };
+            }
+
+            return null;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto
+            {
+                HttpCode = 500,
+                Message = "fail to UpdateDir",
+            });
+        }
+    }
 }

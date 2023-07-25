@@ -46,9 +46,13 @@ public class PasswordStoreController : AuthControllerBase
     }
 
     [HttpPost("dir/re")]
-    public IActionResult UpdateDir()
+    public async Task<IActionResult> UpdateDir([FromBody]PasswordStoreDirInsertDto dto, [FromQuery]ulong id)
     {
-        //todo dir 업데이트
+        var err = await _passwordStoreService.UpdateDir(Member, dto, id);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
     
