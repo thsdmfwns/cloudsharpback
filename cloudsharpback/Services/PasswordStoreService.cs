@@ -18,4 +18,13 @@ public class PasswordStoreService : IPasswordStoreService
     {
         return await _directoryRepository.GetDirListByMemberId(memberDto.Id);
     }
+
+    public async Task<HttpResponseDto?> MakeNewDir(MemberDto memberDto, PasswordStoreDirInsertDto dto)
+    {
+        if (!(await _directoryRepository.InstertDir(memberDto.Id, dto.Name, dto.Comment, dto.Icon)))
+        {
+            return new HttpResponseDto() { HttpCode = 400 };
+        }
+        return null;
+    }
 }

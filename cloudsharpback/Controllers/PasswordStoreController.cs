@@ -1,4 +1,5 @@
 using cloudsharpback.Controllers.Base;
+using cloudsharpback.Models;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -23,9 +24,13 @@ public class PasswordStoreController : AuthControllerBase
     }
 
     [HttpPost("dir/new")]
-    public IActionResult MakeNewDIr()
+    public async Task<IActionResult> MakeNewDIr(PasswordStoreDirInsertDto dto)
     {
-        //todo dir 생성
+        var err = await _passwordStoreService.MakeNewDir(Member, dto);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
     

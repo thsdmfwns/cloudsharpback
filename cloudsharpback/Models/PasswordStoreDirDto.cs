@@ -2,11 +2,11 @@ namespace cloudsharpback.Models;
 
 public record PasswordStoreDirDto
 {
-    public required ulong Id;
-    public required string Name;
-    public string? Comment;
-    public string? Icon;
-    public required ulong LastEditTime;
-    public required ulong CreatedTime;
-    public required ulong OwnerId;
+    public required ulong Id { get; set; }
+    public required string Name { get; set; }
+    public string? Comment { get; set; }
+    public string? Icon { get; set; }
+    public required ulong LastEditTime { get; set; }
+    public required ulong CreatedTime { get; set; }
+    public required ulong OwnerId { get; set; }
 }

@@ -2,7 +2,7 @@ namespace cloudsharpback.Models;
 
 public record PasswordStoreDirInsertDto
 {
-    public required string Name;
-    public required string Icon;
-    public required string Comment;
+    public required string Name { get; set; }
+    public string? Icon { get; set; }
+    public string? Comment { get; set; }
 }

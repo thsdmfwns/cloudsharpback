@@ -28,6 +28,25 @@ FROM password_store_directory
 WHERE member_id = @memberId ;
 ";
         using var conn = _connService.Connection;
-        return (await conn.QueryAsync<PasswordStoreDirDto>(sql, new { memberId })).ToList();
+        return (await conn.QueryAsync<PasswordStoreDirDto>(SQL, new { memberId })).ToList();
+    }
+
+    public async Task<bool> InstertDir(ulong memberId, string name, string? comment, string? icon)
+    {
+        const string SQL = @"
+INSERT INTO password_store_directory(name, comment, icon, last_edited_time, created_time, member_id)
+VALUES (@name, @comment, @icon, @lastEdit, @created, @memberId);
+";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(SQL, new
+        {
+            name,
+            comment,
+            icon,
+            lastEdit = DateTime.UtcNow.Ticks,
+            created = DateTime.UtcNow.Ticks,
+            memberId
+        });
+        return res > 0;
     }
 }
