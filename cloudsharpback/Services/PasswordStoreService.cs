@@ -137,6 +137,16 @@ public class PasswordStoreService : IPasswordStoreService
         return (await _valueRepository.GetPasswordStoreValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
     }
 
+    public async Task<HttpResponseDto?> MakeNewKey(MemberDto memberDto, PasswordStoreKeyInsertDto dto)
+    {
+        if (!await _keyRepository.InsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey))
+        {
+            return new HttpResponseDto() { HttpCode = 400 };
+        }
+
+        return null;
+    }
+
     private async Task<bool> CheckDirIsMine(MemberDto memberDto, ulong dirId)
     {
         var dir = await _directoryRepository.GetDirById(dirId);

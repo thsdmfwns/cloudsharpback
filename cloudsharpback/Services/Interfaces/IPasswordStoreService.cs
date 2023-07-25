@@ -11,4 +11,5 @@ public interface IPasswordStoreService
     public Task<(List<PasswordStoreValueDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto,
         ulong? keyId,
         ulong? dirId);
+    public Task<HttpResponseDto?> MakeNewKey(MemberDto memberDto, PasswordStoreKeyInsertDto dto);
 }
