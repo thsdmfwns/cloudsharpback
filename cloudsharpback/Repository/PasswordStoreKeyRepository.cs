@@ -28,4 +28,21 @@ WHERE password_store_key_id = @keyId;
         using var conn = _connService.Connection;
         return await conn.QueryFirstOrDefaultAsync(sql, new { keyId });
     }
+
+    public async Task<bool> InsertKey(ulong memberId, ulong encryptAlgorithm, string publicKey, string privateKey)
+    {
+        const string sql = @"
+Insert Into password_store_keys(owner_id, encrypt_algorithm, public_key, private_key)
+VALUES (@memberId, @encryptAlgorithm, @publicKey, @privateKey);
+";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(sql, new
+        {
+            memberId,
+            encryptAlgorithm,
+            privateKey,
+            publicKey
+        });
+        return res > 0;
+    }
 }
