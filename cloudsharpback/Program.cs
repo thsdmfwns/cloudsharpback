@@ -1,6 +1,7 @@
 using cloudsharpback.Filter;
 using cloudsharpback.Hubs;
 using cloudsharpback.Middleware;
+using cloudsharpback.Models;
 using cloudsharpback.Repository;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services;
@@ -28,6 +29,8 @@ builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<IShareRepository, ShareRepository>();
 builder.Services.AddScoped<IPasswordStoreService, PasswordStoreService>();
 builder.Services.AddScoped<IPasswordStoreDirectoryRepository, PasswordStoreDirectoryRepository>();
+builder.Services.AddScoped<IPasswordStoreValueRepository, PasswordStoreValueRepository>();
+builder.Services.AddScoped<IPasswordStoreKeyRepository, PasswordStoreKeyRepository>();
 //singleton
 builder.Services.AddSingleton<IDBConnService, DBConnService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
