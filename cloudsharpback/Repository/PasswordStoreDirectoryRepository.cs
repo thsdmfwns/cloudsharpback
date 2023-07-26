@@ -48,7 +48,7 @@ WHERE password_directory_id = @dirId ;
         return await conn.QueryFirstOrDefaultAsync<PasswordStoreDirDto?>(sql, new { dirId });
     }
 
-    public async Task<bool> InstertDir(ulong memberId, string name, string? comment, string? icon)
+    public async Task<bool> InsertDir(ulong memberId, string name, string? comment, string? icon)
     {
         const string sql = @"
 INSERT INTO password_store_directory(name, comment, icon, last_edited_time, created_time, member_id)
@@ -66,6 +66,9 @@ VALUES (@name, @comment, @icon, @lastEdit, @created, @memberId);
         });
         return res > 0;
     }
+
+    public async Task<bool> InsertDir(ulong memberId, PasswordStoreDirInsertDto dto)
+        => await InsertDir(memberId, dto.Name, dto.Comment, dto.Icon);
 
     public async Task<bool> DeleteDir(ulong memberId, ulong id)
     {

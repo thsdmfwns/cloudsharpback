@@ -42,7 +42,7 @@ public class PasswordStoreService : IPasswordStoreService
     {
         try
         {
-            if (!await _directoryRepository.InstertDir(memberDto.Id, dto.Name, dto.Comment, dto.Icon))
+            if (!await _directoryRepository.InsertDir(memberDto.Id, dto))
             {
                 return new HttpResponseDto() { HttpCode = 400 };
             }
