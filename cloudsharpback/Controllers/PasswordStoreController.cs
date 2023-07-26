@@ -81,10 +81,13 @@ public class PasswordStoreController : AuthControllerBase
     }
     
     [HttpPost("val/rm")]
-    public IActionResult RemoveValues()
+    public async Task<IActionResult> RemoveValue(ulong itemId)
     {
-        //todo val 삭제
-
+        var err = await _passwordStoreService.RemoveValue(Member, itemId);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
     

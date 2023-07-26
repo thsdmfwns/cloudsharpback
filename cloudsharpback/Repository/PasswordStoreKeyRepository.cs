@@ -26,7 +26,7 @@ FROM password_store_keys
 WHERE password_store_key_id = @keyId;
 ";
         using var conn = _connService.Connection;
-        return await conn.QueryFirstOrDefaultAsync(sql, new { keyId });
+        return await conn.QueryFirstOrDefaultAsync<PasswordStoreKeyDto?>(sql, new { keyId });
     }
 
     public async Task<List<PasswordStoreKeyDto>> GetKeyListByMemberId(ulong memberId)

@@ -116,7 +116,7 @@ public class PasswordStoreService : IPasswordStoreService
             {
                 return (empty, new HttpResponseDto() { HttpCode = 403 });
             }
-            return (await _valueRepository.GetPasswordStoreValuesByDirectoryId(id), null);
+            return (await _valueRepository.GetValuesByDirectoryId(id), null);
         }
 
         if (keyId.HasValue && !dirId.HasValue)
@@ -126,7 +126,7 @@ public class PasswordStoreService : IPasswordStoreService
             {
                 return (empty, new HttpResponseDto() { HttpCode = 403 });
             }
-            return (await _valueRepository.GetPasswordStoreValuesByKeyId(id), null);
+            return (await _valueRepository.GetValuesByKeyId(id), null);
         }
         
         if (! await CheckDirIsMine(memberDto, dirId!.Value)
@@ -134,7 +134,7 @@ public class PasswordStoreService : IPasswordStoreService
         {
             return (empty, new HttpResponseDto() { HttpCode = 403 });
         }
-        return (await _valueRepository.GetPasswordStoreValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
+        return (await _valueRepository.GetValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
     }
 
     public async Task<HttpResponseDto?> MakeNewValue(MemberDto memberDto, PasswordStoreValueInsertDto dto)
@@ -149,6 +149,21 @@ public class PasswordStoreService : IPasswordStoreService
         {
             return new HttpResponseDto() { HttpCode = 400 };
         }
+        return null;
+    }
+
+    public async Task<HttpResponseDto?> RemoveValue(MemberDto memberDto, ulong itemId)
+    {
+        if (! await CheckValueIsMine(memberDto, itemId))
+        {
+            return new HttpResponseDto() { HttpCode = 403 };
+        }
+
+        if (!await _valueRepository.DeleteValue(itemId))
+        {
+            return new HttpResponseDto() { HttpCode = 404 };
+        }
+
         return null;
     }
 
@@ -213,5 +228,13 @@ public class PasswordStoreService : IPasswordStoreService
     {
         var dir = await _keyRepository.GetKeyById(keyId);
         return dir is not null && dir.OwnerId == memberDto.Id;
+    }
+
+    private async Task<bool> CheckValueIsMine(MemberDto memberDto, ulong itemId)
+    {
+        var val = await _valueRepository.GetValueById(itemId);
+        return val is not null &&
+               await CheckDirIsMine(memberDto, val.DirectoryId) &&
+               await CheckKeyIsMine(memberDto, val.KeyId);
     }
 }
