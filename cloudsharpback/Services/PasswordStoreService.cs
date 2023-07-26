@@ -1,3 +1,4 @@
+using System.Xml;
 using cloudsharpback.Models;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
@@ -182,7 +183,7 @@ public class PasswordStoreService : IPasswordStoreService
         return null;
     }
 
-    public async Task<List<PasswordStoreKeyDto>> GetKeyList(MemberDto memberDto)
+    public async Task<List<PasswordStoreKeyListItemDto>> GetKeyList(MemberDto memberDto)
     {
         try
         {
@@ -206,7 +207,7 @@ public class PasswordStoreService : IPasswordStoreService
         {
             return new HttpResponseDto() { HttpCode = 400, Message = "Bad Encrypt Algorithm" };
         }
-        if (!await _keyRepository.InsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey))
+        if (!await _keyRepository.InsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey, dto.Name, dto.Comment))
         {
             return new HttpResponseDto() { HttpCode = 400 };
         }
@@ -235,14 +236,14 @@ public class PasswordStoreService : IPasswordStoreService
 
     private async Task<bool> CheckDirIsMine(MemberDto memberDto, ulong dirId)
     {
-        var dir = await _directoryRepository.GetDirById(dirId);
-        return dir is not null && dir.OwnerId == memberDto.Id;
+        var dir = await _directoryRepository.GetDirById(memberDto.Id, dirId);
+        return dir is not null;
     }
     
     private async Task<bool> CheckKeyIsMine(MemberDto memberDto, ulong keyId)
     {
-        var dir = await _keyRepository.GetKeyById(keyId);
-        return dir is not null && dir.OwnerId == memberDto.Id;
+        var dir = await _keyRepository.GetKeyById(memberDto.Id, keyId);
+        return dir is not null;
     }
 
     private async Task<bool> CheckValueIsMine(MemberDto memberDto, ulong itemId)

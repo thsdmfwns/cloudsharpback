@@ -31,7 +31,7 @@ WHERE member_id = @memberId ;
         return (await conn.QueryAsync<PasswordStoreDirDto>(sql, new { memberId })).ToList();
     }
 
-    public async Task<PasswordStoreDirDto?> GetDirById(ulong dirId)
+    public async Task<PasswordStoreDirDto?> GetDirById(ulong memberId, ulong dirId)
     {
         const string sql = @"
 SELECT password_directory_id Id, 
@@ -42,7 +42,7 @@ SELECT password_directory_id Id,
        created_time CreatedTIme, 
        member_id OwnerId
 FROM password_store_directory 
-WHERE password_directory_id = @dirId ;
+WHERE password_directory_id = @dirId AND member_id = @memberId;
 ";
         using var conn = _connService.Connection;
         return await conn.QueryFirstOrDefaultAsync<PasswordStoreDirDto?>(sql, new { dirId });
