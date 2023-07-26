@@ -110,10 +110,13 @@ public class PasswordStoreController : AuthControllerBase
     }
     
     [HttpPost("key/rm")]
-    public IActionResult RemoveKey()
+    public async Task<IActionResult> RemoveKey(ulong itemId)
     {
-        //todo key 삭제
-
+        var err = await _passwordStoreService.RemoveKey(Member, itemId);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
     

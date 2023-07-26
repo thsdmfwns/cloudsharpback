@@ -13,4 +13,5 @@ public interface IPasswordStoreService
         ulong? dirId);
     public Task<List<PasswordStoreKeyDto>> GetKeyList(MemberDto memberDto);
     public Task<HttpResponseDto?> MakeNewKey(MemberDto memberDto, PasswordStoreKeyInsertDto dto);
+    public Task<HttpResponseDto?> RemoveKey(MemberDto memberDto, ulong itemId);
 }

@@ -169,6 +169,25 @@ public class PasswordStoreService : IPasswordStoreService
         return null;
     }
 
+    public async Task<HttpResponseDto?> RemoveKey(MemberDto memberDto, ulong itemId)
+    {
+        try
+        {
+            if (!await _keyRepository.DeleteKeyById(memberDto.Id, itemId))
+            {
+                return new HttpResponseDto() { HttpCode = 404, Message = "Key Not Found" };
+            }
+
+            return null;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw;
+        }
+    }
+
     private async Task<bool> CheckDirIsMine(MemberDto memberDto, ulong dirId)
     {
         var dir = await _directoryRepository.GetDirById(dirId);

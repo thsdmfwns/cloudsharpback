@@ -61,4 +61,15 @@ VALUES (@memberId, @encryptAlgorithm, @publicKey, @privateKey);
         });
         return res > 0;
     }
+
+    public async Task<bool> DeleteKeyById(ulong memberId, ulong itemId)
+    {
+        const string sql = @"
+DELETE FROM password_store_keys
+WHERE owner_id = @memberId AND password_store_key_id = @itemId ;
+";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(sql, new { memberId, itemId });
+        return res > 0;
+    }
 }
