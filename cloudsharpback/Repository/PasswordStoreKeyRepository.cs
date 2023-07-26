@@ -29,6 +29,22 @@ WHERE password_store_key_id = @keyId;
         return await conn.QueryFirstOrDefaultAsync(sql, new { keyId });
     }
 
+    public async Task<List<PasswordStoreKeyDto>> GetKeyListByMemberId(ulong memberId)
+    {
+        const string sql = @"
+SELECT  password_store_key_id Id, 
+        owner_id OwnerId, 
+        public_key PublicKey, 
+        private_key privateKey, 
+        encrypt_algorithm EncryptAlgorithmValue
+FROM password_store_keys
+WHERE owner_id  = @memberId;
+";
+        using var conn = _connService.Connection;
+        var res = await conn.QueryAsync<PasswordStoreKeyDto>(sql, new { memberId });
+        return res.ToList();
+    }
+
     public async Task<bool> InsertKey(ulong memberId, int encryptAlgorithm, string? publicKey, string privateKey)
     {
         const string sql = @"

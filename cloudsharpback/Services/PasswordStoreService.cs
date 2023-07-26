@@ -137,6 +137,24 @@ public class PasswordStoreService : IPasswordStoreService
         return (await _valueRepository.GetPasswordStoreValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
     }
 
+    public async Task<List<PasswordStoreKeyDto>> GetKeyList(MemberDto memberDto)
+    {
+        try
+        {
+            return await _keyRepository.GetKeyListByMemberId(memberDto.Id);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto
+            {
+                HttpCode = 500,
+                Message = "fail to GetDirList",
+            });
+        }
+    }
+
     public async Task<HttpResponseDto?> MakeNewKey(MemberDto memberDto, PasswordStoreKeyInsertDto dto)
     {
         if (!Enum.IsDefined(typeof(PasswordEncryptAlgorithm), dto.EncryptAlgorithm))

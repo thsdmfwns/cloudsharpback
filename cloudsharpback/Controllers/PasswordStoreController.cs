@@ -93,10 +93,9 @@ public class PasswordStoreController : AuthControllerBase
     }
     
     [HttpGet("key/ls")]
-    public IActionResult GetKey(ulong? directoryId, ulong? keyId)
+    public async Task<IActionResult> GetKeyList()
     {
-        //todo 비밀번호 조회 
-        return Ok(directoryId + keyId);
+        return Ok(await _passwordStoreService.GetKeyList(Member));
     }
 
     [HttpPost("key/new")]
