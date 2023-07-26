@@ -64,7 +64,6 @@ public class PasswordStoreController : AuthControllerBase
         {
             return BadRequest();
         }
-        //todo 비밀번호 조회 
         var result = await _passwordStoreService.GetValuesList(Member, keyId, directoryId);
         return result.err is not null ? StatusCode(result.err.HttpCode, result.err.Message) : Ok(result.value);
     }
@@ -101,10 +100,13 @@ public class PasswordStoreController : AuthControllerBase
     }
 
     [HttpPost("key/new")]
-    public IActionResult MakeNewKey()
+    public async Task<IActionResult> MakeNewKey(PasswordStoreKeyInsertDto dto)
     {
-        //todo key 생성
-
+        var err = await _passwordStoreService.MakeNewKey(Member, dto);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
     
