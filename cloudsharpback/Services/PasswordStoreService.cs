@@ -147,7 +147,7 @@ public class PasswordStoreService : IPasswordStoreService
         {
             return new HttpResponseDto() { HttpCode = 400 };
         }
-
+        
         return null;
     }
 
