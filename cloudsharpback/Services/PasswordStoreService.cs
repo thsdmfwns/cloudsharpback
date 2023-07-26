@@ -137,6 +137,21 @@ public class PasswordStoreService : IPasswordStoreService
         return (await _valueRepository.GetPasswordStoreValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
     }
 
+    public async Task<HttpResponseDto?> MakeNewValue(MemberDto memberDto, PasswordStoreValueInsertDto dto)
+    {
+        if (! await CheckDirIsMine(memberDto, dto.DirectoryId)
+            || ! await CheckKeyIsMine(memberDto, dto.KeyId))
+        {
+            return new HttpResponseDto() { HttpCode = 403 };
+        }
+
+        if (!await _valueRepository.InsertValue(dto.DirectoryId, dto.KeyId, dto.ValueId, dto.ValuePassword))
+        {
+            return new HttpResponseDto() { HttpCode = 400 };
+        }
+        return null;
+    }
+
     public async Task<List<PasswordStoreKeyDto>> GetKeyList(MemberDto memberDto)
     {
         try

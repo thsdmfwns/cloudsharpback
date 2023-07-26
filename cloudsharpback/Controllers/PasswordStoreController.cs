@@ -70,10 +70,13 @@ public class PasswordStoreController : AuthControllerBase
     
 
     [HttpPost("val/new")]
-    public IActionResult MakeNewValues()
+    public async Task<IActionResult> MakeNewValues(PasswordStoreValueInsertDto dto)
     {
-        //todo val 생성
-
+        var err = await _passwordStoreService.MakeNewValue(Member, dto);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
     

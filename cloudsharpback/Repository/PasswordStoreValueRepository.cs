@@ -63,4 +63,21 @@ WHERE encrypt_key_id = @keyId AND directory_id = @dirId;
         var res = await conn.QueryAsync<PasswordStoreValueDto>(sql, new { keyId, dirId });
         return res.ToList();
     }
+
+    public async Task<bool> InsertValue(ulong dirId, ulong keyId, string? valueId, string valuePassword)
+    {
+        const string sql = @"
+INSERT INTO password_store_value(directory_id, encrypt_key_id, value_id, value_password) 
+VALUES (@dirid, @keyid, @valueId, @valuePassword) ;
+";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(sql, new
+        {
+            dirId,
+            keyId,
+            valueId,
+            valuePassword
+        });
+        return res > 0;
+    }
 }
