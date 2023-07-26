@@ -139,6 +139,10 @@ public class PasswordStoreService : IPasswordStoreService
 
     public async Task<HttpResponseDto?> MakeNewKey(MemberDto memberDto, PasswordStoreKeyInsertDto dto)
     {
+        if (!Enum.IsDefined(typeof(PasswordEncryptAlgorithm), dto.EncryptAlgorithm))
+        {
+            return new HttpResponseDto() { HttpCode = 400, Message = "Bad Encrypt Algorithm" };
+        }
         if (!await _keyRepository.InsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey))
         {
             return new HttpResponseDto() { HttpCode = 400 };
