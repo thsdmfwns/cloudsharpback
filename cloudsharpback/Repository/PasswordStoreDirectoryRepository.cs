@@ -45,7 +45,7 @@ FROM password_store_directory
 WHERE password_directory_id = @dirId AND member_id = @memberId;
 ";
         using var conn = _connService.Connection;
-        return await conn.QueryFirstOrDefaultAsync<PasswordStoreDirDto?>(sql, new { dirId });
+        return await conn.QueryFirstOrDefaultAsync<PasswordStoreDirDto?>(sql, new { dirId, memberId });
     }
 
     public async Task<bool> InsertDir(ulong memberId, string name, string? comment, string? icon)
