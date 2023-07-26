@@ -99,6 +99,18 @@ VALUES (@dirid, @keyid, @valueId, @valuePassword) ;
         return res > 0;
     }
 
+    public async Task<bool> UpdateValue(ulong itemId, string? valueId, string valuePassword)
+    {
+        const string sql = @"
+UPDATE password_store_value
+SET value_id = @valueId, value_password = @valuePassword
+WHERE password_store_value_id = @itemId;
+";
+        using var conn = _connService.Connection;
+        var res = await conn.ExecuteAsync(sql, new { itemId, valueId, valuePassword });
+        return res > 0;
+    }
+
     public async Task<bool> DeleteValue(ulong itemId)
     {
         const string sql = @"

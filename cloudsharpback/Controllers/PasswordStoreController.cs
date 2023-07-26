@@ -35,9 +35,9 @@ public class PasswordStoreController : AuthControllerBase
     }
     
     [HttpPost("dir/rm")]
-    public async Task<IActionResult> RemoveDir(ulong id)
+    public async Task<IActionResult> RemoveDir(ulong itemId)
     {
-        var err = await _passwordStoreService.RemoveDir(Member, id);
+        var err = await _passwordStoreService.RemoveDir(Member, itemId);
         if (err is not null)
         {
             return StatusCode(err.HttpCode, err.Message);
@@ -45,10 +45,10 @@ public class PasswordStoreController : AuthControllerBase
         return Ok();
     }
 
-    [HttpPost("dir/re")]
-    public async Task<IActionResult> UpdateDir([FromBody]PasswordStoreDirInsertDto dto, [FromQuery]ulong id)
+    [HttpPost("dir/edit")]
+    public async Task<IActionResult> UpdateDir([FromBody]PasswordStoreDirInsertDto dto, [FromQuery]ulong itemId)
     {
-        var err = await _passwordStoreService.UpdateDir(Member, dto, id);
+        var err = await _passwordStoreService.UpdateDir(Member, dto, itemId);
         if (err is not null)
         {
             return StatusCode(err.HttpCode, err.Message);
@@ -91,10 +91,14 @@ public class PasswordStoreController : AuthControllerBase
         return Ok();
     }
     
-    [HttpPost("val/re")]
-    public IActionResult UpdateValues()
+    [HttpPost("val/edit")]
+    public async Task<IActionResult> UpdateValue([FromQuery]ulong itemId, [FromBody]PasswordStoreValueUpdateDto dto)
     {
-        //todo val 업데이트
+        var err = await _passwordStoreService.UpdateValue(Member, itemId, dto);
+        if (err is not null)
+        {
+            return StatusCode(err.HttpCode, err.Message);
+        }
         return Ok();
     }
     
@@ -123,13 +127,6 @@ public class PasswordStoreController : AuthControllerBase
         {
             return StatusCode(err.HttpCode, err.Message);
         }
-        return Ok();
-    }
-    
-    [HttpPost("key/re")]
-    public IActionResult UpdateKey()
-    {
-        //todo key 업데이트
         return Ok();
     }
 }

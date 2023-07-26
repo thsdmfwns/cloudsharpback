@@ -13,6 +13,7 @@ public interface IPasswordStoreService
         ulong? dirId);
     public Task<HttpResponseDto?> MakeNewValue(MemberDto memberDto, PasswordStoreValueInsertDto dto);
     public Task<HttpResponseDto?> RemoveValue(MemberDto memberDto, ulong itemId);
+    public Task<HttpResponseDto?> UpdateValue(MemberDto memberDto, ulong itemId, PasswordStoreValueUpdateDto dto);
     public Task<List<PasswordStoreKeyDto>> GetKeyList(MemberDto memberDto);
     public Task<HttpResponseDto?> MakeNewKey(MemberDto memberDto, PasswordStoreKeyInsertDto dto);
     public Task<HttpResponseDto?> RemoveKey(MemberDto memberDto, ulong itemId);

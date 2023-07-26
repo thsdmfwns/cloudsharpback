@@ -9,6 +9,7 @@ public interface IPasswordStoreValueRepository
     Task<List<PasswordStoreValueDto>> GetValuesByKeyId(ulong keyId);
     Task<List<PasswordStoreValueDto>> GetValuesByKeyIdAndDirId(ulong dirId ,ulong keyId);
     Task<bool> InsertValue(ulong dirId, ulong keyId, string? valueId, string valuePassword);
+    Task<bool> UpdateValue(ulong itemId, string? valueId, string valuePassword);
     Task<bool> DeleteValue(ulong itemId);
     
 }

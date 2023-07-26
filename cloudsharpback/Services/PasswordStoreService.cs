@@ -167,6 +167,21 @@ public class PasswordStoreService : IPasswordStoreService
         return null;
     }
 
+    public async Task<HttpResponseDto?> UpdateValue(MemberDto memberDto, ulong itemId, PasswordStoreValueUpdateDto dto)
+    {
+        if (! await CheckValueIsMine(memberDto, itemId))
+        {
+            return new HttpResponseDto() { HttpCode = 403 };
+        }
+
+        if (! await _valueRepository.UpdateValue(itemId, dto.ValueId, dto.ValuePassword))
+        {
+            return new HttpResponseDto() { HttpCode = 404 };
+        }
+
+        return null;
+    }
+
     public async Task<List<PasswordStoreKeyDto>> GetKeyList(MemberDto memberDto)
     {
         try
