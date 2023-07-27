@@ -109,91 +109,182 @@ public class PasswordStoreService : IPasswordStoreService
 
     public async Task<(PasswordStoreValueDto? value, HttpResponseDto? err)> GetValue(MemberDto memberDto, ulong itemId)
     {
-        var val = await _valueRepository.GetValueById(itemId);
-        if (val is null)
+        try
         {
-            return (null, new HttpResponseDto() { HttpCode = 404 });
+            var val = await _valueRepository.GetValueById(itemId);
+            if (val is null)
+            {
+                return (null, new HttpResponseDto() { HttpCode = 404 });
+            }
+            if (! await CheckKeyAndDirIsMine(memberDto, val))
+            {
+                return (null, new HttpResponseDto() { HttpCode = 403 });
+            }
+            return (val, null);
         }
-        if (! await CheckKeyAndDirIsMine(memberDto, val))
+        catch (Exception exception)
         {
-            return (null, new HttpResponseDto() { HttpCode = 403 });
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto()
+            {
+                HttpCode = 500,
+                Message = "fail to GetValue"
+            });
+            
         }
-        return (val, null);
     }
 
     public async Task<(List<PasswordStoreValueListItemDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto, ulong? keyId, ulong? dirId)
     {
-        var empty = new List<PasswordStoreValueListItemDto>();
-        if (!keyId.HasValue && dirId.HasValue)
+        try
         {
-            var id = dirId.Value;
-            if (!await CheckDirIsMine(memberDto, id))
+            var empty = new List<PasswordStoreValueListItemDto>();
+            if (!keyId.HasValue && dirId.HasValue)
             {
-                return (empty, new HttpResponseDto() { HttpCode = 403 });
+                var id = dirId.Value;
+                if (!await CheckDirIsMine(memberDto, id))
+                {
+                    return (empty, new HttpResponseDto() { HttpCode = 403 });
+                }
+                return (await _valueRepository.GetValuesByDirectoryId(id), null);
             }
-            return (await _valueRepository.GetValuesByDirectoryId(id), null);
-        }
 
-        if (keyId.HasValue && !dirId.HasValue)
-        {
-            var id = keyId.Value;
-            if (!await CheckKeyIsMine(memberDto, id))
+            if (keyId.HasValue && !dirId.HasValue)
+            {
+                var id = keyId.Value;
+                if (!await CheckKeyIsMine(memberDto, id))
+                {
+                    return (empty, new HttpResponseDto() { HttpCode = 403 });
+                }
+                return (await _valueRepository.GetValuesByKeyId(id), null);
+            }
+        
+            if (! await CheckKeyAndDirIsMine(memberDto, keyId!.Value, dirId!.Value))
             {
                 return (empty, new HttpResponseDto() { HttpCode = 403 });
             }
-            return (await _valueRepository.GetValuesByKeyId(id), null);
+            return (await _valueRepository.GetValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
         }
-        
-        if (! await CheckKeyAndDirIsMine(memberDto, keyId!.Value, dirId!.Value))
+        catch (Exception exception)
         {
-            return (empty, new HttpResponseDto() { HttpCode = 403 });
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto()
+            {
+                HttpCode = 500,
+                Message = "fail to GetValuesList"
+            });
         }
-        return (await _valueRepository.GetValuesByKeyIdAndDirId(dirId.Value, keyId.Value), null);
     }
 
     public async Task<HttpResponseDto?> MakeNewValue(MemberDto memberDto, PasswordStoreValueInsertDto dto)
     {
-        if (! await CheckDirIsMine(memberDto, dto.DirectoryId)
-            || ! await CheckKeyIsMine(memberDto, dto.KeyId))
+        try
         {
-            return new HttpResponseDto() { HttpCode = 403 };
-        }
+            if (! await CheckDirIsMine(memberDto, dto.DirectoryId)
+                || ! await CheckKeyIsMine(memberDto, dto.KeyId))
+            {
+                return new HttpResponseDto() { HttpCode = 403 };
+            }
 
-        if (!await _valueRepository.InsertValue(dto.DirectoryId, dto.KeyId, dto.ValueId, dto.ValuePassword))
-        {
-            return new HttpResponseDto() { HttpCode = 400 };
+            if (!await _valueRepository.InsertValue(dto.DirectoryId, dto.KeyId, dto.ValueId, dto.ValuePassword))
+            {
+                return new HttpResponseDto() { HttpCode = 400 };
+            }
+            return null;
         }
-        return null;
+        catch (Exception exception)
+        {
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto()
+            {
+                HttpCode = 500,
+                Message = "fail to MakeNewValue"
+            });
+        }
     }
 
     public async Task<HttpResponseDto?> RemoveValue(MemberDto memberDto, ulong itemId)
     {
-        if (! await CheckValueIsMine(memberDto, itemId))
+        try
         {
-            return new HttpResponseDto() { HttpCode = 403 };
-        }
+            if (! await CheckValueIsMine(memberDto, itemId))
+            {
+                return new HttpResponseDto() { HttpCode = 403 };
+            }
 
-        if (!await _valueRepository.DeleteValue(itemId))
+            if (!await _valueRepository.DeleteValue(itemId))
+            {
+                return new HttpResponseDto() { HttpCode = 404 };
+            }
+
+            return null;
+        }
+        catch (Exception exception)
         {
-            return new HttpResponseDto() { HttpCode = 404 };
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto()
+            {
+                HttpCode = 500,
+                Message = "fail to RemoveValue"
+            });
         }
-
-        return null;
     }
 
     public async Task<HttpResponseDto?> UpdateValue(MemberDto memberDto, ulong itemId, PasswordStoreValueUpdateDto dto)
     {
-        if (! await CheckValueIsMine(memberDto, itemId))
+        try
         {
-            return new HttpResponseDto() { HttpCode = 403 };
-        }
+            if (! await CheckValueIsMine(memberDto, itemId))
+            {
+                return new HttpResponseDto() { HttpCode = 403 };
+            }
 
-        if (! await _valueRepository.UpdateValue(itemId, dto.ValueId, dto.ValuePassword))
+            if (! await _valueRepository.UpdateValue(itemId, dto.ValueId, dto.ValuePassword))
+            {
+                return new HttpResponseDto() { HttpCode = 404 };
+            }
+
+            return null;
+        }
+        catch (Exception exception)
         {
-            return new HttpResponseDto() { HttpCode = 404 };
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto()
+            {
+                HttpCode = 500,
+                Message = "fail to UpdateValue"
+            });
         }
+    }
 
-        return null;
+    public async Task<(PasswordStoreKeyDto? value, HttpResponseDto? err)> GetKey(MemberDto memberDto, ulong itemId)
+    {
+        try
+        {
+            var res = await _keyRepository.GetKeyById(memberDto.Id, itemId);
+            if (res is null)
+            {
+                return (null, new HttpResponseDto() { HttpCode = 404 });
+            }
+
+            return (res, null);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto()
+            {
+                HttpCode = 500,
+                Message = "fail to GetKey"
+            });
+        }
+        
     }
 
     public async Task<List<PasswordStoreKeyListItemDto>> GetKeyList(MemberDto memberDto)
@@ -209,23 +300,36 @@ public class PasswordStoreService : IPasswordStoreService
             throw new HttpErrorException(new HttpResponseDto
             {
                 HttpCode = 500,
-                Message = "fail to GetDirList",
+                Message = "fail to GetKeyList",
             });
         }
     }
 
     public async Task<HttpResponseDto?> MakeNewKey(MemberDto memberDto, PasswordStoreKeyInsertDto dto)
     {
-        if (!Enum.IsDefined(typeof(PasswordEncryptAlgorithm), dto.EncryptAlgorithm))
+        try
         {
-            return new HttpResponseDto() { HttpCode = 400, Message = "Bad Encrypt Algorithm" };
-        }
-        if (!await _keyRepository.InsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey, dto.Name, dto.Comment))
-        {
-            return new HttpResponseDto() { HttpCode = 400 };
-        }
+            if (!Enum.IsDefined(typeof(PasswordEncryptAlgorithm), dto.EncryptAlgorithm))
+            {
+                return new HttpResponseDto() { HttpCode = 400, Message = "Bad Encrypt Algorithm" };
+            }
+            if (!await _keyRepository.InsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey, dto.Name, dto.Comment))
+            {
+                return new HttpResponseDto() { HttpCode = 400 };
+            }
         
-        return null;
+            return null;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception.Message);
+            _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto
+            {
+                HttpCode = 500,
+                Message = "fail to MakeNewKey",
+            });
+        }
     }
 
     public async Task<HttpResponseDto?> RemoveKey(MemberDto memberDto, ulong itemId)
@@ -243,6 +347,11 @@ public class PasswordStoreService : IPasswordStoreService
         {
             _logger.LogError(exception.Message);
             _logger.LogError(exception.StackTrace);
+            throw new HttpErrorException(new HttpResponseDto
+            {
+                HttpCode = 500,
+                Message = "fail to RemoveKey",
+            });
             throw;
         }
     }

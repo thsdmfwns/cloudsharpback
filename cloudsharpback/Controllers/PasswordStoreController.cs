@@ -27,33 +27,21 @@ public class PasswordStoreController : AuthControllerBase
     public async Task<IActionResult> MakeNewDIr(PasswordStoreDirInsertDto dto)
     {
         var err = await _passwordStoreService.MakeNewDir(Member, dto);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
     }
     
     [HttpPost("dir/rm")]
     public async Task<IActionResult> RemoveDir(ulong itemId)
     {
         var err = await _passwordStoreService.RemoveDir(Member, itemId);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
     }
 
     [HttpPost("dir/edit")]
     public async Task<IActionResult> UpdateDir([FromBody]PasswordStoreDirInsertDto dto, [FromQuery]ulong itemId)
     {
         var err = await _passwordStoreService.UpdateDir(Member, dto, itemId);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
     }
 
     [HttpGet("val/{itemId}")]
@@ -79,33 +67,28 @@ public class PasswordStoreController : AuthControllerBase
     public async Task<IActionResult> MakeNewValues(PasswordStoreValueInsertDto dto)
     {
         var err = await _passwordStoreService.MakeNewValue(Member, dto);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
     }
     
     [HttpPost("val/rm")]
     public async Task<IActionResult> RemoveValue(ulong itemId)
     {
         var err = await _passwordStoreService.RemoveValue(Member, itemId);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
     }
     
     [HttpPost("val/edit")]
     public async Task<IActionResult> UpdateValue([FromQuery]ulong itemId, [FromBody]PasswordStoreValueUpdateDto dto)
     {
         var err = await _passwordStoreService.UpdateValue(Member, itemId, dto);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
+    }
+
+    [HttpGet("key/{itemId}")]
+    public async Task<IActionResult> GetKey(ulong itemId)
+    {
+        var res = await _passwordStoreService.GetKey(Member, itemId);
+        return res.err is not null ? StatusCode(res.err.HttpCode, res.err.Message) : Ok(res.value);
     }
     
     [HttpGet("key/ls")]
@@ -118,21 +101,13 @@ public class PasswordStoreController : AuthControllerBase
     public async Task<IActionResult> MakeNewKey(PasswordStoreKeyInsertDto dto)
     {
         var err = await _passwordStoreService.MakeNewKey(Member, dto);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
     }
     
     [HttpPost("key/rm")]
     public async Task<IActionResult> RemoveKey(ulong itemId)
     {
         var err = await _passwordStoreService.RemoveKey(Member, itemId);
-        if (err is not null)
-        {
-            return StatusCode(err.HttpCode, err.Message);
-        }
-        return Ok();
+        return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
     }
 }
