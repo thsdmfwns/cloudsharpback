@@ -23,7 +23,9 @@ SELECT password_store_value_id Id,
        value_id ValueId,
        value_password ValuePassword,
        directory_id DirectoryId,
-       encrypt_key_id KeyId
+       encrypt_key_id KeyId,
+       last_edited_time LastEditedTime,
+       created_time CreatedTime
 FROM password_store_value
 WHERE password_store_value_id = @id;
 ";
@@ -41,7 +43,9 @@ SELECT password_store_value_id Id,
        value_id ValueId,
        value_password ValuePassword,
        directory_id DirectoryId,
-       encrypt_key_id KeyId
+       encrypt_key_id KeyId,
+       last_edited_time LastEditedTime,
+       created_time CreatedTime
 FROM password_store_value
 WHERE directory_id = @dirId ;
 ";
@@ -57,7 +61,9 @@ SELECT password_store_value_id Id,
        value_id ValueId,
        value_password ValuePassword,
        directory_id DirectoryId,
-       encrypt_key_id KeyId
+       encrypt_key_id KeyId,
+       last_edited_time LastEditedTime,
+       created_time CreatedTime
 FROM password_store_value
 WHERE encrypt_key_id = @keyId ;
 ";
@@ -73,7 +79,9 @@ SELECT password_store_value_id Id,
        value_id ValueId,
        value_password ValuePassword,
        directory_id DirectoryId,
-       encrypt_key_id KeyId
+       encrypt_key_id KeyId,
+       last_edited_time LastEditedTime,
+       created_time CreatedTime
 FROM password_store_value
 WHERE encrypt_key_id = @keyId AND directory_id = @dirId;
 ";
@@ -85,8 +93,8 @@ WHERE encrypt_key_id = @keyId AND directory_id = @dirId;
     public async Task<bool> InsertValue(ulong dirId, ulong keyId, string? valueId, string valuePassword)
     {
         const string sql = @"
-INSERT INTO password_store_value(directory_id, encrypt_key_id, value_id, value_password) 
-VALUES (@dirid, @keyid, @valueId, @valuePassword) ;
+INSERT INTO password_store_value(directory_id, encrypt_key_id, value_id, value_password, last_edited_time, created_time) 
+VALUES (@dirid, @keyid, @valueId, @valuePassword, @lastEditedTIme, @createdTime) ;
 ";
         using var conn = _connService.Connection;
         var res = await conn.ExecuteAsync(sql, new
@@ -94,7 +102,9 @@ VALUES (@dirid, @keyid, @valueId, @valuePassword) ;
             dirId,
             keyId,
             valueId,
-            valuePassword
+            valuePassword,
+            lastEditedTime = DateTime.UtcNow.Ticks,
+            createdTime = DateTime.UtcNow.Ticks,
         });
         return res > 0;
     }
@@ -103,11 +113,11 @@ VALUES (@dirid, @keyid, @valueId, @valuePassword) ;
     {
         const string sql = @"
 UPDATE password_store_value
-SET value_id = @valueId, value_password = @valuePassword
+SET value_id = @valueId, value_password = @valuePassword, last_edited_time = @lastEditTIme
 WHERE password_store_value_id = @itemId;
 ";
         using var conn = _connService.Connection;
-        var res = await conn.ExecuteAsync(sql, new { itemId, valueId, valuePassword });
+        var res = await conn.ExecuteAsync(sql, new { itemId, valueId, valuePassword, lastEditTIme = DateTime.UtcNow.Ticks });
         return res > 0;
     }
 
