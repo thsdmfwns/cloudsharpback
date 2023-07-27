@@ -107,6 +107,20 @@ public class PasswordStoreService : IPasswordStoreService
         }
     }
 
+    public async Task<(PasswordStoreValueDto? value, HttpResponseDto? err)> GetValue(MemberDto memberDto, ulong itemId)
+    {
+        var val = await _valueRepository.GetValueById(itemId);
+        if (val is null)
+        {
+            return (null, new HttpResponseDto() { HttpCode = 404 });
+        }
+        if (! await CheckKeyAndDirIsMine(memberDto, val))
+        {
+            return (null, new HttpResponseDto() { HttpCode = 403 });
+        }
+        return (val, null);
+    }
+
     public async Task<(List<PasswordStoreValueListItemDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto, ulong? keyId, ulong? dirId)
     {
         var empty = new List<PasswordStoreValueListItemDto>();
@@ -130,8 +144,7 @@ public class PasswordStoreService : IPasswordStoreService
             return (await _valueRepository.GetValuesByKeyId(id), null);
         }
         
-        if (! await CheckDirIsMine(memberDto, dirId!.Value)
-            || ! await CheckKeyIsMine(memberDto, keyId!.Value))
+        if (! await CheckKeyAndDirIsMine(memberDto, keyId!.Value, dirId!.Value))
         {
             return (empty, new HttpResponseDto() { HttpCode = 403 });
         }
@@ -246,6 +259,11 @@ public class PasswordStoreService : IPasswordStoreService
         return dir is not null;
     }
 
+    private async Task<bool> CheckKeyAndDirIsMine(MemberDto memberDto, ulong keyId, ulong dirId)
+        => await CheckDirIsMine(memberDto, dirId) && await CheckKeyIsMine(memberDto, keyId);
+
+    private async Task<bool> CheckKeyAndDirIsMine(MemberDto memberDto, PasswordStoreValueDto dto)
+        => await CheckKeyAndDirIsMine(memberDto, dto.KeyId, dto.DirectoryId);
     private async Task<bool> CheckValueIsMine(MemberDto memberDto, ulong itemId)
     {
         var val = await _valueRepository.GetValueById(itemId);

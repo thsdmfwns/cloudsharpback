@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers;
 
-[Route("api/pass")]
+[Route("api/Pass")]
 [ApiController]
 public class PasswordStoreController : AuthControllerBase
 {
@@ -55,7 +55,13 @@ public class PasswordStoreController : AuthControllerBase
         }
         return Ok();
     }
-    
+
+    [HttpGet("val/{itemId}")]
+    public async Task<IActionResult> GetValue(ulong itemId)
+    {
+        var result = await _passwordStoreService.GetValue(Member, itemId);
+        return result.err is not null ? StatusCode(result.err.HttpCode, result.err.Message) : Ok(result.value);
+    }
     
     [HttpGet("val/ls")]
     public async Task<IActionResult> GetValues(ulong? directoryId, ulong? keyId)
