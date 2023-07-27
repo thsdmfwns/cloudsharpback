@@ -36,12 +36,10 @@ WHERE password_store_value_id = @id;
         });
     }
 
-    public async Task<List<PasswordStoreValueDto>> GetValuesByDirectoryId(ulong dirId)
+    public async Task<List<PasswordStoreValueListItemDto>> GetValuesByDirectoryId(ulong dirId)
     {
         const string sql = @"
 SELECT password_store_value_id Id,
-       value_id ValueId,
-       value_password ValuePassword,
        directory_id DirectoryId,
        encrypt_key_id KeyId,
        last_edited_time LastEditedTime,
@@ -50,16 +48,14 @@ FROM password_store_value
 WHERE directory_id = @dirId ;
 ";
         using var conn = _connService.Connection;
-        var res = await conn.QueryAsync<PasswordStoreValueDto>(sql, new { dirId });
+        var res = await conn.QueryAsync<PasswordStoreValueListItemDto>(sql, new { dirId });
         return res.ToList();
     }
     
-    public async Task<List<PasswordStoreValueDto>> GetValuesByKeyId(ulong keyId)
+    public async Task<List<PasswordStoreValueListItemDto>> GetValuesByKeyId(ulong keyId)
     {
         const string sql = @"
 SELECT password_store_value_id Id,
-       value_id ValueId,
-       value_password ValuePassword,
        directory_id DirectoryId,
        encrypt_key_id KeyId,
        last_edited_time LastEditedTime,
@@ -68,16 +64,14 @@ FROM password_store_value
 WHERE encrypt_key_id = @keyId ;
 ";
         using var conn = _connService.Connection;
-        var res = await conn.QueryAsync<PasswordStoreValueDto>(sql, new { keyId });
+        var res = await conn.QueryAsync<PasswordStoreValueListItemDto>(sql, new { keyId });
         return res.ToList();
     }
     
-    public async Task<List<PasswordStoreValueDto>> GetValuesByKeyIdAndDirId(ulong dirId ,ulong keyId)
+    public async Task<List<PasswordStoreValueListItemDto>> GetValuesByKeyIdAndDirId(ulong dirId ,ulong keyId)
     {
         const string sql = @"
 SELECT password_store_value_id Id,
-       value_id ValueId,
-       value_password ValuePassword,
        directory_id DirectoryId,
        encrypt_key_id KeyId,
        last_edited_time LastEditedTime,
@@ -86,7 +80,7 @@ FROM password_store_value
 WHERE encrypt_key_id = @keyId AND directory_id = @dirId;
 ";
         using var conn = _connService.Connection;
-        var res = await conn.QueryAsync<PasswordStoreValueDto>(sql, new { keyId, dirId });
+        var res = await conn.QueryAsync<PasswordStoreValueListItemDto>(sql, new { keyId, dirId });
         return res.ToList();
     }
 
