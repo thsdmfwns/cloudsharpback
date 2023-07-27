@@ -7,9 +7,9 @@ namespace cloudsharpback.Repository;
 
 public class MemberRepository : IMemberRepository
 {
-    private readonly IDBConnService _connService;
+    private readonly IDBConnectionFactory _connService;
 
-    public MemberRepository(IDBConnService connService)
+    public MemberRepository(IDBConnectionFactory connService)
     {
         _connService = connService;
     }

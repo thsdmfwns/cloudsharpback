@@ -3,10 +3,10 @@ using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Services
 {
-    public class DBConnService : IDBConnService
+    public class DBConnectionFactory : IDBConnectionFactory
     {
         private readonly string _connStr;
-        public DBConnService(IConfiguration configuration)
+        public DBConnectionFactory(IConfiguration configuration)
         {
             _connStr = configuration["DBConnectionString"];
         }

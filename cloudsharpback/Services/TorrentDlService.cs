@@ -9,10 +9,10 @@ namespace cloudsharpback.Services
     public class TorrentDlService : ITorrentDlService
     {
         private readonly ILogger _logger;
-        private readonly IDBConnService _connService;
+        private readonly IDBConnectionFactory _connService;
         private readonly IPathStore _pathStore;
 
-        public TorrentDlService(IPathStore pathStore, ILogger<ITorrentDlService> logger, IDBConnService connService)
+        public TorrentDlService(IPathStore pathStore, ILogger<ITorrentDlService> logger, IDBConnectionFactory connService)
         {
             _pathStore = pathStore;
             _logger = logger;

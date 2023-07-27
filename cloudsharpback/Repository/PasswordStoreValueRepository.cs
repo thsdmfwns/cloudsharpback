@@ -8,9 +8,9 @@ namespace cloudsharpback.Repository;
 
 public class PasswordStoreValueRepository : IPasswordStoreValueRepository
 {
-    private readonly IDBConnService _connService;
+    private readonly IDBConnectionFactory _connService;
 
-    public PasswordStoreValueRepository(IDBConnService connService)
+    public PasswordStoreValueRepository(IDBConnectionFactory connService)
     {
         _connService = connService;
     }

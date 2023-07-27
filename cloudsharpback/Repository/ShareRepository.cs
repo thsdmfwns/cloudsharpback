@@ -7,9 +7,9 @@ namespace cloudsharpback.Repository;
 
 public class ShareRepository : IShareRepository
 {
-    private readonly IDBConnService _connService;
+    private readonly IDBConnectionFactory _connService;
 
-    public ShareRepository(IDBConnService connService)
+    public ShareRepository(IDBConnectionFactory connService)
     {
         _connService = connService;
     }

@@ -32,7 +32,7 @@ builder.Services.AddScoped<IPasswordStoreDirectoryRepository, PasswordStoreDirec
 builder.Services.AddScoped<IPasswordStoreValueRepository, PasswordStoreValueRepository>();
 builder.Services.AddScoped<IPasswordStoreKeyRepository, PasswordStoreKeyRepository>();
 //singleton
-builder.Services.AddSingleton<IDBConnService, DBConnService>();
+builder.Services.AddSingleton<IDBConnectionFactory, DBConnectionFactory>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<ITicketStore, TicketStore>();
 builder.Services.AddSingleton<IPathStore, PathStore>();
