@@ -8,7 +8,7 @@ public interface IPasswordStoreService
     public Task<HttpResponseDto?> MakeNewDir(MemberDto memberDto, PasswordStoreDirInsertDto dto);
     public Task<HttpResponseDto?> RemoveDir(MemberDto memberDto, ulong id);
     public Task<HttpResponseDto?> UpdateDir(MemberDto memberDto, PasswordStoreDirInsertDto dto, ulong itemId);
-    public Task<(List<PasswordStoreValueDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto,
+    public Task<(List<PasswordStoreValueListItemDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto,
         ulong? keyId,
         ulong? dirId);
     public Task<HttpResponseDto?> MakeNewValue(MemberDto memberDto, PasswordStoreValueInsertDto dto);

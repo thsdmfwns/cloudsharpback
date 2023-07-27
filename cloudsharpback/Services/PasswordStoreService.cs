@@ -107,9 +107,9 @@ public class PasswordStoreService : IPasswordStoreService
         }
     }
 
-    public async Task<(List<PasswordStoreValueDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto, ulong? keyId, ulong? dirId)
+    public async Task<(List<PasswordStoreValueListItemDto> value, HttpResponseDto? err)> GetValuesList(MemberDto memberDto, ulong? keyId, ulong? dirId)
     {
-        var empty = new List<PasswordStoreValueDto>();
+        var empty = new List<PasswordStoreValueListItemDto>();
         if (!keyId.HasValue && dirId.HasValue)
         {
             var id = dirId.Value;
