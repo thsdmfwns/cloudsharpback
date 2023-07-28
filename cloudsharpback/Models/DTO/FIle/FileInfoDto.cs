@@ -1,4 +1,4 @@
-﻿namespace cloudsharpback.Models
+﻿namespace cloudsharpback.Models.DTO.FIle
 {
     public enum FileType
     {
@@ -20,7 +20,7 @@
             return new()
             {
                 Name = directoryInfo.Name,
-                FileType = Models.FileType.Folder,
+                FileType = FileType.Folder,
                 Path = directoryInfo.FullName[(memberDirectoryPath.Length + 1)..]
             };
         }
@@ -28,7 +28,7 @@
         public static FileInfoDto FromFileInfo(FileInfo fileInfo, string memberDirectoryPath)
             => new() {
                 Name = fileInfo.Name,
-                FileType = Models.FileType.File,
+                FileType = FileType.File,
                 Extention = fileInfo.Extension,
                 LastWriteTime = fileInfo.LastWriteTime.ToUniversalTime().Ticks,
                 Size = (ulong?)fileInfo.Length,

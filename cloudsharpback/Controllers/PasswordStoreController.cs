@@ -1,5 +1,7 @@
 using cloudsharpback.Controllers.Base;
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;

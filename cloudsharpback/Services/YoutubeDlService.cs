@@ -3,6 +3,8 @@ using System.Text.RegularExpressions;
 using CliWrap;
 using cloudsharpback.Hubs;
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;

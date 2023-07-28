@@ -1,5 +1,8 @@
 using System.Xml;
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Member;
+using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 

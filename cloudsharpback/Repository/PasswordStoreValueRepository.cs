@@ -1,4 +1,6 @@
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;

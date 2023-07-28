@@ -1,6 +1,6 @@
 ﻿using Transmission.API.RPC.Entity;
 
-namespace cloudsharpback.Models
+namespace cloudsharpback.Models.DTO.FIle
 {
     public class TorrentInfoDto
     {

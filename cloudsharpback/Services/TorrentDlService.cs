@@ -1,4 +1,7 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.FIle;
+using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
 using Transmission.API.RPC;

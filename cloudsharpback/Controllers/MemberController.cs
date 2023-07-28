@@ -1,5 +1,7 @@
 ﻿using cloudsharpback.Controllers.Base;
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -1,4 +1,6 @@
-﻿namespace cloudsharpback.Models
+﻿using cloudsharpback.Models.DTO;
+
+namespace cloudsharpback.Models
 {
     public class HttpErrorException : Exception
     {

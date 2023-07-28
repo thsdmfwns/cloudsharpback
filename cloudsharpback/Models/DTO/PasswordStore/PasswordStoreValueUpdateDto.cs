@@ -1,4 +1,4 @@
-namespace cloudsharpback.Models;
+namespace cloudsharpback.Models.DTO.PasswordStore;
 
 public record PasswordStoreValueUpdateDto
 {

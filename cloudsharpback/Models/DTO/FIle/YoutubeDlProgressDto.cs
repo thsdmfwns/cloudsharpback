@@ -1,4 +1,4 @@
-﻿namespace cloudsharpback.Models
+﻿namespace cloudsharpback.Models.DTO.FIle
 {
     public class YoutubeDlProgressDto
     {
