@@ -1,6 +1,6 @@
 ﻿using JsonWebToken;
 
-namespace cloudsharpback.Models
+namespace cloudsharpback.Models.DTO.Member
 {
     public class MemberDto
     {

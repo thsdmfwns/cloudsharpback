@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace cloudsharpback.Models
+namespace cloudsharpback.Models.DTO
 {
     public class HttpResponseDto
     {

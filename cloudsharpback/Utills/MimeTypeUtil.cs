@@ -14,13 +14,8 @@ namespace cloudsharpback.Utills
 
         public static string? GetExtension(string contentType)
             => new FileExtensionContentTypeProvider().Mappings.FirstOrDefault(x => x.Key == contentType).Value;
+
         public static string? GetMimeType(string filepath)
-        {
-            if (!new FileExtensionContentTypeProvider().TryGetContentType(filepath, out var mime))
-            {
-                return null;
-            }
-            return mime;
-        }
+            => new FileExtensionContentTypeProvider().TryGetContentType(filepath, out var mime) ? mime : null;
     }
 }

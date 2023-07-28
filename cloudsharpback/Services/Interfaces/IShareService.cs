@@ -1,4 +1,7 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Member;
+using cloudsharpback.Models.DTO.Share;
 
 namespace cloudsharpback.Services.Interfaces
 {

@@ -1,5 +1,7 @@
 ﻿using cloudsharpback.Attribute;
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Member;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers.Base

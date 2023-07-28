@@ -1,4 +1,7 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.FIle;
+using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
 using Transmission.API.RPC;
@@ -9,10 +12,10 @@ namespace cloudsharpback.Services
     public class TorrentDlService : ITorrentDlService
     {
         private readonly ILogger _logger;
-        private readonly IDBConnService _connService;
+        private readonly IDBConnectionFactory _connService;
         private readonly IPathStore _pathStore;
 
-        public TorrentDlService(IPathStore pathStore, ILogger<ITorrentDlService> logger, IDBConnService connService)
+        public TorrentDlService(IPathStore pathStore, ILogger<ITorrentDlService> logger, IDBConnectionFactory connService)
         {
             _pathStore = pathStore;
             _logger = logger;

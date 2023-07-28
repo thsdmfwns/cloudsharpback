@@ -2,6 +2,8 @@
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utills;
 using System.Net.Mail;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository.Interface;
 
 namespace cloudsharpback.Services

@@ -1,4 +1,5 @@
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
 using cloudsharpback.Services.Interfaces;
 
 namespace cloudsharpback.Services;

@@ -2,7 +2,7 @@
 
 namespace cloudsharpback.Services.Interfaces
 {
-    public interface IDBConnService
+    public interface IDBConnectionFactory
     {
         public MySqlConnection Connection { get; }
     }

@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace cloudsharpback.Models
+namespace cloudsharpback.Models.DTO.FIle
 {
     public class ZipEntryDto
     {

@@ -1,4 +1,6 @@
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
@@ -7,9 +9,9 @@ namespace cloudsharpback.Repository;
 
 public class MemberRepository : IMemberRepository
 {
-    private readonly IDBConnService _connService;
+    private readonly IDBConnectionFactory _connService;
 
-    public MemberRepository(IDBConnService connService)
+    public MemberRepository(IDBConnectionFactory connService)
     {
         _connService = connService;
     }

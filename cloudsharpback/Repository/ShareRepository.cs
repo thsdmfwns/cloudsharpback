@@ -1,4 +1,6 @@
 using cloudsharpback.Models;
+using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.Share;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
@@ -7,9 +9,9 @@ namespace cloudsharpback.Repository;
 
 public class ShareRepository : IShareRepository
 {
-    private readonly IDBConnService _connService;
+    private readonly IDBConnectionFactory _connService;
 
-    public ShareRepository(IDBConnService connService)
+    public ShareRepository(IDBConnectionFactory connService)
     {
         _connService = connService;
     }

@@ -1,7 +1,8 @@
-﻿namespace cloudsharpback.Models
+﻿namespace cloudsharpback.Models.DTO.Share
 {
-    public class ShareUpdateDto
+    public class ShareRequestDto
     {
+        public required string Target { get; set; }
         public string? Password { get; set; }
         public ulong? ExpireTime { get; set; }
         public string? Comment { get; set; }
