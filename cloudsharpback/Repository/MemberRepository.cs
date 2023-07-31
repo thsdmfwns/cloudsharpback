@@ -4,6 +4,7 @@ using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Repository;
 
@@ -108,6 +109,24 @@ public class MemberRepository : IMemberRepository
     }
 
     public async Task<bool> TryAddMember(RegisterDto registerDto, ulong role)
+    {
+        try
+        {
+            return await AddMember(registerDto, role);
+        }
+        catch (MySqlException ex)
+        {
+            if (ex.Number  == 1452 
+                || ex.Number == 1451
+                || ex.Number == 1062)
+            {
+                return false;
+            }
+            throw;
+        }
+    }
+
+    private async Task<bool> AddMember(RegisterDto registerDto, ulong role)
     {
         using var conn = _connService.Connection;
         const string sql = "INSERT INTO member(id, password, nickname, role_id, email, directory) " +
