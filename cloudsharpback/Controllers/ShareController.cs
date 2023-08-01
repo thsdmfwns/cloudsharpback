@@ -47,11 +47,11 @@ namespace cloudsharpback.Controllers
         [HttpGet("get")]
         public async Task<IActionResult> GetShare(string token)
         {
-            if (!Guid.TryParse(token, out _))
+            if (!Guid.TryParse(token, out var guidToken))
             {
                 return BadRequest();
             }
-            var res = await _shareService.GetShareAsync(token);
+            var res = await _shareService.GetShareAsync(guidToken);
             if (res.err is not null || res.result is null)
             {
                 return StatusCode(res.err!.HttpCode, res.err.Message);

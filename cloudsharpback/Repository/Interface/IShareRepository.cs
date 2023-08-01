@@ -7,7 +7,10 @@ namespace cloudsharpback.Repository.Interface;
 public interface IShareRepository
 {
     Task<bool> TryAddShare(ulong memberId, ShareRequestDto req, string? password, FileInfo fileinfo);
-    Task<ShareResponseDto?> GetShareByToken(string token);
+    Task<bool> TryAddShare(ulong memberId, string target, string password, ulong expireTime,
+        string? comment,
+        string? shareName, Guid token, ulong fileSize);
+    Task<ShareResponseDto?> GetShareByToken(Guid token);
     Task<List<ShareResponseDto>> GetSharesByTargetFilePath(ulong memberid, string targetFilePath);
     Task<List<ShareResponseDto>> GetSharesListByMemberId(ulong memberId);
     Task<ShareDownloadDto?> GetShareDownloadDtoByToken(string token);

@@ -4,6 +4,7 @@ using cloudsharpback.Models.DTO.Share;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Repository;
 
@@ -17,27 +18,59 @@ public class ShareRepository : IShareRepository
     }
 
     public async Task<bool> TryAddShare(ulong memberId, ShareRequestDto req, string? password, FileInfo fileinfo)
+        => await TryAddShare(
+            memberId: memberId,
+            target: req.Target,
+            password: password,
+            expireTime: req.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
+            comment: req.Comment,
+            shareName: req.ShareName,
+            token: Guid.NewGuid(),
+            fileSize: (ulong)fileinfo.Length
+        );
+
+    public async Task<bool> TryAddShare(ulong memberId, string target, string password, ulong expireTime,
+        string? comment,
+        string? shareName, Guid token, ulong fileSize)
+    {
+        try
+        {
+            return await AddShare(memberId, target, password, expireTime, comment, shareName, token, fileSize);
+        }
+        catch (MySqlException ex)
+        {
+            if (ex.Number  == 1452 
+                || ex.Number == 1451
+                || ex.Number == 1062)
+            {
+                return false;
+            }
+            throw;
+        }
+    }
+
+    private async Task<bool> AddShare(ulong memberId, string target, string password, ulong expireTime, string? comment,
+        string? shareName, Guid token, ulong fileSize)
     {
         const string sql = "INSERT INTO share(member_id, target, password, expire_time, comment, share_time, share_name, token, file_size) " +
                            "VALUES(@MemberID, @Target, @Password, @ExpireTime, @Comment, @ShareTime, @ShareName, UUID_TO_BIN(@Token), @FileSize)";
         using var conn = _connService.Connection;
-        var token = Guid.NewGuid().ToString();
         var res =await conn.ExecuteAsync(sql, new
         {
             MemberId = memberId,
-            Target = req.Target,
+            Target = target,
             Password = password,
-            ExpireTime = req.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
-            Comment = req.Comment,
+            ExpireTime = expireTime, 
+            Comment = comment,
             ShareTime = DateTime.UtcNow.Ticks,
-            ShareName = req.ShareName,
-            Token = token,
-            FileSize = (ulong)fileinfo.Length,
+            ShareName = shareName,
+            Token = token.ToString(),
+            FileSize = fileSize,
         });
         return res > 0;
     }
 
-    public async Task<ShareResponseDto?> GetShareByToken(string token)
+    public async Task<ShareResponseDto?> GetShareByToken(Guid token)
     {
         //ulong id, ulong ownerId, string ownerNick, ulong shareTime, ulong? expireTime, string target, string? shareName, string? comment
         const string sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
@@ -48,7 +81,7 @@ public class ShareRepository : IShareRepository
                            "ON s.member_id = m.member_id " +
                            "WHERE s.token = UUID_TO_BIN(@Token)";
         using var conn = _connService.Connection;
-        return await conn.QueryFirstOrDefaultAsync<ShareResponseDto>(sql, new { Token = token });
+        return await conn.QueryFirstOrDefaultAsync<ShareResponseDto>(sql, new { Token = token.ToString() });
     }
 
     public async Task<List<ShareResponseDto>> GetSharesListByMemberId(ulong memberId)
