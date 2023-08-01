@@ -2,6 +2,7 @@ using Bogus;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository;
 using cloudsharpback.Repository.Interface;
+using cloudsharpback.Test.Records;
 using cloudsharpback.Utills;
 using Dapper;
 using MySql.Data.MySqlClient;
@@ -10,8 +11,6 @@ namespace cloudsharpback.Test;
 
 public class MemberRepositoryTests
 {
-    protected record Member(ulong MemberId, string Id, string Password, string Nick, ulong Role, string Email,
-        string Dir);
 
     private MemberRepository _repository;
     private List<Member> _members = new List<Member>();
@@ -21,31 +20,28 @@ public class MemberRepositoryTests
     public async Task Setup()
     {
         _repository = new MemberRepository(DBConnectionFactoryMock.Mock.Object);
-        _members = new List<Member>();
+        _members = await SetTable();
+    }
+
+    public static async Task<List<Member>> SetTable()
+    {
         var insertSql = @"
 INSERT INTO member
 VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), null);
 ";
         ulong memberid = 1;
-        var faker = _faker = new Faker();
+        var members = new List<Member>();
+        var faker  = new Faker();
         for (int i = 0; i < 5; i++)
         {
-            var mem = new Member(
-                memberid++,
-                faker.Internet.UserName(),
-                faker.Internet.Password(),
-                faker.Internet.UserName(),
-                2,
-                faker.Internet.Email(),
-                Guid.NewGuid().ToString()
-            );
-            _members.Add(mem);
+            var mem = Member.GetFake(memberid++, faker);
+            members.Add(mem);
             await Task.Delay(1);
         }
 
         using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
         await conn.ExecuteAsync("DELETE FROM member");
-        foreach (var mem in _members)
+        foreach (var mem in members)
         {
             await conn.ExecuteAsync(insertSql, new
             {
@@ -58,6 +54,8 @@ VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), null
                 role = mem.Role
             });
         }
+
+        return members;
     }
 
     [Test]
