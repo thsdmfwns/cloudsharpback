@@ -13,11 +13,12 @@ public interface IShareRepository
     Task<ShareResponseDto?> GetShareByToken(Guid token);
     Task<List<ShareResponseDto>> GetSharesByTargetFilePath(ulong memberid, string targetFilePath);
     Task<List<ShareResponseDto>> GetSharesListByMemberId(ulong memberId);
-    Task<ShareDownloadDto?> GetShareDownloadDtoByToken(string token);
-    Task<bool> TrySetShareExpireTimeToZero(ulong memberId, string token);
-    Task<bool> TryUpdateShare(ulong memberId, string token, ShareUpdateDto dto, string? password);
+    Task<ShareDownloadDto?> GetShareDownloadDtoByToken(Guid token);
+    Task<bool> TrySetShareExpireTimeToZero(ulong memberId, Guid token);
+    Task<bool> TryUpdateShare(ulong memberId, Guid token, string? password, string? comment,
+        ulong? expireTime, string? shareName);
     Task<bool> TryDeleteShare(ulong memberId, string targetFilePath);
     Task<bool> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath, int sharesCount);
     Task<List<ShareResponseDto>> GetSharesInDirectory(ulong memberid, string targetDirectoryPath);
-    Task<string?> GetPasswordHashByToken(string token);
+    Task<string?> GetPasswordHashByToken(Guid token);
 }

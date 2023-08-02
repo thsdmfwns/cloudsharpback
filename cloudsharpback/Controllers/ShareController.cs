@@ -83,21 +83,21 @@ namespace cloudsharpback.Controllers
         [HttpPost("close")]
         public async Task<IActionResult> CloseShare(string token)
         {
-            if (!Guid.TryParse(token, out _))
+            if (!Guid.TryParse(token, out var guidToken))
             {
                 return BadRequest();
             }
-            var err = await _shareService.CloseShareAsync(Member, token);
+            var err = await _shareService.CloseShareAsync(Member, guidToken);
             return err is null ? Ok() : StatusCode(err.HttpCode, err.Message);
         }
         [HttpPost("update")]
         public async Task<IActionResult> UpdateShare(string token, [FromBody] ShareUpdateDto dto)
         {
-            if (!Guid.TryParse(token, out _))
+            if (!Guid.TryParse(token, out var guidToken))
             {
                 return BadRequest();
             }
-            var err = await _shareService.UpdateShareAsync(dto, token, Member);
+            var err = await _shareService.UpdateShareAsync(dto, guidToken, Member);
             return err is null ? Ok() : StatusCode(err.HttpCode, err.Message);
         }
 
@@ -105,11 +105,11 @@ namespace cloudsharpback.Controllers
         [HttpPost("validatePw")]
         public async Task<IActionResult> ValidatePassword(ShareRequestValidatePasswordDto dto)
         {
-            if (!Guid.TryParse(dto.Token, out _))
+            if (!Guid.TryParse(dto.Token, out var guidToken))
             {
                 return BadRequest();
             }
-            var result = await _shareService.ValidatePassword(dto.Password, dto.Token);
+            var result = await _shareService.ValidatePassword(dto.Password, guidToken);
             if (result.err is not null || result.result is null)
             {
                 return StatusCode(result.err!.HttpCode, result.err.Message);
@@ -121,11 +121,11 @@ namespace cloudsharpback.Controllers
         [HttpGet("checkPw")]
         public async Task<IActionResult> CheckPassword(string token)
         {
-            if (!Guid.TryParse(token, out _))
+            if (!Guid.TryParse(token, out var guidToken))
             {
                 return BadRequest();
             }
-            var result = await _shareService.CheckPassword(token);
+            var result = await _shareService.CheckPassword(guidToken);
             return Ok(result);
         }
 

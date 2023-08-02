@@ -130,7 +130,11 @@ namespace cloudsharpback.Services
         {
             try
             {
-                var dto = await _shareRepository.GetShareDownloadDtoByToken(req.Token);
+                if (!Guid.TryParse(req.Token, out var token))
+                {
+                    return (new HttpResponseDto() { HttpCode = 400 }, null);
+                }
+                var dto = await _shareRepository.GetShareDownloadDtoByToken(token);
                 if (dto is null)
                 {
                     var res = new HttpResponseDto
@@ -189,7 +193,7 @@ namespace cloudsharpback.Services
                 });
             }
         }
-        public async Task<HttpResponseDto?> CloseShareAsync(MemberDto member, string token)
+        public async Task<HttpResponseDto?> CloseShareAsync(MemberDto member, Guid token)
         {
             try
             {
@@ -208,7 +212,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        public async Task<HttpResponseDto?> UpdateShareAsync(ShareUpdateDto dto, string token, MemberDto member)
+        public async Task<HttpResponseDto?> UpdateShareAsync(ShareUpdateDto dto, Guid token, MemberDto member)
         {
             try
             {
@@ -217,7 +221,7 @@ namespace cloudsharpback.Services
                 {
                     password = PasswordEncrypt.EncryptPassword(password);
                 }
-                var res = await _shareRepository.TryUpdateShare(member.Id, token, dto, password);
+                var res = await _shareRepository.TryUpdateShare(member.Id, token, password, dto.Comment, dto.ExpireTime, dto.ShareName);
                 return res ? null : new HttpResponseDto{HttpCode = 404, Message = "share not found"};
             }
             catch (Exception ex)
@@ -322,7 +326,7 @@ namespace cloudsharpback.Services
         /// <param name="token"></param>
         /// <returns>404 : NotFound Share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpResponseDto? err, bool? result)> ValidatePassword(string password, string token)
+        public async Task<(HttpResponseDto? err, bool? result)> ValidatePassword(string password, Guid token)
         {
             try
             {
@@ -349,7 +353,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        public async Task<bool> CheckPassword(string token)
+        public async Task<bool> CheckPassword(Guid token)
         {
             try
             {

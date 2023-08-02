@@ -173,8 +173,9 @@ VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), null
     [Test]
     public async Task TryAddMember()
     {
+        var addMembersCount = 5;
         var sucs = new List<RegisterDto>();
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < addMembersCount; i++)
         {
             var dto = new RegisterDto()
             {
@@ -198,7 +199,7 @@ VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), null
         //fail
         
         var fails = new List<RegisterDto>();
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < addMembersCount; i++)
         {
             var dto = new RegisterDto()
             {

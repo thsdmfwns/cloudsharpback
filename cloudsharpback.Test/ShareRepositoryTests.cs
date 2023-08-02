@@ -10,11 +10,15 @@ public class ShareRepositoryTests
 {
     private List<Member> Members = new();
     private List<Share> Shares = new();
+    private Faker _faker;
     private ShareRepository _shareRepository;
+    private ulong FailMemberId =>
+        (ulong)Random.Shared.Next(Members.Count +1, 100);
     [SetUp]
     public async Task Setup()
     {
         _shareRepository = new ShareRepository(DBConnectionFactoryMock.Mock.Object);
+        _faker = new();
         Members = await MemberRepositoryTests.SetTable();
         Shares = await SetTable(5, Members);
     }
@@ -29,7 +33,7 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
 ";
         for (int i = 0; i < rowsCount; i++)
         {
-            var item = Share.GetFake(faker, (ulong)i + 1, members.ElementAt(Random.Shared.Next(members.Count - 1)).MemberId);
+            var item = Share.GetFake(faker, (ulong)i + 1, members.ElementAt(members.Count-1).MemberId);
             list.Add(item);
         }
 
@@ -54,7 +58,9 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         return list;
     }
 
-    [Test]
+    
+
+        [Test]
     public async Task GetShareByToken()
     {
         //success
@@ -72,4 +78,122 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
             Assert.That(dto, Is.Null);
         }
     }
+
+    [Test]
+    public async Task GetSharesListByMemberId()
+    {
+        //Success
+        foreach (var item in Members)
+        {
+            var dtos = 
+                (await _shareRepository.GetSharesListByMemberId(item.MemberId))
+                .Select(x => x.Target)
+                .ToList();
+            var shares = 
+                Shares.Where(x => x.MemeberId == item.MemberId)
+                    .Select(x=> x.Target)
+                    .ToList();
+            dtos.ForEach(x => Assert.That(shares, Does.Contain(x)));
+        }
+
+        //fail
+        for (int i = 0; i < Members.Count; i++)
+        {
+            var failList =
+                await _shareRepository.GetSharesListByMemberId(FailMemberId);
+            Assert.That(failList, Is.Empty);
+        }
+    }
+
+    [Test]
+    public async Task GetShareDownloadDtoByToken()
+    {
+        //suc
+        foreach (var item in Shares)
+        {
+            var dto = await _shareRepository.GetShareDownloadDtoByToken(item.Token);
+            Assert.That(dto, Is.Not.Null);
+            Assert.That(dto!.Target, Is.EqualTo(item.Target));
+        }
+        
+        //fail
+        for (int i = 0; i < Shares.Count; i++)
+        {
+            var dto = await _shareRepository.GetShareDownloadDtoByToken(Guid.NewGuid());
+            Assert.That(dto, Is.Null);   
+        }
+    }
+
+    [Test]
+    public async Task GetSharesByTargetFilePath()
+    {
+        //suc
+        foreach (var item in Shares)
+        {
+            var dtos = await _shareRepository.GetSharesByTargetFilePath(item.MemeberId, item.Target);
+            Assert.That(dtos, Is.Not.Empty);
+            dtos.ForEach(x => Assert.That(x.Target, Is.EqualTo(item.Target)));
+        }
+        
+        //fail
+        for (int i = 0; i < Shares.Count; i++)
+        {
+            var dto = await _shareRepository.GetSharesByTargetFilePath(FailMemberId, _faker.Random.Words());
+            Assert.That(dto, Is.Empty);   
+        }
+    }
+
+    [Test]
+    public async Task GetSharesInDirectory()
+    {
+        foreach (var share in Shares)
+        {
+            var dir = Path.GetDirectoryName(share.Target);
+            var res = await _shareRepository.GetSharesInDirectory(share.MemeberId, dir!);
+            var tokens = res.Select(x => x.Token).ToList();
+            Assert.That(res, Is.Not.Empty);
+            Assert.That(tokens, Does.Contain(share.Token.ToString()));
+        }
+
+        for (int i = 0; i < Shares.Count; i++)
+        {
+            var res = await _shareRepository.GetSharesInDirectory(FailMemberId, _faker.Random.Word());
+            Assert.That(res, Is.Empty);
+        }
+    }
+
+    [Test]
+    public async Task GetPasswordHashByToken()
+    {
+        foreach (var share in Shares)
+        {
+            var res = await _shareRepository.GetPasswordHashByToken(share.Token);
+            Assert.That(res, Is.Not.Null);
+            Assert.That(PasswordEncrypt.VerifyPassword(share.Password, res!), Is.True);
+        }
+
+        for (int i = 0; i < Shares.Count(); i++)
+        {
+            var res = await _shareRepository.GetPasswordHashByToken(_faker.Random.Uuid());
+            Assert.That(res, Is.Null);
+        }
+    }
+
+    [Test]
+    public async Task TrySetShareExpireTimeToZero()
+    {
+        foreach (var share in Shares)
+        {
+            var res = await _shareRepository.TrySetShareExpireTimeToZero(share.MemeberId, share.Token);
+            Assert.That(res, Is.True);
+            
+        }
+
+        for (int i = 0; i < Shares.Count(); i++)
+        {
+            var res = await _shareRepository.TrySetShareExpireTimeToZero(FailMemberId, Guid.NewGuid());
+            Assert.That(res, Is.False);
+        }
+    }
+
 }

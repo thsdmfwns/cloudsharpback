@@ -29,7 +29,7 @@ public class ShareRepository : IShareRepository
             fileSize: (ulong)fileinfo.Length
         );
 
-    public async Task<bool> TryAddShare(ulong memberId, string target, string password, ulong expireTime,
+    public async Task<bool> TryAddShare(ulong memberId, string target, string? password, ulong expireTime,
         string? comment,
         string? shareName, Guid token, ulong fileSize)
     {
@@ -49,7 +49,7 @@ public class ShareRepository : IShareRepository
         }
     }
 
-    private async Task<bool> AddShare(ulong memberId, string target, string password, ulong expireTime, string? comment,
+    private async Task<bool> AddShare(ulong memberId, string target, string? password, ulong expireTime, string? comment,
         string? shareName, Guid token, ulong fileSize)
     {
         const string sql = "INSERT INTO share(member_id, target, password, expire_time, comment, share_time, share_name, token, file_size) " +
@@ -98,7 +98,7 @@ public class ShareRepository : IShareRepository
         return result.ToList();
     }
 
-    public async Task<ShareDownloadDto?> GetShareDownloadDtoByToken(string token)
+    public async Task<ShareDownloadDto?> GetShareDownloadDtoByToken(Guid token)
     {
         const string sql = "Select BIN_TO_UUID(m.directory) directory , s.target, s.expire_time expireTime, s.password " +
                            "FROM share AS s " +
@@ -109,7 +109,7 @@ public class ShareRepository : IShareRepository
         return await conn.QueryFirstOrDefaultAsync<ShareDownloadDto?>(sql, new { Token = token });
     }
 
-    public async Task<bool> TrySetShareExpireTimeToZero(ulong memberId, string token)
+    public async Task<bool> TrySetShareExpireTimeToZero(ulong memberId, Guid token)
     {
         const string sql = "UPDATE share " +
                            "SET expire_time = 0 " +
@@ -123,7 +123,8 @@ public class ShareRepository : IShareRepository
         return result > 0;
     }
 
-    public async Task<bool> TryUpdateShare(ulong memberId, string token, ShareUpdateDto dto, string? password)
+    public async Task<bool> TryUpdateShare(ulong memberId, Guid token, string? password, string? comment,
+        ulong? expireTime, string? shareName)
     {
         const string sql = "UPDATE share " +
                            "SET password = @Password, expire_time = @Expire, comment = @Comment, share_name = @ShareName " +
@@ -132,13 +133,13 @@ public class ShareRepository : IShareRepository
         var res = await conn.ExecuteAsync(sql, new
         {
             Password = password,
-            Expire = dto.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
-            Comment = dto.Comment,
-            ShareName = dto.ShareName,
+            Expire = expireTime ?? (ulong)DateTime.MaxValue.Ticks,
+            Comment = comment,
+            ShareName = shareName,
             Token = token,
             Id = memberId,
         });
-        return res > 0;
+        return res > 0;  
     }
 
     public async Task<List<ShareResponseDto>> GetSharesByTargetFilePath(ulong memberid, string targetFilePath)
@@ -195,7 +196,7 @@ public class ShareRepository : IShareRepository
         return res == sharesCount;
     }
 
-    public async Task<string?> GetPasswordHashByToken(string token)
+    public async Task<string?> GetPasswordHashByToken(Guid token)
     {
         var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
         using var conn = _connService.Connection;

@@ -1,3 +1,7 @@
+CREATE DATABASE cloud_sharp;
+
+USE cloud_sharp;
+
 -- member: table
 CREATE TABLE `member` (
                           `member_id` bigint unsigned NOT NULL AUTO_INCREMENT,
@@ -12,7 +16,7 @@ CREATE TABLE `member` (
                           UNIQUE KEY `id` (`id`) USING BTREE,
                           KEY `role_id` (`role_id`),
                           CONSTRAINT `member_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `role` (`role_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- No native definition for element: role_id (index)
 
@@ -28,7 +32,7 @@ CREATE TABLE `password_store_directory` (
                                             PRIMARY KEY (`password_directory_id`),
                                             KEY `member_id` (`member_id`),
                                             CONSTRAINT `member_id` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- password_store_keys: table
 CREATE TABLE `password_store_keys` (
@@ -43,7 +47,7 @@ CREATE TABLE `password_store_keys` (
                                        PRIMARY KEY (`password_store_key_id`),
                                        KEY `password_store_keys_owner_id` (`owner_id`),
                                        CONSTRAINT `password_store_keys_owner_id` FOREIGN KEY (`owner_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- password_store_value: table
 CREATE TABLE `password_store_value` (
@@ -59,7 +63,7 @@ CREATE TABLE `password_store_value` (
                                         KEY `password_store_value_encrypt_key_id` (`encrypt_key_id`),
                                         CONSTRAINT `password_store_value_directory_id` FOREIGN KEY (`directory_id`) REFERENCES `password_store_directory` (`password_directory_id`) ON DELETE CASCADE,
                                         CONSTRAINT `password_store_value_encrypt_key_id` FOREIGN KEY (`encrypt_key_id`) REFERENCES `password_store_keys` (`password_store_key_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- role: table
 CREATE TABLE `role` (
@@ -67,6 +71,9 @@ CREATE TABLE `role` (
                         `name` varchar(255) DEFAULT NULL,
                         UNIQUE KEY `role_id` (`role_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO role(role_id, name) VALUES (1, 'user');
+INSERT INTO role(role_id, name) VALUES (2, 'member');
 
 -- share: table
 CREATE TABLE `share` (
@@ -84,7 +91,7 @@ CREATE TABLE `share` (
                          UNIQUE KEY `token` (`token`) USING BTREE,
                          KEY `member_id` (`member_id`),
                          CONSTRAINT `share_ibfk_1` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- No native definition for element: member_id (index)
 
@@ -97,7 +104,7 @@ CREATE TABLE `torrent` (
                            UNIQUE KEY `idx` (`torrent_id`),
                            KEY `owner_member_id` (`owner_member_id`),
                            CONSTRAINT `torrent_ibfk_1` FOREIGN KEY (`owner_member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- No native definition for element: owner_member_id (index)
 
