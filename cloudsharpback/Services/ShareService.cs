@@ -315,8 +315,8 @@ namespace cloudsharpback.Services
             {
                 return null;
             }
-            var res = await _shareRepository.TryDeleteShareInDirectory(memberDto.Id, targetDirectoryPath, shares.Count);
-            return res ? null : new HttpResponseDto() { HttpCode = 404, Message = "few shares not found"};
+            var res = await _shareRepository.TryDeleteShareInDirectory(memberDto.Id, targetDirectoryPath);
+            return res == shares.Count ? null : new HttpResponseDto() { HttpCode = 404, Message = "few shares not found"};
         }
 
         /// <summary>

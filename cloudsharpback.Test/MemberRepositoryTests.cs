@@ -23,38 +23,43 @@ public class MemberRepositoryTests
         _members = await SetTable();
     }
 
-    public static async Task<List<Member>> SetTable()
+    private static async Task InsertMember(Member mem)
     {
         var insertSql = @"
 INSERT INTO member
 VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), null);
 ";
+        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        await conn.ExecuteAsync(insertSql, new
+        {
+            memberId = mem.MemberId,
+            id = mem.Id,
+            password = PasswordEncrypt.EncryptPassword(mem.Password),
+            nick = mem.Nick,
+            email = mem.Email,
+            dir = mem.Dir,
+            role = mem.Role
+        });
+    }
+
+    private static async Task DeleteMembers()
+    {
+        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        await conn.ExecuteAsync("DELETE FROM member");   
+    }
+
+    public static async Task<List<Member>> SetTable()
+    {
         ulong memberid = 1;
         var members = new List<Member>();
         var faker  = new Faker();
+        await DeleteMembers();
         for (int i = 0; i < 5; i++)
         {
             var mem = Member.GetFake(memberid++, faker);
             members.Add(mem);
-            await Task.Delay(1);
+            await InsertMember(mem);
         }
-
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
-        await conn.ExecuteAsync("DELETE FROM member");
-        foreach (var mem in members)
-        {
-            await conn.ExecuteAsync(insertSql, new
-            {
-                memberId = mem.MemberId,
-                id = mem.Id,
-                password = PasswordEncrypt.EncryptPassword(mem.Password),
-                nick = mem.Nick,
-                email = mem.Email,
-                dir = mem.Dir,
-                role = mem.Role
-            });
-        }
-
         return members;
     }
 

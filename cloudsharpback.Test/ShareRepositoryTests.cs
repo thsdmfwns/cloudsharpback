@@ -3,6 +3,7 @@ using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using cloudsharpback.Utills;
 using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Test;
 
@@ -27,40 +28,46 @@ public class ShareRepositoryTests
     {
         var faker = new Faker();
         var list = new List<Share>();
-        var insertSQL = @"
-INSERT INTO share
-VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @shareName, UUID_TO_BIN(@token), @fileSize)
-";
+        await DeleteAllRows();
         for (int i = 0; i < rowsCount; i++)
         {
-            var item = Share.GetFake(faker, (ulong)i + 1, members.ElementAt(members.Count-1).MemberId);
+            var item = Share.GetFake(faker, (ulong)i + 1, members.ElementAt(Random.Shared.Next(0, members.Count-1)).MemberId);
             list.Add(item);
-        }
-
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
-        await conn.ExecuteAsync("DELETE FROM share");
-        foreach (var item in list)
-        {
-            await conn.ExecuteAsync(insertSQL, new
-            {
-                id = item.Id,
-                memberId = item.MemeberId,
-                target = item.Target,
-                password = PasswordEncrypt.EncryptPassword(item.Password),
-                expireTime = item.ExpireTime,
-                comment = item.Comment,
-                shareTime = item.ShareTime,
-                shareName = item.ShareName,
-                token = item.Token,
-                fileSize = item.FileSize,
-            });
+            await InsertRow(item);
         }
         return list;
     }
 
+    private static async Task DeleteAllRows()
+    {
+        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        await conn.ExecuteAsync("DELETE FROM share");
+    }
     
+    private static async Task InsertRow(Share item)
+    {
+        var insertSQL = @"
+INSERT INTO share
+VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @shareName, UUID_TO_BIN(@token), @fileSize)
+";
+        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        await conn.ExecuteAsync(insertSQL, new
+        {
+            id = item.Id,
+            memberId = item.MemeberId,
+            target = item.Target,
+            password = PasswordEncrypt.EncryptPassword(item.Password),
+            expireTime = item.ExpireTime,
+            comment = item.Comment,
+            shareTime = item.ShareTime,
+            shareName = item.ShareName,
+            token = item.Token,
+            fileSize = item.FileSize,
+        });
+    }
 
-        [Test]
+
+    [Test]
     public async Task GetShareByToken()
     {
         //success
@@ -155,6 +162,7 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
             Assert.That(tokens, Does.Contain(share.Token.ToString()));
         }
 
+        
         for (int i = 0; i < Shares.Count; i++)
         {
             var res = await _shareRepository.GetSharesInDirectory(FailMemberId, _faker.Random.Word());
@@ -195,5 +203,89 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
             Assert.That(res, Is.False);
         }
     }
+
+    [Test]
+    public async Task TryAddShare()
+    {
+        int addCount = 5;
+        for (int i = 0; i < addCount; i++)
+        {
+            var share = Share.GetFake(_faker, _faker.Random.ULong(), _faker.Random.ULong(1, (ulong)Members.Count));
+            var res = await _shareRepository.TryAddShare(share.MemeberId, share.Target,
+                PasswordEncrypt.EncryptPassword(share.Password), share.ExpireTime, share.Comment, share.ShareName,
+                share.Token, share.FileSize);
+            Assert.That(res, Is.True);
+        }
+
+        for (int i = 0; i < addCount; i++)
+        {
+            var share = Share.GetFake(_faker, _faker.Random.ULong(), FailMemberId);
+            var res = await _shareRepository.TryAddShare(share.MemeberId, share.Target,
+                PasswordEncrypt.EncryptPassword(share.Password), share.ExpireTime, share.Comment, share.ShareName,
+                share.Token, share.FileSize);
+            Assert.That(res, Is.False);
+        }
+    }
+
+    [Test]
+    public async Task TryUpdateShare()
+    {
+        foreach (var share in Shares)
+        {
+            var update = Share.GetFake(_faker, share.Id, share.MemeberId);
+            var res = await _shareRepository.TryUpdateShare(
+                update.MemeberId, share.Token, PasswordEncrypt.EncryptPassword(update.Password), update.Comment,
+                update.ExpireTime, update.ShareName);
+            Assert.That(res, Is.True);
+        }
+
+        foreach (var update in Shares.Select(share => Share.GetFake(_faker, share.Id, FailMemberId)).ToList())
+        {
+            var res = await _shareRepository.TryUpdateShare(
+                update.MemeberId, Guid.NewGuid(), PasswordEncrypt.EncryptPassword(update.Password), update.Comment,
+                update.ExpireTime, update.ShareName);
+            Assert.That(res, Is.False);
+        }
+    }
+
+    [Test]
+    public async Task TryDeleteShare()
+    {
+        foreach (var share in Shares)
+        {
+            var res = await _shareRepository.TryDeleteShare(share.MemeberId, share.Target);
+            Assert.That(res, Is.True);
+        }
+
+        for (int i = 0; i < Shares.Count; i++)
+        {
+            var res = await _shareRepository.TryDeleteShare(FailMemberId, _faker.System.FilePath());
+            Assert.That(res, Is.False);
+        }
+    }
+
+    [Test]
+    public async Task TryDeleteShareInDirectory()
+    {
+        foreach (var share in Shares)
+        {
+            var dir = Path.GetDirectoryName(share.Target);
+            var res = await _shareRepository.TryDeleteShareInDirectory(share.MemeberId, dir!);
+            var dircount = Shares.Count(x => Path.GetDirectoryName(x.Target) == dir 
+                                             && share.MemeberId == x.MemeberId);
+            Assert.That(res, Is.EqualTo(dircount));
+        }
+    }
+
+    [Test]
+    public async Task TryDeleteShareInDIrectoryFail()
+    {
+        for (int i = 0; i < Shares.Count(); i++)
+        {
+            var res = await _shareRepository.TryDeleteShareInDirectory(FailMemberId, _faker.Random.Words());
+            Assert.That(res, Is.EqualTo(0));
+        }
+    }
+    
 
 }

@@ -18,7 +18,7 @@ public interface IShareRepository
     Task<bool> TryUpdateShare(ulong memberId, Guid token, string? password, string? comment,
         ulong? expireTime, string? shareName);
     Task<bool> TryDeleteShare(ulong memberId, string targetFilePath);
-    Task<bool> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath, int sharesCount);
+    Task<int> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath);
     Task<List<ShareResponseDto>> GetSharesInDirectory(ulong memberid, string targetDirectoryPath);
     Task<string?> GetPasswordHashByToken(Guid token);
 }

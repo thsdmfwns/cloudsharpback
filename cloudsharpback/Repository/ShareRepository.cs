@@ -182,7 +182,7 @@ public class ShareRepository : IShareRepository
         return res > 0;
     }
     
-    public async Task<bool> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath, int sharesCount)
+    public async Task<int> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath)
     {
         var targetPath = Path.Combine(targetDirectoryPath, "%");
         const string sql = "DELETE FROM share " +
@@ -193,7 +193,7 @@ public class ShareRepository : IShareRepository
             Target = targetPath,
             Id = memberId,
         });
-        return res == sharesCount;
+        return res;
     }
 
     public async Task<string?> GetPasswordHashByToken(Guid token)
