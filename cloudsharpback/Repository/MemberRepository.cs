@@ -1,5 +1,3 @@
-using cloudsharpback.Models;
-using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
@@ -108,11 +106,14 @@ public class MemberRepository : IMemberRepository
         return result > 0;
     }
 
-    public async Task<bool> TryAddMember(RegisterDto registerDto, ulong role)
+    public async Task<bool> TryAddMember(RegisterDto dto, ulong role)
+        => await TryAddMember(dto.Id, dto.Pw, dto.Nick, dto.Email, Guid.NewGuid(), role);
+    
+    public async Task<bool> TryAddMember(string id, string pw, string nick, string email, Guid dir, ulong role)
     {
         try
         {
-            return await AddMember(registerDto, role);
+            return await AddMember(id, pw, nick, email, dir, role);
         }
         catch (MySqlException ex)
         {
@@ -126,19 +127,19 @@ public class MemberRepository : IMemberRepository
         }
     }
 
-    private async Task<bool> AddMember(RegisterDto registerDto, ulong role)
+    private async Task<bool> AddMember(string id, string pw, string nick, string email, Guid dir, ulong role)
     {
         using var conn = _connService.Connection;
         const string sql = "INSERT INTO member(id, password, nickname, role_id, email, directory) " +
                     "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory))";
         var result = await conn.ExecuteAsync(sql, new
         {
-            Id = registerDto.Id,
-            Pw = registerDto.Pw,
-            Nick = registerDto.Nick,
+            Id = id,
+            Pw = pw,
+            Nick = nick,
             Role = role,
-            Email = registerDto.Email,
-            Directory = Guid.NewGuid().ToString(),
+            Email = email,
+            Directory = dir.ToString(),
         });
         return result > 0;
     }

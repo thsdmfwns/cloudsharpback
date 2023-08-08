@@ -31,4 +31,7 @@ public record Share(
             faker.Random.ULong()
         );
     }
+    
+    public override string ToString()
+        => Utils.ToJson(this);
 };

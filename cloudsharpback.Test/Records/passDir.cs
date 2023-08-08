@@ -22,4 +22,7 @@ public record PassDir(
             (ulong)faker.Date.Past().Ticks,
             memberId);
     }
+    public override string ToString()
+        => Utils.ToJson(this);
+
 }

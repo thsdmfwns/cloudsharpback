@@ -1,6 +1,5 @@
 using Bogus;
 using cloudsharpback.Repository;
-using cloudsharpback.Repository.Interface;
 using cloudsharpback.Test.Records;
 using Dapper;
 
@@ -8,19 +7,20 @@ namespace cloudsharpback.Test;
 
 public class PasswordDIrRepoTests
 {
-    private List<Member> _members = new List<Member>();
-    private List<PassDir> _passDirs = new List<PassDir>();
+    private List<Member> _members = null!;
+    private List<PassDir> _passDirs = null!;
     private PasswordStoreDirectoryRepository _repository = null!;
-    private Faker _faker = new Faker();
-    private ulong FailMemberId =>
-        (ulong)Random.Shared.Next(_members.Count +1, 100);
-    
+    private Faker _faker = null!;
+    private ulong FailMemberId => Utils.GetFailId(_members);
+    private ulong FailRowId => Utils.GetFailId(_passDirs);
+
     [SetUp]
     public async Task SetUp()
     {
         _members = await MemberRepositoryTests.SetTable();
         _passDirs = await SetTable(5, _members);
         _repository = new PasswordStoreDirectoryRepository(DBConnectionFactoryMock.Mock.Object);
+        _faker = new Faker();
     }
 
     public static async Task<List<PassDir>> SetTable(int rowsSize, List<Member> members)
@@ -89,6 +89,83 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
         {
             var res = await _repository.GetDirById(FailMemberId, _faker.Random.ULong());
             Assert.That(res, Is.Null);
+        }
+    }
+
+    [Test]
+    public async Task TryInsertDir()
+    {
+        var insertCount = 5;
+        var insertlist = new List<PassDir>();
+        for (int i = 0; i < insertCount; i++)
+        {
+            var data = PassDir.GetFake(_faker, 0, _faker.Random.ULong(1, (ulong)_members.Count));
+            var res = await _repository.TryInsertDir(data.member_id, data.name, data.comment, data.icon);
+            Assert.That(res, Is.True);
+        }
+        
+        for (int i = 0; i < insertCount; i++)
+        {
+            var data = PassDir.GetFake(_faker, 0, FailMemberId);
+            var res = await _repository.TryInsertDir(data.member_id, data.name, data.comment, data.icon);
+            Assert.That(res, Is.False);
+        }
+    }
+
+    [Test]
+    public async Task DeleteDir()
+    {
+        foreach (var passDir in _passDirs)
+        {
+            var res = await _repository.DeleteDir(passDir.member_id, passDir.password_directory_id);
+            Assert.That(res, Is.True);
+            var rows = await GetAllRows();
+            Assert.That(rows.Select(Utils.ToJson).ToList(), Does.Not.Contain(Utils.ToJson(passDir)));
+        }
+    }
+
+    [Test]
+    public async Task DeleteDirFail()
+    {
+        foreach (var passDir in _passDirs)
+        {
+            var res = await _repository.DeleteDir(FailMemberId, passDir.password_directory_id);
+            Assert.That(res, Is.False);
+            res = await _repository.DeleteDir(FailMemberId, FailRowId);
+            Assert.That(res, Is.False);
+        }
+    }
+
+    [Test]
+    public async Task UpdateDir()
+    {
+        foreach (var update in _passDirs.Select(passDir => PassDir.GetFake(_faker, passDir.password_directory_id, passDir.member_id)))
+        {
+            var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
+                update.comment, update.icon);
+            Assert.That(res, Is.True);
+            var rows = await GetAllRows();
+            var dataes = rows
+                .Select(x => Test.Utils.ToJson(new { x.member_id, x.comment, x.password_directory_id, x.name, x.icon }))
+                .ToList();
+            var updateData = Utils.ToJson(new
+                { update.member_id, update.comment, update.password_directory_id, update.name, update.icon });
+            Assert.That(dataes, Does.Contain(updateData));
+        }
+
+        //fail
+        foreach (var update in _passDirs.Select(passDir => PassDir.GetFake(_faker, FailRowId, passDir.member_id)))
+        {
+            var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
+                update.comment, update.icon);
+            Assert.That(res, Is.False);
+        }
+        
+        foreach (var update in _passDirs.Select(passDir => PassDir.GetFake(_faker, FailRowId, FailMemberId)))
+        {
+            var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
+                update.comment, update.icon);
+            Assert.That(res, Is.False);
         }
     }
 }

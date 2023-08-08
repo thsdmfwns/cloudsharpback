@@ -4,6 +4,7 @@ using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Repository;
 
@@ -72,6 +73,24 @@ VALUES (@name, @comment, @icon, @lastEdit, @created, @memberId);
     public async Task<bool> InsertDir(ulong memberId, PasswordStoreDirInsertDto dto)
         => await InsertDir(memberId, dto.Name, dto.Comment, dto.Icon);
 
+    public async Task<bool> TryInsertDir(ulong memberId, string name, string? comment, string? icon)
+    {
+        try
+        {
+            return await InsertDir(memberId, name, comment, icon);
+        }
+        catch (MySqlException ex)
+        {
+            if (ex.Number  == 1452 
+                || ex.Number == 1451
+                || ex.Number == 1062)
+            {
+                return false;
+            }
+            throw;
+        }
+    }
+    
     public async Task<bool> DeleteDir(ulong memberId, ulong id)
     {
         const string sql = @"
