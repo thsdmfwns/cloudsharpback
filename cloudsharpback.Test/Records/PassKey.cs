@@ -26,4 +26,18 @@ public record PassKey(
             faker.Random.Words()
         );
     }
+
+    public string ToCompareTestString()
+        => Utils.ToJson(new
+        {
+            owner_id,
+            private_key,
+            public_key,
+            encrypt_algorithm,
+            name,
+            comment
+        });
+
+    public override string ToString()
+        => Utils.ToJson(this);
 }

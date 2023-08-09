@@ -102,8 +102,11 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
             var data = PassDir.GetFake(_faker, 0, _faker.Random.ULong(1, (ulong)_members.Count));
             var res = await _repository.TryInsertDir(data.member_id, data.name, data.comment, data.icon);
             Assert.That(res, Is.True);
+            var rows = await GetAllRows();
+            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(data.ToCompareTestString()));
         }
-        
+
+        //fail
         for (int i = 0; i < insertCount; i++)
         {
             var data = PassDir.GetFake(_faker, 0, FailMemberId);
@@ -145,12 +148,7 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
                 update.comment, update.icon);
             Assert.That(res, Is.True);
             var rows = await GetAllRows();
-            var dataes = rows
-                .Select(x => Test.Utils.ToJson(new { x.member_id, x.comment, x.password_directory_id, x.name, x.icon }))
-                .ToList();
-            var updateData = Utils.ToJson(new
-                { update.member_id, update.comment, update.password_directory_id, update.name, update.icon });
-            Assert.That(dataes, Does.Contain(updateData));
+            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(update.ToCompareTestString()));
         }
 
         //fail

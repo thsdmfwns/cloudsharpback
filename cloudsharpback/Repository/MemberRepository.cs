@@ -107,13 +107,14 @@ public class MemberRepository : IMemberRepository
     }
 
     public async Task<bool> TryAddMember(RegisterDto dto, ulong role)
-        => await TryAddMember(dto.Id, dto.Pw, dto.Nick, dto.Email, Guid.NewGuid(), role);
+        => await TryAddMember(dto.Id, dto.Pw, dto.Nick, dto.Email, Guid.NewGuid(), role, null);
     
-    public async Task<bool> TryAddMember(string id, string pw, string nick, string email, Guid dir, ulong role)
+    public async Task<bool> TryAddMember(string id, string pw, string nick, string email, Guid dir, ulong role,
+        string? profileImage)
     {
         try
         {
-            return await AddMember(id, pw, nick, email, dir, role);
+            return await AddMember(id, pw, nick, email, dir, role, profileImage);
         }
         catch (MySqlException ex)
         {
@@ -127,11 +128,12 @@ public class MemberRepository : IMemberRepository
         }
     }
 
-    private async Task<bool> AddMember(string id, string pw, string nick, string email, Guid dir, ulong role)
+    private async Task<bool> AddMember(string id, string pw, string nick, string email, Guid dir, ulong role,
+        string? profileImage)
     {
         using var conn = _connService.Connection;
-        const string sql = "INSERT INTO member(id, password, nickname, role_id, email, directory) " +
-                    "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory))";
+        const string sql = "INSERT INTO member(id, password, nickname, role_id, email, directory, profile_image) " +
+                    "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory), @ProfileImage)";
         var result = await conn.ExecuteAsync(sql, new
         {
             Id = id,
@@ -140,6 +142,7 @@ public class MemberRepository : IMemberRepository
             Role = role,
             Email = email,
             Directory = dir.ToString(),
+            ProfileImage = profileImage
         });
         return result > 0;
     }

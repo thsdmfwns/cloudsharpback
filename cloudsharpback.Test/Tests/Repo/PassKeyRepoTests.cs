@@ -124,15 +124,12 @@ VALUES (@password_store_key_id, @owner_id, @public_key, @private_key, @encrypt_a
                 row.name, row.comment);
             Assert.That(res, Is.True);
             var rows = await GetAllRows();
-            var keys = rows
-                .Where(x => x.owner_id == row.owner_id)
-                .Select(x => x.private_key)
-                .ToList();
-            Assert.That(keys, Does.Contain(row.private_key));
-            
+            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(row.ToCompareTestString()));
+
             //fail
-            res = await _repository.TryInsertKey(FailMemberId, row.encrypt_algorithm, row.public_key,
-                row.private_key, row.name, row.comment);
+            row = PassKey.GetFake(_faker, 0, FailMemberId);
+            res = await _repository.TryInsertKey(row.owner_id, row.encrypt_algorithm, row.public_key, row.private_key,
+                row.name, row.comment);
             Assert.That(res, Is.False);
         }
     }
@@ -145,7 +142,7 @@ VALUES (@password_store_key_id, @owner_id, @public_key, @private_key, @encrypt_a
             var res = await _repository.DeleteKeyById(passKey.owner_id, passKey.password_store_key_id);
             Assert.That(res, Is.True);
             var rows = await GetAllRows();
-            Assert.That(rows, Does.Not.Contain(passKey));
+            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Not.Contain(passKey.ToCompareTestString()));
         }
     }
 

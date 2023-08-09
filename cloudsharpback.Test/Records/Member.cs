@@ -20,6 +20,18 @@ public record Member(ulong MemberId, string Id, string Password, string Nick, st
         );    
     }
 
+
+    public string ToCompareTestString()
+     => Utils.ToJson(new
+         {
+             Password,
+             Nick,
+             Email,
+             Dir,
+             Role,
+             ProfileImage
+         });
+    
     public override string ToString()
         => Utils.ToJson(this);
 };

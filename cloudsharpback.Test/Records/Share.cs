@@ -1,18 +1,19 @@
 using Bogus;
 using Bogus.DataSets;
+using cloudsharpback.Utills;
 
 namespace cloudsharpback.Test.Records;
 
 public record Share(
     ulong Id,
-    ulong MemeberId,
+    ulong MemberId,
     string Target,
     string Password,
     ulong ExpireTime,
     string Comment,
     ulong ShareTime,
     string ShareName,
-    Guid Token,
+    string Token,
     ulong FileSize
     )
 {
@@ -22,15 +23,28 @@ public record Share(
             id,
             memberId,
             faker.System.FilePath(),
-            faker.Internet.Password(),
+            PasswordEncrypt.EncryptPassword(faker.Internet.Password()),
             (ulong)DateTime.MaxValue.Ticks,
-            faker.Random.String(),
+            faker.Random.Words(),
             (ulong)DateTime.UtcNow.Ticks,
             faker.Random.Word(),
-            Guid.NewGuid(),
+            Guid.NewGuid().ToString(),
             faker.Random.ULong()
         );
     }
+
+    public string ToCompareTestString()
+        => Utils.ToJson(new
+        {
+            MemeberId = MemberId,
+            Target,
+            Password,
+            ExpireTime,
+            Comment,
+            ShareName,
+            Token,
+            FileSize
+        });
     
     public override string ToString()
         => Utils.ToJson(this);

@@ -22,6 +22,16 @@ public record PassDir(
             (ulong)faker.Date.Past().Ticks,
             memberId);
     }
+
+    public string ToCompareTestString()
+        => Utils.ToJson(new
+        {
+            name,
+            comment,
+            icon,
+            member_id
+        });
+
     public override string ToString()
         => Utils.ToJson(this);
 

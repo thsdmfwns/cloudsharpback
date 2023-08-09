@@ -12,8 +12,8 @@ public class ShareRepositoryTests
     private List<Share> _shares = null!;
     private Faker _faker = null!;
     private ShareRepository _shareRepository = null!;
-    private ulong FailMemberId =>
-        (ulong)Random.Shared.Next(_members.Count +1, 100);
+    private ulong FailMemberId => Utils.GetFailId(_members);
+    private ulong FailShareId => Utils.GetFailId(_shares);
     [SetUp]
     public async Task Setup()
     {
@@ -53,9 +53,9 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         await conn.ExecuteAsync(insertSQL, new
         {
             id = item.Id,
-            memberId = item.MemeberId,
+            memberId = item.MemberId,
             target = item.Target,
-            password = PasswordEncrypt.EncryptPassword(item.Password),
+            password = item.Password,
             expireTime = item.ExpireTime,
             comment = item.Comment,
             shareTime = item.ShareTime,
@@ -63,6 +63,25 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
             token = item.Token,
             fileSize = item.FileSize,
         });
+    }
+    
+    private static async Task<List<Share>> GetAllRows()
+    {
+        var sql = @"
+SELECT share_id Id,
+       member_id MemberId,
+       target as Target,
+       password as Password,
+       expire_time ExpireTime,
+       comment as Comment,
+       share_time ShareTime,
+       share_name ShareName,
+       BIN_TO_UUID(token) as Token,
+       file_size FileSize
+FROM share; 
+";
+        var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        return (await conn.QueryAsync<Share>(sql)).ToList();
     }
 
 
@@ -72,7 +91,7 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         //success
         foreach (var item in _shares)
         {
-            var dto = await _shareRepository.GetShareByToken(item.Token);
+            var dto = await _shareRepository.GetShareByToken(Guid.Parse(item.Token));
             Assert.That(dto, Is.Not.Null);
             Assert.That(dto!.Target, Is.EqualTo(item.Target));
         }
@@ -96,7 +115,7 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
                 .Select(x => x.Target)
                 .ToList();
             var shares = 
-                _shares.Where(x => x.MemeberId == item.MemberId)
+                _shares.Where(x => x.MemberId == item.MemberId)
                     .Select(x=> x.Target)
                     .ToList();
             dtos.ForEach(x => Assert.That(shares, Does.Contain(x)));
@@ -117,7 +136,7 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         //suc
         foreach (var item in _shares)
         {
-            var dto = await _shareRepository.GetShareDownloadDtoByToken(item.Token);
+            var dto = await _shareRepository.GetShareDownloadDtoByToken(Guid.Parse(item.Token));
             Assert.That(dto, Is.Not.Null);
             Assert.That(dto!.Target, Is.EqualTo(item.Target));
         }
@@ -136,7 +155,7 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         //suc
         foreach (var item in _shares)
         {
-            var dtos = await _shareRepository.GetSharesByTargetFilePath(item.MemeberId, item.Target);
+            var dtos = await _shareRepository.GetSharesByTargetFilePath(item.MemberId, item.Target);
             Assert.That(dtos, Is.Not.Empty);
             dtos.ForEach(x => Assert.That(x.Target, Is.EqualTo(item.Target)));
         }
@@ -155,13 +174,13 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         foreach (var share in _shares)
         {
             var dir = Path.GetDirectoryName(share.Target);
-            var res = await _shareRepository.GetSharesInDirectory(share.MemeberId, dir!);
+            var res = await _shareRepository.GetSharesInDirectory(share.MemberId, dir!);
             var tokens = res.Select(x => x.Token).ToList();
             Assert.That(res, Is.Not.Empty);
-            Assert.That(tokens, Does.Contain(share.Token.ToString()));
+            Assert.That(tokens, Does.Contain(share.Token));
         }
 
-        
+        //fail
         for (int i = 0; i < _shares.Count; i++)
         {
             var res = await _shareRepository.GetSharesInDirectory(FailMemberId, _faker.Random.Word());
@@ -174,11 +193,12 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
     {
         foreach (var share in _shares)
         {
-            var res = await _shareRepository.GetPasswordHashByToken(share.Token);
+            var res = await _shareRepository.GetPasswordHashByToken(Guid.Parse(share.Token));
             Assert.That(res, Is.Not.Null);
-            Assert.That(PasswordEncrypt.VerifyPassword(share.Password, res!), Is.True);
+            Assert.That(res, Is.EqualTo(share.Password));
         }
 
+        //fail
         for (int i = 0; i < _shares.Count(); i++)
         {
             var res = await _shareRepository.GetPasswordHashByToken(_faker.Random.Uuid());
@@ -191,11 +211,13 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
     {
         foreach (var share in _shares)
         {
-            var res = await _shareRepository.TrySetShareExpireTimeToZero(share.MemeberId, share.Token);
+            var res = await _shareRepository.TrySetShareExpireTimeToZero(share.MemberId, Guid.Parse(share.Token));
             Assert.That(res, Is.True);
-            
+            var targetRow = (await GetAllRows()).Single(x=> x.Token == share.Token);
+            Assert.That(targetRow.ExpireTime, Is.EqualTo(0));
         }
 
+        //fail
         for (int i = 0; i < _shares.Count(); i++)
         {
             var res = await _shareRepository.TrySetShareExpireTimeToZero(FailMemberId, Guid.NewGuid());
@@ -210,18 +232,21 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         for (int i = 0; i < addCount; i++)
         {
             var share = Share.GetFake(_faker, _faker.Random.ULong(), _faker.Random.ULong(1, (ulong)_members.Count));
-            var res = await _shareRepository.TryAddShare(share.MemeberId, share.Target,
-                PasswordEncrypt.EncryptPassword(share.Password), share.ExpireTime, share.Comment, share.ShareName,
-                share.Token, share.FileSize);
+            var res = await _shareRepository.TryAddShare(share.MemberId, share.Target,
+                share.Password, share.ExpireTime, share.Comment, share.ShareName,
+                Guid.Parse(share.Token), share.FileSize);
             Assert.That(res, Is.True);
+            var target = (await GetAllRows()).Single(x => x.Token == share.Token);
+            Assert.That(target.ToCompareTestString(), Is.EqualTo(share.ToCompareTestString()));
         }
-
+        
+        //fail
         for (int i = 0; i < addCount; i++)
         {
             var share = Share.GetFake(_faker, _faker.Random.ULong(), FailMemberId);
-            var res = await _shareRepository.TryAddShare(share.MemeberId, share.Target,
-                PasswordEncrypt.EncryptPassword(share.Password), share.ExpireTime, share.Comment, share.ShareName,
-                share.Token, share.FileSize);
+            var res = await _shareRepository.TryAddShare(share.MemberId, share.Target,
+                share.Password, share.ExpireTime, share.Comment, share.ShareName,
+                Guid.Parse(share.Token), share.FileSize);
             Assert.That(res, Is.False);
         }
     }
@@ -231,17 +256,18 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
     {
         foreach (var share in _shares)
         {
-            var update = Share.GetFake(_faker, share.Id, share.MemeberId);
+            var update = Share.GetFake(_faker, share.Id, share.MemberId);
             var res = await _shareRepository.TryUpdateShare(
-                update.MemeberId, share.Token, PasswordEncrypt.EncryptPassword(update.Password), update.Comment,
+                update.MemberId, Guid.Parse(share.Token), update.Password, update.Comment,
                 update.ExpireTime, update.ShareName);
             Assert.That(res, Is.True);
         }
-
+        
+        //fail
         foreach (var update in _shares.Select(share => Share.GetFake(_faker, share.Id, FailMemberId)).ToList())
         {
             var res = await _shareRepository.TryUpdateShare(
-                update.MemeberId, Guid.NewGuid(), PasswordEncrypt.EncryptPassword(update.Password), update.Comment,
+                update.MemberId, Guid.NewGuid(), update.Password, update.Comment,
                 update.ExpireTime, update.ShareName);
             Assert.That(res, Is.False);
         }
@@ -252,10 +278,11 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
     {
         foreach (var share in _shares)
         {
-            var res = await _shareRepository.TryDeleteShare(share.MemeberId, share.Target);
+            var res = await _shareRepository.TryDeleteShare(share.MemberId, share.Target);
             Assert.That(res, Is.True);
         }
 
+        //fail
         for (int i = 0; i < _shares.Count; i++)
         {
             var res = await _shareRepository.TryDeleteShare(FailMemberId, _faker.System.FilePath());
@@ -269,9 +296,9 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
         foreach (var share in _shares)
         {
             var dir = Path.GetDirectoryName(share.Target);
-            var res = await _shareRepository.TryDeleteShareInDirectory(share.MemeberId, dir!);
+            var res = await _shareRepository.TryDeleteShareInDirectory(share.MemberId, dir!);
             var dircount = _shares.Count(x =>  x.Target.StartsWith(dir!)
-                                             && share.MemeberId == x.MemeberId);
+                                             && share.MemberId == x.MemberId);
             Assert.That(res, Is.EqualTo(dircount));
         }
     }

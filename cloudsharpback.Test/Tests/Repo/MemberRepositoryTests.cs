@@ -27,7 +27,7 @@ public class MemberRepositoryTests
     {
         var insertSql = @"
 INSERT INTO member
-VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), null);
+VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), @profileImage);
 ";
         using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
         await conn.ExecuteAsync(insertSql, new
@@ -38,8 +38,10 @@ VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), null
             nick = mem.Nick,
             email = mem.Email,
             dir = mem.Dir.ToString(),
-            role = mem.Role
+            role = mem.Role,
+            profileImage = mem.ProfileImage
         });
+        
     }
 
     private static async Task<List<Member>> GetAllRows()
@@ -190,10 +192,11 @@ FROM member;
         {
             var mem = Member.GetFake(0, _faker);
             sucs.Add(mem);
-            var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir), mem.Role);
+            var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir),
+                mem.Role, mem.ProfileImage);
             Assert.That(res, Is.True);
             var rows = await GetAllRows();
-            Assert.That(rows.Select(x=>x.Dir).ToList(), Does.Contain(mem.Dir));
+            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(mem.ToCompareTestString()));
         }
 
         //fail
@@ -201,7 +204,8 @@ FROM member;
         for (int i = 0; i < addMembersCount; i++)
         {
             var mem = Member.GetFake(0, _faker);
-            var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir), _faker.Random.ULong(3));
+            var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir),
+                _faker.Random.ULong(3), mem.ProfileImage);
             Assert.That(res, Is.False);
         }
 
