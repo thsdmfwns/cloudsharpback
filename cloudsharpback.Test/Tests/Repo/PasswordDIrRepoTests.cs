@@ -18,12 +18,12 @@ public class PasswordDIrRepoTests
     public async Task SetUp()
     {
         _members = await MemberRepositoryTests.SetTable();
-        _passDirs = await SetTable(5, _members);
+        _passDirs = await SetTable(_members, 5);
         _repository = new PasswordStoreDirectoryRepository(DBConnectionFactoryMock.Mock.Object);
         _faker = new Faker();
     }
 
-    public static async Task<List<PassDir>> SetTable(int rowsSize, List<Member> members)
+    public static async Task<List<PassDir>> SetTable(List<Member> members, int rowsSize = 5)
     {
         var list = new List<PassDir>();
         var faker = new Faker();
