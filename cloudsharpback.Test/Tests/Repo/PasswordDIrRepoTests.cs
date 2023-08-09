@@ -3,7 +3,7 @@ using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using Dapper;
 
-namespace cloudsharpback.Test;
+namespace cloudsharpback.Test.Tests.Repo;
 
 public class PasswordDIrRepoTests
 {

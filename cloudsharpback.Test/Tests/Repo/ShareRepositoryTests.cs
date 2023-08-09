@@ -4,7 +4,7 @@ using cloudsharpback.Test.Records;
 using cloudsharpback.Utills;
 using Dapper;
 
-namespace cloudsharpback.Test;
+namespace cloudsharpback.Test.Tests.Repo;
 
 public class ShareRepositoryTests
 {

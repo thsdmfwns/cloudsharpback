@@ -316,7 +316,7 @@ public class PasswordStoreService : IPasswordStoreService
             {
                 return new HttpResponseDto() { HttpCode = 400, Message = "Bad Encrypt Algorithm" };
             }
-            if (!await _keyRepository.InsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey, dto.Name, dto.Comment))
+            if (!await _keyRepository.TryInsertKey(memberDto.Id, dto.EncryptAlgorithm, dto.PublicKey, dto.PrivateKey, dto.Name, dto.Comment))
             {
                 return new HttpResponseDto() { HttpCode = 400 };
             }
