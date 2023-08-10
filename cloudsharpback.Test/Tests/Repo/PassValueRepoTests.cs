@@ -1,4 +1,5 @@
 using Bogus;
+using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using Dapper;
@@ -26,7 +27,7 @@ public class PassValueRepoTests
         _PassDirs = await PasswordDIrRepoTests.SetTable(_members);
         _faker = new Faker();
         _PassValues = await SetTable(_PassKeys, _PassDirs);
-        _repository = new PasswordStoreValueRepository(DBConnectionFactoryMock.Mock.Object);
+        _repository = new PasswordStoreValueRepository(DBConnectionFactoryMock.Mock);
     }
 
     public static async Task<List<PassValue>> SetTable(List<PassKey> keys, List<PassDir> PassDirs, int fakeCount = 5)
@@ -60,21 +61,133 @@ VALUES (
         @last_edited_time
 );";
 
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync(sql, passValue);
     }
 
     private static async Task DeleteAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync("DELETE FROM password_store_value");
     }
 
     private static async Task<List<PassValue>> GetAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         return (await conn.QueryAsync<PassValue>("SELECT * FROM password_store_value")).ToList();
     }
-    
+
+    [Test]
+    public async Task GetValueById()
+    {
+        foreach (var value in _PassValues)
+        {
+            var res = await _repository.GetValueById(value.password_store_value_id);
+            Assert.That(res, Is.Not.Null);
+            var resRecord = new PassValue(res!.Id, res.DirectoryId, res.KeyId, res.ValueId, res.ValuePassword,
+                res.CreatedTime, res.LastEditedTime);
+            Assert.That(resRecord.ToCompareTestString(), Is.EqualTo(value.ToCompareTestString()));
+        }
+
+        for (int i = 0; i < _PassValues.Count; i++)
+        {
+            var res = await _repository.GetValueById(FailPassValId);
+            Assert.That(res, Is.Null);
+        }
+    }
+
+    [Test]
+    public async Task GetValuesByDirectoryId()
+    {
+        foreach (var passDir in _PassDirs)
+        {
+            var res = await _repository.GetValuesByDirectoryId(passDir.password_directory_id);
+            var items = _PassValues
+                .Where(x => x.directory_id == passDir.password_directory_id)
+                .Select(x => new PasswordStoreValueListItemDto()
+                {
+                    CreatedTime = x.created_time,
+                    DirectoryId = x.directory_id,
+                    Id = x.password_store_value_id,
+                    KeyId = x.encrypt_key_id,
+                    LastEditedTime = x.last_edited_time
+                })
+                .ToList();
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(items)));
+        }
+
+        for (int i = 0; i < _PassDirs.Count; i++)
+        {
+            var res = await _repository.GetValuesByDirectoryId(FailPassDIrId);
+            Assert.That(res, Is.Empty);
+        }
+    }
+
+    [Test]
+    public async Task GetValuesByKeyId()
+    {
+        foreach (var passKey in _PassKeys)
+        {
+            var res = await _repository.GetValuesByKeyId(passKey.password_store_key_id);
+            var items = _PassValues
+                .Where(x => x.encrypt_key_id == passKey.password_store_key_id)
+                .Select(x => new PasswordStoreValueListItemDto()
+                {
+                    CreatedTime = x.created_time,
+                    DirectoryId = x.directory_id,
+                    Id = x.password_store_value_id,
+                    KeyId = x.encrypt_key_id,
+                    LastEditedTime = x.last_edited_time
+                })
+                .ToList();
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(items)));
+        }
+
+        for (int i = 0; i < _PassKeys.Count; i++)
+        {
+            var res = await _repository.GetValuesByKeyId(FailPassKeyId);
+            Assert.That(res, Is.Empty);
+        }   
+    }
+
+    [Test]
+    public async Task GetValuesByKeyIdAndDirId()
+    {
+        foreach (var value in _PassValues)
+        {
+            var res = await _repository.GetValuesByKeyIdAndDirId(value.directory_id, value.encrypt_key_id);
+            var items = _PassValues
+                .Where(x => x.directory_id == value.directory_id &&
+                            x.encrypt_key_id == value.encrypt_key_id)
+                .Select(x => new PasswordStoreValueListItemDto()
+                {
+                    CreatedTime = x.created_time,
+                    DirectoryId = x.directory_id,
+                    Id = x.password_store_value_id,
+                    KeyId = x.encrypt_key_id,
+                    LastEditedTime = x.last_edited_time
+                }).ToList();
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(items)));
+        }
+
+        foreach (var value in _PassValues)
+        {
+            var res = await _repository.GetValuesByKeyIdAndDirId(value.directory_id, FailPassKeyId);
+            Assert.That(res, Is.Empty);
+            res = await _repository.GetValuesByKeyIdAndDirId(FailPassDIrId, value.encrypt_key_id);
+            Assert.That(res, Is.Empty);
+            res = await _repository.GetValuesByKeyIdAndDirId(FailPassDIrId, FailPassKeyId);
+            Assert.That(res, Is.Empty);
+        }
+    }
+
+    [Test]
+    public async Task InsertValue()
+    {
+        foreach (var value in _PassValues)
+        {
+            
+        }
+    }
     
 }
