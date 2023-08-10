@@ -5,6 +5,7 @@ using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Repository;
 
@@ -86,7 +87,25 @@ WHERE encrypt_key_id = @keyId AND directory_id = @dirId;
         return res.ToList();
     }
 
-    public async Task<bool> InsertValue(ulong dirId, ulong keyId, string? valueId, string valuePassword)
+    public async Task<bool> TryInsertValue(ulong dirId, ulong keyId, string? valueId, string valuePassword)
+    {
+        try
+        {
+            return await InsertValue(dirId, keyId, valueId, valuePassword);
+        }
+        catch (MySqlException ex)
+        {
+            if (ex.Number  == 1452 
+                || ex.Number == 1451
+                || ex.Number == 1062)
+            {
+                return false;
+            }
+            throw;
+        }
+    }
+
+    private async Task<bool> InsertValue(ulong dirId, ulong keyId, string? valueId, string valuePassword)
     {
         const string sql = @"
 INSERT INTO password_store_value(directory_id, encrypt_key_id, value_id, value_password, last_edited_time, created_time) 
@@ -102,7 +121,7 @@ VALUES (@dirid, @keyid, @valueId, @valuePassword, @lastEditedTIme, @createdTime)
             lastEditedTime = DateTime.UtcNow.Ticks,
             createdTime = DateTime.UtcNow.Ticks,
         });
-        return res > 0;
+        return res > 0;   
     }
 
     public async Task<bool> UpdateValue(ulong itemId, string? valueId, string valuePassword)

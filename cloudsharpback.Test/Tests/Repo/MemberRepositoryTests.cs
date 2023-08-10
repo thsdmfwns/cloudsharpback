@@ -47,7 +47,14 @@ VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), @pro
     private static async Task<List<Member>> GetAllRows()
     {
         var sql = @"
-SELECT member_id MemberId, id AS Id, password AS Password, nickname Nick, email As Email, BIN_TO_UUID(directory) Dir, role_id Role, profile_image ProfileImage 
+SELECT member_id MemberId, 
+       id AS Id,
+       password AS Password,
+       nickname Nick,
+       email As Email,
+       BIN_TO_UUID(directory) Dir,
+       role_id Role,
+       profile_image ProfileImage 
 FROM member;
 ";
         var conn = DBConnectionFactoryMock.Mock.Connection;

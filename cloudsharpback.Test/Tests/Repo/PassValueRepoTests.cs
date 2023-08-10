@@ -3,6 +3,8 @@ using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using Dapper;
+using Google.Protobuf.WellKnownTypes;
+using K4os.Hash.xxHash;
 
 namespace cloudsharpback.Test.Tests.Repo;
 
@@ -184,9 +186,102 @@ VALUES (
     [Test]
     public async Task InsertValue()
     {
+        int insertCount = 5;
+
+        for (int i = 0; i < insertCount; i++)
+        {
+            var val = PassValue.GetFake(_faker,
+                _faker.Random.ULong(1, (ulong)_PassDirs.Count),
+                _faker.Random.ULong(1, (ulong)_PassKeys.Count),
+                0
+            );
+            var res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
+            Assert.That(res, Is.True);
+
+            var rows = (await GetAllRows())
+                .Select(x => x.ToCompareTestString())
+                .ToList();
+            
+            Assert.That(rows, Does.Contain(val.ToCompareTestString()));
+        }
+        
+        //fail
+        for (int i = 0; i < insertCount; i++)
+        {
+            var val = PassValue.GetFake(_faker,
+                FailPassDIrId,
+                _faker.Random.ULong(1, (ulong)_PassKeys.Count),
+                0
+            );
+            var res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
+            Assert.That(res, Is.False);
+            
+            val = PassValue.GetFake(_faker,
+                FailPassDIrId,
+                FailPassKeyId,
+                0
+            );
+            res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
+            Assert.That(res, Is.False);
+            
+            val = PassValue.GetFake(_faker,
+                _faker.Random.ULong(1, (ulong)_PassDirs.Count),
+                FailPassKeyId,
+                0
+            );
+            res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
+            Assert.That(res, Is.False);
+        }
+    }
+
+    [Test]
+    public async Task UpdateValue()
+    {
+        foreach (var update in 
+                 _PassValues.Select(value => PassValue.GetFake(
+                     _faker, 
+                     value.directory_id, 
+                     value.encrypt_key_id, 
+                     value.password_store_value_id)))
+        {
+            var res = await _repository.UpdateValue(update.password_store_value_id, update.value_id, update.value_password);
+            Assert.That(res, Is.True);
+            var target = (await GetAllRows()).Single(x => x.password_store_value_id == update.password_store_value_id);
+            Assert.That(target.ToCompareTestString(), Is.EqualTo(update.ToCompareTestString()));
+        }
+        //fail
+        foreach (var update in 
+                 _PassValues.Select(value => PassValue.GetFake(
+                     _faker, 
+                     value.directory_id, 
+                     value.encrypt_key_id, 
+                     FailPassValId)))
+        {
+            var res = await _repository.UpdateValue(update.password_store_value_id, update.value_id, update.value_password);
+            Assert.That(res, Is.False);
+        }
+    }
+
+    [Test]
+    public async Task DeleteValue()
+    {
         foreach (var value in _PassValues)
         {
-            
+            var res = await _repository.DeleteValue(value.password_store_value_id);
+            Assert.That(res, Is.True);
+            var target =
+                (await GetAllRows()).SingleOrDefault(x => x.password_store_value_id == value.password_store_value_id);
+            Assert.That(target, Is.Null);
+        }
+    }
+
+    [Test]
+    public async Task DeleteValue_Fail()
+    {
+        for (int i = 0; i < _PassValues.Count; i++)
+        {
+            var res = await _repository.DeleteValue(FailPassValId);
+            Assert.That(res, Is.False);
         }
     }
     

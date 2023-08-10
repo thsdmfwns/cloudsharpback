@@ -191,7 +191,7 @@ public class PasswordStoreService : IPasswordStoreService
                 return new HttpResponseDto() { HttpCode = 403 };
             }
 
-            if (!await _valueRepository.InsertValue(dto.DirectoryId, dto.KeyId, dto.ValueId, dto.ValuePassword))
+            if (!await _valueRepository.TryInsertValue(dto.DirectoryId, dto.KeyId, dto.ValueId, dto.ValuePassword))
             {
                 return new HttpResponseDto() { HttpCode = 400 };
             }
