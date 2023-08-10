@@ -24,7 +24,7 @@ public record PassDir(
     }
 
     public string ToCompareTestString()
-        => Utils.ToJson(new
+        => Utils.ClassToJson(new
         {
             name,
             comment,
@@ -33,6 +33,6 @@ public record PassDir(
         });
 
     public override string ToString()
-        => Utils.ToJson(this);
+        => Utils.ClassToJson(this);
 
 }

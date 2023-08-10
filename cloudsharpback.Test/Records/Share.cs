@@ -34,7 +34,7 @@ public record Share(
     }
 
     public string ToCompareTestString()
-        => Utils.ToJson(new
+        => Utils.ClassToJson(new
         {
             MemeberId = MemberId,
             Target,
@@ -47,5 +47,5 @@ public record Share(
         });
     
     public override string ToString()
-        => Utils.ToJson(this);
+        => Utils.ClassToJson(this);
 };

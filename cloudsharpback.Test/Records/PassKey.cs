@@ -28,7 +28,7 @@ public record PassKey(
     }
 
     public string ToCompareTestString()
-        => Utils.ToJson(new
+        => Utils.ClassToJson(new
         {
             owner_id,
             private_key,
@@ -39,5 +39,5 @@ public record PassKey(
         });
 
     public override string ToString()
-        => Utils.ToJson(this);
+        => Utils.ClassToJson(this);
 }

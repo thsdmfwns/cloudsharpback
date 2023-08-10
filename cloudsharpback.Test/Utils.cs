@@ -5,7 +5,7 @@ namespace cloudsharpback.Test;
 
 public static class Utils
 {
-    public static string ToJson(object obj)
+    public static string ClassToJson(object obj)
     {
         var dic = new SortedDictionary<string, object?>();
         obj.GetType()
@@ -13,6 +13,11 @@ public static class Utils
             .ToList()
             .ForEach(x => dic.Add(x.Name, x.GetValue(obj)));
         return JsonConvert.SerializeObject(dic, Formatting.Indented);
+    }
+
+    public static string ToJson(object obj)
+    {
+        return JsonConvert.SerializeObject(obj, Formatting.Indented);
     }
         
 

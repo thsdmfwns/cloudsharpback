@@ -22,7 +22,7 @@ public record Member(ulong MemberId, string Id, string Password, string Nick, st
 
 
     public string ToCompareTestString()
-     => Utils.ToJson(new
+     => Utils.ClassToJson(new
          {
              Password,
              Nick,
@@ -33,5 +33,5 @@ public record Member(ulong MemberId, string Id, string Password, string Nick, st
          });
     
     public override string ToString()
-        => Utils.ToJson(this);
+        => Utils.ClassToJson(this);
 };

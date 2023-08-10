@@ -26,7 +26,7 @@ public record PassValue(
     }
 
     public string ToCompareTestString()
-        => Utils.ToJson(new
+        => Utils.ClassToJson(new
         {
             directory_id,
             encrypt_key_id,
@@ -35,5 +35,5 @@ public record PassValue(
         });
 
     public override string ToString()
-        => Utils.ToJson(this);
+        => Utils.ClassToJson(this);
 }
