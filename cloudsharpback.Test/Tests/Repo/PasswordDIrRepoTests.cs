@@ -19,7 +19,7 @@ public class PasswordDIrRepoTests
     {
         _members = await MemberRepositoryTests.SetTable();
         _passDirs = await SetTable(_members, 5);
-        _repository = new PasswordStoreDirectoryRepository(DBConnectionFactoryMock.Mock.Object);
+        _repository = new PasswordStoreDirectoryRepository(DBConnectionFactoryMock.Mock);
         _faker = new Faker();
     }
 
@@ -39,7 +39,7 @@ public class PasswordDIrRepoTests
 
     private static async Task DeleteAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync("DELETE FROM password_store_directory;");
     }
 
@@ -49,13 +49,13 @@ public class PasswordDIrRepoTests
 INSERT INTO password_store_directory
 VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @created_time, @member_id);
 ";
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync(sql, passDir);
     }
     
     private static async Task<List<PassDir>> GetAllRows() 
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         var res = await conn.QueryAsync<PassDir>("SELECT * FROM password_store_directory;");
         return res.ToList();
     }
@@ -123,7 +123,7 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
             var res = await _repository.DeleteDir(passDir.member_id, passDir.password_directory_id);
             Assert.That(res, Is.True);
             var rows = await GetAllRows();
-            Assert.That(rows.Select(Utils.ToJson).ToList(), Does.Not.Contain(Utils.ToJson(passDir)));
+            Assert.That(rows.Select(Utils.ClassToJson).ToList(), Does.Not.Contain(Utils.ClassToJson(passDir)));
         }
     }
 

@@ -18,7 +18,7 @@ public class MemberRepositoryTests
     [SetUp]
     public async Task Setup()
     {
-        _repository = new MemberRepository(DBConnectionFactoryMock.Mock.Object);
+        _repository = new MemberRepository(DBConnectionFactoryMock.Mock);
         _members = await SetTable();
         _faker = new Faker();
     }
@@ -29,7 +29,7 @@ public class MemberRepositoryTests
 INSERT INTO member
 VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), @profileImage);
 ";
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync(insertSql, new
         {
             memberId = mem.MemberId,
@@ -50,13 +50,13 @@ VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), @pro
 SELECT member_id MemberId, id AS Id, password AS Password, nickname Nick, email As Email, BIN_TO_UUID(directory) Dir, role_id Role, profile_image ProfileImage 
 FROM member;
 ";
-        var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        var conn = DBConnectionFactoryMock.Mock.Connection;
         return (await conn.QueryAsync<Member>(sql)).ToList();
     }
 
     private static async Task DeleteMembers()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync("DELETE FROM member");   
     }
 

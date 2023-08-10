@@ -19,7 +19,7 @@ public class PassKeyRepoTests
     public async Task Setup()
     {
         _faker = new Faker();
-        _repository = new PasswordStoreKeyRepository(DBConnectionFactoryMock.Mock.Object);
+        _repository = new PasswordStoreKeyRepository(DBConnectionFactoryMock.Mock);
         _members = await MemberRepositoryTests.SetTable();
         _passKeys = await SetTable(_members);
     }
@@ -46,19 +46,19 @@ public class PassKeyRepoTests
 INSERT INTO password_store_keys
 VALUES (@password_store_key_id, @owner_id, @public_key, @private_key, @encrypt_algorithm, @created_time, @name, @comment)
 ";
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync(sql, passKey);
     }
 
     private static async Task DeleteAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync("DELETE FROM password_store_keys");
     }
 
     private static async Task<List<PassKey>> GetAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         var res = await conn.QueryAsync<PassKey>("SELECT * FROM password_store_keys");
         return res.ToList();
     }

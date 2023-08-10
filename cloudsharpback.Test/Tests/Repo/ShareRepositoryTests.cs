@@ -17,7 +17,7 @@ public class ShareRepositoryTests
     [SetUp]
     public async Task Setup()
     {
-        _shareRepository = new ShareRepository(DBConnectionFactoryMock.Mock.Object);
+        _shareRepository = new ShareRepository(DBConnectionFactoryMock.Mock);
         _faker = new();
         _members = await MemberRepositoryTests.SetTable();
         _shares = await SetTable(5, _members);
@@ -39,7 +39,7 @@ public class ShareRepositoryTests
 
     private static async Task DeleteAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync("DELETE FROM share");
     }
     
@@ -49,7 +49,7 @@ public class ShareRepositoryTests
 INSERT INTO share
 VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @shareName, UUID_TO_BIN(@token), @fileSize)
 ";
-        using var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync(insertSQL, new
         {
             id = item.Id,
@@ -80,7 +80,7 @@ SELECT share_id Id,
        file_size FileSize
 FROM share; 
 ";
-        var conn = DBConnectionFactoryMock.Mock.Object.Connection;
+        var conn = DBConnectionFactoryMock.Mock.Connection;
         return (await conn.QueryAsync<Share>(sql)).ToList();
     }
 
