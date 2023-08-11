@@ -34,7 +34,7 @@ VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), @pro
         {
             memberId = mem.MemberId,
             id = mem.Id,
-            password = PasswordEncrypt.EncryptPassword(mem.Password),
+            password = mem.Password,
             nick = mem.Nick,
             email = mem.Email,
             dir = mem.Dir.ToString(),
@@ -85,12 +85,20 @@ FROM member;
     [Test]
     public async Task GetMemberById()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
-            var mem = await _repository.GetMemberById(suc.MemberId);
-            Assert.That(mem, Is.Not.Null);
-            Assert.That(mem!.Directory, Is.EqualTo(suc.Dir.ToString()));
+            var res = await _repository.GetMemberById(member.MemberId);
+            Assert.That(res, Is.Not.Null);
+            var memberDto = new MemberDto()
+            {
+                Directory = member.Dir,
+                Email = member.Email,
+                Id = member.MemberId,
+                Nickname = member.Nick,
+                ProfileImage = member.ProfileImage,
+                Role = member.Role
+            };
+            Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(memberDto)));
         }
         Assert.That(await _repository.GetMemberById(FailMemberId), Is.Null);
     }
@@ -98,12 +106,20 @@ FROM member;
     [Test]
     public async Task GetMemberByLoginId()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
-            var mem = await _repository.GetMemberByLoginId(suc.Id);
-            Assert.That(mem, Is.Not.Null);
-            Assert.That(mem!.Directory, Is.EqualTo(suc.Dir.ToString()));
+            var res = await _repository.GetMemberByLoginId(member.Id);
+            Assert.That(res, Is.Not.Null);
+            var memberDto = new MemberDto()
+            {
+                Directory = member.Dir,
+                Email = member.Email,
+                Id = member.MemberId,
+                Nickname = member.Nick,
+                ProfileImage = member.ProfileImage,
+                Role = member.Role
+            };
+            Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(memberDto)));
         }
         Assert.That(await _repository.GetMemberByLoginId(_faker.Random.String()), Is.Null);
     }
@@ -111,52 +127,74 @@ FROM member;
     [Test]
     public async Task TryUpdateMemberProfileImage()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        
+        foreach (var member in _members)
         {
             var filename = _faker.System.FileName();
-            var res = await _repository.TryUpdateMemberProfileImage(suc.MemberId, filename);
+            var res = await _repository.TryUpdateMemberProfileImage(member.MemberId, filename);
             Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.ProfileImage).ToList(), Does.Contain(filename));
+            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+            Assert.That(target.ProfileImage, Is.EqualTo(filename));
+        }
+        //fail
+        for (int i = 0; i < _members.Count; i++)
+        {
+            var filename = _faker.System.FileName();
+            var res = await _repository.TryUpdateMemberProfileImage(FailMemberId, filename);
+            Assert.That(res, Is.False);
         }
     }
     
     [Test]
     public async Task TryUpdateMemberNickname()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
             var nickename = _faker.Internet.UserName();
-            var res = await _repository.TryUpdateMemberNickname(suc.MemberId, nickename);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.Nick).ToList(), Does.Contain(nickename));
+            var res = await _repository.TryUpdateMemberNickname(member.MemberId, nickename);
+            Assert.That(res, Is.True);
+            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+            Assert.That(target.Nick, Is.EqualTo(nickename));
+        }
+        
+        //fail
+        for (int i = 0; i < _members.Count; i++)
+        {
+            var nickename = _faker.Internet.UserName();
+            var res = await _repository.TryUpdateMemberNickname(FailMemberId, nickename);
+            Assert.That(res, Is.False);
         }
     }
     
     [Test]
     public async Task TryUpdateMemberEmail()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
             var email = _faker.Internet.Email();
-            var res = await _repository.TryUpdateMemberEmail(suc.MemberId, email);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.Email).ToList(), Does.Contain(email));
+            var res = await _repository.TryUpdateMemberEmail(member.MemberId, email);
+            Assert.That(res, Is.True);
+            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+            Assert.That(target.Email, Is.EqualTo(email));
+        }
+        
+        //fail
+        for (int i = 0; i < _members.Count; i++)
+        {
+            var email = _faker.Internet.Email();
+            var res = await _repository.TryUpdateMemberEmail(FailMemberId, email);
+            Assert.That(res, Is.False);
         }
     }
     
     [Test]
     public async Task GetMemberPasswordHashById()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
-            var hash = await _repository.GetMemberPasswordHashById(suc.MemberId);
+            var hash = await _repository.GetMemberPasswordHashById(member.MemberId);
             Assert.That(hash, Is.Not.Null);
-            Assert.That(PasswordEncrypt.VerifyPassword(suc.Password, hash!), Is.True);
+            Assert.That(hash, Is.EqualTo(member.Password));
         }
 
         Assert.That(await _repository.GetMemberPasswordHashById(FailMemberId), Is.Null);
@@ -165,28 +203,26 @@ FROM member;
     [Test]
     public async Task GetMemberPasswordHashByLoginId()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
-            var hash = await _repository.GetMemberPasswordHashByLoginId(suc.Id);
+            var hash = await _repository.GetMemberPasswordHashByLoginId(member.Id);
             Assert.That(hash, Is.Not.Null);
-            Assert.That(PasswordEncrypt.VerifyPassword(suc.Password, hash!), Is.True);
+            Assert.That(hash, Is.EqualTo(member.Password));
         }
-
+        
         Assert.That(await _repository.GetMemberPasswordHashByLoginId(_faker.Random.String()), Is.Null);
     }
     
     [Test]
     public async Task TryUpdateMemberPassword()
     {
-        var sucs = _members;
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
             var password = PasswordEncrypt.EncryptPassword(_faker.Internet.Password());
-            var res = await _repository.TryUpdateMemberPassword(suc.MemberId, password);
+            var res = await _repository.TryUpdateMemberPassword(member.MemberId, password);
             Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.Password).ToList(), Does.Contain(password));
+            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+            Assert.That(target.Password, Is.EqualTo(password));
         }
     }
 
@@ -194,11 +230,9 @@ FROM member;
     public async Task TryAddMember()
     {
         var addMembersCount = 5;
-        var sucs = new List<Member>();
         for (int i = 0; i < addMembersCount; i++)
         {
             var mem = Member.GetFake(0, _faker);
-            sucs.Add(mem);
             var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir),
                 mem.Role, mem.ProfileImage);
             Assert.That(res, Is.True);
@@ -207,7 +241,7 @@ FROM member;
         }
 
         //fail
-        
+
         for (int i = 0; i < addMembersCount; i++)
         {
             var mem = Member.GetFake(0, _faker);
@@ -216,16 +250,10 @@ FROM member;
             Assert.That(res, Is.False);
         }
 
-        foreach (var suc in sucs)
+        foreach (var member in _members)
         {
-            var dto = new RegisterDto()
-            {
-                Email = _faker.Internet.Email(),
-                Id = suc.Id,
-                Nick = _faker.Internet.UserName(),
-                Pw = PasswordEncrypt.EncryptPassword(_faker.Internet.Password())
-            };
-            var res = await _repository.TryAddMember(dto, 2);
+            var res = await _repository.TryAddMember(member.Id, member.Password, member.Nick, member.Email, Guid.Parse(member.Dir),
+                member.Role, member.ProfileImage);
             Assert.That(res, Is.False);
         }
     }

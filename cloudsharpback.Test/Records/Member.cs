@@ -1,4 +1,5 @@
 using Bogus;
+using cloudsharpback.Utills;
 
 namespace cloudsharpback.Test.Records;
 
@@ -11,7 +12,7 @@ public record Member(ulong MemberId, string Id, string Password, string Nick, st
         return new Member(
             memberid,
             faker.Internet.UserName(),
-            faker.Internet.Password(),
+            PasswordEncrypt.EncryptPassword(faker.Internet.Password()),
             faker.Internet.UserName(),
             faker.Internet.Email(),
             Guid.NewGuid().ToString(),

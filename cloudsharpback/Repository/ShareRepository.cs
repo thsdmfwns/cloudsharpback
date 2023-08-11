@@ -72,10 +72,16 @@ public class ShareRepository : IShareRepository
 
     public async Task<ShareResponseDto?> GetShareByToken(Guid token)
     {
-        //ulong id, ulong ownerId, string ownerNick, ulong shareTime, ulong? expireTime, string target, string? shareName, string? comment
-        const string sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                           "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
-                           "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
+        const string sql = "Select m.member_id OwnerId, " +
+                           "m.nickname OwnerNick, " +
+                           "s.share_time ShareTime, " +
+                           "s.expire_time ExpireTime, " +
+                           "s.target AS Target, " +
+                           "s.share_name ShareName, " +
+                           "s.comment AS Comment, " +
+                           "BIN_TO_UUID(s.token) AS Token, " +
+                           "s.password IS NOT NULL AS HasPassword, " +
+                           "s.file_size Filesize " +
                            "FROM share AS s " +
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
@@ -86,15 +92,23 @@ public class ShareRepository : IShareRepository
 
     public async Task<List<ShareResponseDto>> GetSharesListByMemberId(ulong memberId)
     {
-        const string sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                           "s.share_time shareTime, s.expire_time expireTime, s.target, " +
-                           "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
+        const string sql = "Select m.member_id ownerId, " +
+                           "m.nickname OwnerNick, " +
+                           "s.share_time ShareTime, " +
+                           "s.expire_time ExpireTime, " +
+                           "s.target AS Target, " +
+                           "s.share_name ShareName, " +
+                           "s.comment AS Comment, " +
+                           "BIN_TO_UUID(s.token) AS Token, " +
+                           "s.password IS NOT NULL AS HasPassword, " +
+                           "s.file_size Filesize " +
                            "FROM share AS s " +
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
                            "WHERE s.member_id = @ID AND s.expire_time >= @Now";
         using var conn = _connService.Connection;
-        var result = await conn.QueryAsync<ShareResponseDto>(sql, new { ID = memberId, Now = (ulong)DateTime.UtcNow.Ticks });
+        var result = await conn.QueryAsync<ShareResponseDto>(sql, 
+            new { ID = memberId, Now = (ulong)DateTime.UtcNow.Ticks });
         return result.ToList();
     }
 
@@ -144,9 +158,16 @@ public class ShareRepository : IShareRepository
 
     public async Task<List<ShareResponseDto>> GetSharesByTargetFilePath(ulong memberid, string targetFilePath)
     {
-        const string sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                           "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
-                           "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
+        const string sql = "Select m.member_id ownerId," +
+                           "m.nickname OwnerNick, " +
+                           "s.share_time ShareTime, " +
+                           "s.expire_time ExpireTime, " +
+                           "s.target AS Target, " +
+                           "s.share_name ShareName, " +
+                           "s.comment AS Comment, " +
+                           "BIN_TO_UUID(s.token) AS Token, " +
+                           "s.password IS NOT NULL AS HasPassword, " +
+                           "s.file_size Filesize " +
                            "FROM share AS s " +
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
@@ -158,9 +179,16 @@ public class ShareRepository : IShareRepository
     public async Task<List<ShareResponseDto>> GetSharesInDirectory(ulong memberid, string targetDirectoryPath)
     {
         var targetPath = Path.Combine(targetDirectoryPath, "%");
-        const string sql = "Select m.member_id ownerId, m.nickname ownerNick, " +
-                           "s.share_time shareTime, s.expire_time expireTime, s.target target, " +
-                           "s.share_name shareName, s.comment, BIN_TO_UUID(s.token) token, s.password, s.file_size filesize " +
+        const string sql = "Select m.member_id ownerId, " +
+                           "m.nickname OwnerNick, " +
+                           "s.share_time ShareTime, " +
+                           "s.expire_time ExpireTime, " +
+                           "s.target AS Target, " +
+                           "s.share_name ShareName, " +
+                           "s.comment AS Comment, " +
+                           "BIN_TO_UUID(s.token) AS Token, " +
+                           "s.password IS NOT NULL AS HasPassword, " +
+                           "s.file_size Filesize " +
                            "FROM share AS s " +
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +

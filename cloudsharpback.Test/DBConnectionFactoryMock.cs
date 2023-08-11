@@ -7,7 +7,7 @@ namespace cloudsharpback.Test;
 public static class DBConnectionFactoryMock
 {
     public static IDBConnectionFactory Mock => GetIdbConnectionFactoryMock();
-    private const string connString = "Server=localhost;Port=32770;Uid=root;Pwd=3279;Database=cloud_sharp;";
+    private const string connString = "Server=cs_db;Port=3306;Uid=root;Pwd=3279;Database=cloud_sharp;";
     private static IDBConnectionFactory GetIdbConnectionFactoryMock()
     {
         var mock = Substitute.For<IDBConnectionFactory>();

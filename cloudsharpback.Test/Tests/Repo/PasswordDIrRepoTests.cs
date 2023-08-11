@@ -1,4 +1,5 @@
 using Bogus;
+using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using Dapper;
@@ -65,13 +66,31 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
     {
         foreach (var dir in _passDirs)
         {
-            var names = _passDirs
+            var datas = _passDirs
                 .Where(x => x.member_id == dir.member_id)
-                .Select(x => x.name).ToList();
-
-            var res = await _repository.GetDirListByMemberId(dir.member_id);
-            var resNames = res.Select(x => x.Name).ToList();
-            resNames.ForEach(x => Assert.That(names, Does.Contain(x)));
+                .Select(x => new PasswordStoreDirDto()
+                {
+                    Comment = x.comment,
+                    CreatedTime = x.created_time,
+                    Id = x.password_directory_id,
+                    Icon = x.icon,
+                    LastEditTime = x.last_edited_time,
+                    Name = x.name,
+                    OwnerId = x.member_id
+                })
+                .OrderBy(x => x.Id)
+                .ToList();
+            var res = (await _repository.GetDirListByMemberId(dir.member_id))
+                .OrderBy(x => x.Id)
+                .ToList();
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(datas)));
+        }
+        
+        //fail
+        for (int i = 0; i < _passDirs.Count; i++)
+        {
+            var res = await _repository.GetDirListByMemberId(FailMemberId);
+            Assert.That(res, Is.Empty);
         }
     }
 
@@ -82,7 +101,17 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
         {
             var res = await _repository.GetDirById(passDir.member_id, passDir.password_directory_id);
             Assert.That(res, Is.Not.Null);
-            Assert.That(res!.Name, Is.EqualTo(passDir.name));
+            var dto = new PasswordStoreDirDto()
+            {
+                Comment = passDir.comment,
+                CreatedTime = passDir.created_time,
+                Id = passDir.password_directory_id,
+                Icon = passDir.icon,
+                LastEditTime = passDir.last_edited_time,
+                Name = passDir.name,
+                OwnerId = passDir.member_id
+            };
+            Assert.That(res, Is.EqualTo(dto));
         }
 
         for (int i = 0; i < 5; i++)
@@ -122,13 +151,13 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
         {
             var res = await _repository.DeleteDir(passDir.member_id, passDir.password_directory_id);
             Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(Utils.ClassToJson).ToList(), Does.Not.Contain(Utils.ClassToJson(passDir)));
+            var target = (await GetAllRows()).SingleOrDefault(x => x.password_directory_id == passDir.password_directory_id);
+            Assert.That(target, Is.Null);
         }
     }
 
     [Test]
-    public async Task DeleteDirFail()
+    public async Task DeleteDir_Fail()
     {
         foreach (var passDir in _passDirs)
         {
@@ -147,8 +176,8 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
             var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
                 update.comment, update.icon);
             Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(update.ToCompareTestString()));
+            var target = (await GetAllRows()).Single(x => x.password_directory_id == update.password_directory_id);
+            Assert.That(target.ToCompareTestString(), Is.EqualTo(update.ToCompareTestString()));
         }
 
         //fail

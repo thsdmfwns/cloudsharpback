@@ -1,4 +1,5 @@
 using Bogus;
+using cloudsharpback.Models.DTO.Share;
 using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using cloudsharpback.Utills;
@@ -91,9 +92,23 @@ FROM share;
         //success
         foreach (var item in _shares)
         {
-            var dto = await _shareRepository.GetShareByToken(Guid.Parse(item.Token));
-            Assert.That(dto, Is.Not.Null);
-            Assert.That(dto!.Target, Is.EqualTo(item.Target));
+            var res = await _shareRepository.GetShareByToken(Guid.Parse(item.Token));
+            Assert.That(res, Is.Not.Null);
+            var mem = _members.Single(x => x.MemberId == item.MemberId);
+            var dto = new ShareResponseDto()
+            {
+                Comment = item.Comment,
+                ExpireTime = item.ExpireTime,
+                FileSize = item.FileSize,
+                HasPassword = true,
+                OwnerId = item.MemberId,
+                OwnerNick = mem.Nick,
+                ShareName = item.ShareName,
+                ShareTime = item.ShareTime,
+                Target = item.Target,
+                Token = item.Token
+            };
+            Assert.That(Utils.ToJson(res!), Is.EqualTo(Utils.ToJson(dto)));
         }
         
         //fail
@@ -110,15 +125,28 @@ FROM share;
         //Success
         foreach (var item in _members)
         {
-            var dtos = 
+            var res = 
                 (await _shareRepository.GetSharesListByMemberId(item.MemberId))
-                .Select(x => x.Target)
+                .OrderBy(x => x.Token)
                 .ToList();
             var shares = 
                 _shares.Where(x => x.MemberId == item.MemberId)
-                    .Select(x=> x.Target)
+                    .Select( x => new ShareResponseDto()
+                    {
+                        Comment = x.Comment,
+                        ExpireTime = x.ExpireTime,
+                        FileSize = x.FileSize,
+                        HasPassword = true,
+                        OwnerId = x.MemberId,
+                        OwnerNick = item.Nick,
+                        ShareName = x.ShareName,
+                        ShareTime = x.ShareTime,
+                        Target = x.Target,
+                        Token = x.Token
+                    })
+                    .OrderBy(x => x.Token)
                     .ToList();
-            dtos.ForEach(x => Assert.That(shares, Does.Contain(x)));
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(shares)));
         }
 
         //fail
@@ -136,9 +164,17 @@ FROM share;
         //suc
         foreach (var item in _shares)
         {
-            var dto = await _shareRepository.GetShareDownloadDtoByToken(Guid.Parse(item.Token));
-            Assert.That(dto, Is.Not.Null);
-            Assert.That(dto!.Target, Is.EqualTo(item.Target));
+            var res = await _shareRepository.GetShareDownloadDtoByToken(Guid.Parse(item.Token));
+            Assert.That(res, Is.Not.Null);
+            var mem = _members.Single(x => x.MemberId == item.MemberId);
+            var dto = new ShareDownloadDto()
+            {
+                Directory = mem.Dir,
+                ExpireTime = item.ExpireTime,
+                Password = item.Password,
+                Target = item.Target
+            };
+            Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(dto)));
         }
         
         //fail
@@ -155,9 +191,30 @@ FROM share;
         //suc
         foreach (var item in _shares)
         {
-            var dtos = await _shareRepository.GetSharesByTargetFilePath(item.MemberId, item.Target);
-            Assert.That(dtos, Is.Not.Empty);
-            dtos.ForEach(x => Assert.That(x.Target, Is.EqualTo(item.Target)));
+            var res = (await _shareRepository.GetSharesByTargetFilePath(item.MemberId, item.Target))
+                .OrderBy(x => x.Token)
+                .ToList();
+            Assert.That(res, Is.Not.Empty);
+            var mem = _members.Single(x => x.MemberId == item.MemberId);
+            var shares = 
+                _shares.Where(x => x.MemberId == item.MemberId
+                    && x.Target == item.Target)
+                    .Select( x => new ShareResponseDto()
+                    {
+                        Comment = x.Comment,
+                        ExpireTime = x.ExpireTime,
+                        FileSize = x.FileSize,
+                        HasPassword = true,
+                        OwnerId = x.MemberId,
+                        OwnerNick = mem.Nick,
+                        ShareName = x.ShareName,
+                        ShareTime = x.ShareTime,
+                        Target = x.Target,
+                        Token = x.Token
+                    })
+                    .OrderBy(x => x.Token)
+                    .ToList();
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Test.Utils.ToJson(shares)));
         }
         
         //fail
@@ -171,13 +228,31 @@ FROM share;
     [Test]
     public async Task GetSharesInDirectory()
     {
-        foreach (var share in _shares)
+        foreach (var item in _shares)
         {
-            var dir = Path.GetDirectoryName(share.Target);
-            var res = await _shareRepository.GetSharesInDirectory(share.MemberId, dir!);
-            var tokens = res.Select(x => x.Token).ToList();
+            var dir = Path.GetDirectoryName(item.Target);
+            var res = await _shareRepository.GetSharesInDirectory(item.MemberId, dir!);
             Assert.That(res, Is.Not.Empty);
-            Assert.That(tokens, Does.Contain(share.Token));
+            var mem = _members.Single(x => x.MemberId == item.MemberId);
+            var shares = 
+                _shares.Where(x => x.MemberId == item.MemberId
+                                   && x.Target.StartsWith(dir!))
+                    .Select( x => new ShareResponseDto()
+                    {
+                        Comment = x.Comment,
+                        ExpireTime = x.ExpireTime,
+                        FileSize = x.FileSize,
+                        HasPassword = true,
+                        OwnerId = x.MemberId,
+                        OwnerNick = mem.Nick,
+                        ShareName = x.ShareName,
+                        ShareTime = x.ShareTime,
+                        Target = x.Target,
+                        Token = x.Token
+                    })
+                    .OrderBy(x => x.Token)
+                    .ToList();
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Test.Utils.ToJson(shares)));
         }
 
         //fail
@@ -258,9 +333,22 @@ FROM share;
         {
             var update = Share.GetFake(_faker, share.Id, share.MemberId);
             var res = await _shareRepository.TryUpdateShare(
-                update.MemberId, Guid.Parse(share.Token), update.Password, update.Comment,
+                share.MemberId, Guid.Parse(share.Token), update.Password, update.Comment,
                 update.ExpireTime, update.ShareName);
+
+            string GetCompareString(Share s)
+            {
+                return Utils.ClassToJson(new
+                {
+                    s.Password,
+                    s.ExpireTime,
+                    s.Comment,
+                    s.ShareName,
+                });
+            }
             Assert.That(res, Is.True);
+            var target = (await GetAllRows()).ToList().Single(x => x.Token == share.Token);
+            Assert.That(GetCompareString(target), Is.EqualTo(GetCompareString(update)));
         }
         
         //fail
@@ -280,6 +368,8 @@ FROM share;
         {
             var res = await _shareRepository.TryDeleteShare(share.MemberId, share.Target);
             Assert.That(res, Is.True);
+            var target = (await GetAllRows()).FirstOrDefault(x => x.MemberId == share.MemberId && x.Target == share.Target);
+            Assert.That(target, Is.Null);
         }
 
         //fail
@@ -300,6 +390,9 @@ FROM share;
             var dircount = _shares.Count(x =>  x.Target.StartsWith(dir!)
                                              && share.MemberId == x.MemberId);
             Assert.That(res, Is.EqualTo(dircount));
+            var targets = (await GetAllRows()).Where(x => x.Target.StartsWith(dir!)
+                                                          && x.MemberId == share.MemberId);
+            Assert.That(targets, Is.Empty);
         }
     }
 

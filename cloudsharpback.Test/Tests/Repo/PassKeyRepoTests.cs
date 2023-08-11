@@ -96,14 +96,24 @@ VALUES (@password_store_key_id, @owner_id, @public_key, @private_key, @encrypt_a
     {
         foreach (var mem in _members)
         {
-            var res = (await _repository.GetKeyListByMemberId(mem.MemberId))
-                .Select(x => x.Id)
+            var res = 
+                (await _repository.GetKeyListByMemberId(mem.MemberId))
+                .OrderBy(x => x.Id)
                 .ToList();
             var keys = _passKeys
                 .Where(x => x.owner_id == mem.MemberId)
-                .Select(x => x.password_store_key_id)
+                .Select(x => new PasswordStoreKeyListItemDto()
+                {
+                    Comment = x.comment,
+                    CreatedTime = x.created_time,
+                    EncryptAlgorithmValue = (ulong)x.encrypt_algorithm,
+                    Id = x.password_store_key_id,
+                    Name = x.name,
+                    OwnerId = x.owner_id
+                })
+                .OrderBy(x => x.Id)
                 .ToList();
-            keys.ForEach(x => Assert.That(res, Does.Contain(x)));
+            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(keys)));
         }
         
         //fail
@@ -141,13 +151,13 @@ VALUES (@password_store_key_id, @owner_id, @public_key, @private_key, @encrypt_a
         {
             var res = await _repository.DeleteKeyById(passKey.owner_id, passKey.password_store_key_id);
             Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Not.Contain(passKey.ToCompareTestString()));
+            var target = (await GetAllRows()).SingleOrDefault(x => x.password_store_key_id == passKey.password_store_key_id);
+            Assert.That(target, Is.Null);
         }
     }
 
     [Test]
-    public async Task DeleteKeyByIdFail()
+    public async Task DeleteKeyById_Fail()
     {
         foreach (var passKey in _passKeys)
         {
