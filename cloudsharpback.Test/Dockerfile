@@ -5,4 +5,5 @@ COPY ["cloudsharpback/cloudsharpback.csproj", "cloudsharpback/"]
 RUN dotnet restore "cloudsharpback.Test/cloudsharpback.Test.csproj"
 COPY . .
 WORKDIR "/src/cloudsharpback.Test"
+RUN mkdir /var/cloud-sharp/
 ENTRYPOINT ["dotnet", "test"]

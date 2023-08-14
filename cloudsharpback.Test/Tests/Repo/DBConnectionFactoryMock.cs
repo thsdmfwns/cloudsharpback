@@ -2,7 +2,7 @@ using cloudsharpback.Services.Interfaces;
 using MySql.Data.MySqlClient;
 using NSubstitute;
 
-namespace cloudsharpback.Test;
+namespace cloudsharpback.Test.Tests.Repo;
 
 public static class DBConnectionFactoryMock
 {

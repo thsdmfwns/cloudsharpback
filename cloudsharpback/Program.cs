@@ -36,6 +36,7 @@ builder.Services.AddSingleton<IDBConnectionFactory, DBConnectionFactory>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<ITicketStore, TicketStore>();
 builder.Services.AddSingleton<IPathStore, PathStore>();
+builder.Services.AddSingleton<IEnvironmentValueStore, EnvironmentValueStore>();
 //transient
 builder.Services.AddTransient<ITusService, TusService>();
 
@@ -54,6 +55,12 @@ builder.Services.Configure<KestrelServerOptions>(options =>
     options.Limits.MaxRequestBodySize = long.MaxValue;
 });
 var app = builder.Build();
+
+if (!app.Services.GetRequiredService<IEnvironmentValueStore>().CheckValues())
+{
+    Console.Error.WriteLine("There are some problems about environment values");
+    return;
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

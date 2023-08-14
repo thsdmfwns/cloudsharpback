@@ -1,4 +1,5 @@
 using System.Collections;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
 namespace cloudsharpback.Test;
@@ -23,4 +24,10 @@ public static class Utils
 
     public static ulong GetFailId(IList rows, int max = 100)
         => (ulong)Random.Shared.Next(rows.Count + 1, max);
+
+    public static IConfiguration GetConfiguration()
+    => new ConfigurationBuilder()
+        .SetBasePath(AppContext.BaseDirectory)
+        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+        .Build();
 }
