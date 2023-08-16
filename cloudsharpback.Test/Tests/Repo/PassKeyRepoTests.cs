@@ -23,6 +23,18 @@ public class PassKeyRepoTests
         _members = await MemberRepositoryTests.SetTable();
         _passKeys = await SetTable(_members);
     }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        var test = TestContext.CurrentContext.Test;
+        var testResult = TestContext.CurrentContext.Result;
+        
+        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
+        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
+        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
+        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
+    }
 
     public static async Task<List<PassKey>> SetTable(List<Member> members, int maxCount = 5)
     {

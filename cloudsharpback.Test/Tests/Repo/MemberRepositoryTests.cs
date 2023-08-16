@@ -23,6 +23,18 @@ public class MemberRepositoryTests
         _faker = new Faker();
     }
 
+    [TearDown]
+    public void TearDown()
+    {
+        var test = TestContext.CurrentContext.Test;
+        var testResult = TestContext.CurrentContext.Result;
+        
+        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
+        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
+        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
+        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
+    }
+
     private static async Task InsertMember(Member mem)
     {
         var insertSql = @"

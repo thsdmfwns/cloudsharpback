@@ -23,6 +23,18 @@ public class PasswordDIrRepoTests
         _repository = new PasswordStoreDirectoryRepository(DBConnectionFactoryMock.Mock);
         _faker = new Faker();
     }
+    
+    [TearDown]
+    public void TearDown()
+    {
+        var test = TestContext.CurrentContext.Test;
+        var testResult = TestContext.CurrentContext.Result;
+        
+        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
+        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
+        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
+        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
+    }
 
     public static async Task<List<PassDir>> SetTable(List<Member> members, int rowsSize = 5)
     {
