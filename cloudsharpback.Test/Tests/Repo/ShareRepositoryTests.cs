@@ -7,7 +7,7 @@ using Dapper;
 
 namespace cloudsharpback.Test.Tests.Repo;
 
-public class ShareRepositoryTests
+public class ShareRepositoryTests : TestsBase
 {
     private List<Member> _members = null!;
     private List<Share> _shares = null!;
@@ -22,18 +22,6 @@ public class ShareRepositoryTests
         _faker = new();
         _members = await MemberRepositoryTests.SetTable();
         _shares = await SetTable(5, _members);
-    }
-    
-    [TearDown]
-    public void TearDown()
-    {
-        var test = TestContext.CurrentContext.Test;
-        var testResult = TestContext.CurrentContext.Result;
-        
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
-        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
-        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
     }
 
     public static async Task<List<Share>> SetTable(int rowsCount, List<Member> members)

@@ -3,10 +3,11 @@ using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using Dapper;
+using NUnit.Framework.Interfaces;
 
 namespace cloudsharpback.Test.Tests.Repo;
 
-public class PassKeyRepoTests
+public class PassKeyRepoTests : TestsBase
 {
     private List<Member> _members = null!;
     private List<PassKey> _passKeys = null!;
@@ -22,18 +23,6 @@ public class PassKeyRepoTests
         _repository = new PasswordStoreKeyRepository(DBConnectionFactoryMock.Mock);
         _members = await MemberRepositoryTests.SetTable();
         _passKeys = await SetTable(_members);
-    }
-    
-    [TearDown]
-    public void TearDown()
-    {
-        var test = TestContext.CurrentContext.Test;
-        var testResult = TestContext.CurrentContext.Result;
-        
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
-        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
-        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
     }
 
     public static async Task<List<PassKey>> SetTable(List<Member> members, int maxCount = 5)

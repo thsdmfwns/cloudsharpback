@@ -4,10 +4,12 @@ using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using cloudsharpback.Utills;
 using Dapper;
+using NUnit.Framework.Interfaces;
+using NUnit.Framework.Internal;
 
 namespace cloudsharpback.Test.Tests.Repo;
 
-public class MemberRepositoryTests
+public class MemberRepositoryTests : TestsBase
 {
 
     private MemberRepository _repository = null!;
@@ -21,18 +23,6 @@ public class MemberRepositoryTests
         _repository = new MemberRepository(DBConnectionFactoryMock.Mock);
         _members = await SetTable();
         _faker = new Faker();
-    }
-
-    [TearDown]
-    public void TearDown()
-    {
-        var test = TestContext.CurrentContext.Test;
-        var testResult = TestContext.CurrentContext.Result;
-        
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
-        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
-        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
     }
 
     private static async Task InsertMember(Member mem)

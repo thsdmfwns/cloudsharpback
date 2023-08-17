@@ -8,7 +8,7 @@ using K4os.Hash.xxHash;
 
 namespace cloudsharpback.Test.Tests.Repo;
 
-public class PassValueRepoTests
+public class PassValueRepoTests : TestsBase
 {
     private List<Member> _members = null!;
     private List<PassKey> _PassKeys = null!;
@@ -30,18 +30,6 @@ public class PassValueRepoTests
         _faker = new Faker();
         _PassValues = await SetTable(_PassKeys, _PassDirs);
         _repository = new PasswordStoreValueRepository(DBConnectionFactoryMock.Mock);
-    }
-    
-    [TearDown]
-    public void TearDown()
-    {
-        var test = TestContext.CurrentContext.Test;
-        var testResult = TestContext.CurrentContext.Result;
-        
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
-        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
-        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
     }
 
     public static async Task<List<PassValue>> SetTable(List<PassKey> keys, List<PassDir> PassDirs, int fakeCount = 5)

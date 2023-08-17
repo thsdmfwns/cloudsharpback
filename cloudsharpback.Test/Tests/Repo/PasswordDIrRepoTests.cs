@@ -6,7 +6,7 @@ using Dapper;
 
 namespace cloudsharpback.Test.Tests.Repo;
 
-public class PasswordDIrRepoTests
+public class PasswordDIrRepoTests : TestsBase
 {
     private List<Member> _members = null!;
     private List<PassDir> _passDirs = null!;
@@ -22,18 +22,6 @@ public class PasswordDIrRepoTests
         _passDirs = await SetTable(_members, 5);
         _repository = new PasswordStoreDirectoryRepository(DBConnectionFactoryMock.Mock);
         _faker = new Faker();
-    }
-    
-    [TearDown]
-    public void TearDown()
-    {
-        var test = TestContext.CurrentContext.Test;
-        var testResult = TestContext.CurrentContext.Result;
-        
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
-        Console.WriteLine($"Test '{test.Name}' of '{test.ClassName}' finished with outcome: {testResult.Outcome}");
-        Console.WriteLine($"PASS : {testResult.PassCount} | FAIL : {testResult.FailCount} | ALL : {testResult.InconclusiveCount}");
-        Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
     }
 
     public static async Task<List<PassDir>> SetTable(List<Member> members, int rowsSize = 5)
