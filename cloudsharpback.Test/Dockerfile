@@ -4,6 +4,10 @@ COPY ["cloudsharpback.Test/cloudsharpback.Test.csproj", "cloudsharpback.Test/"]
 COPY ["cloudsharpback/cloudsharpback.csproj", "cloudsharpback/"]
 RUN dotnet restore "cloudsharpback.Test/cloudsharpback.Test.csproj"
 COPY . .
+COPY ["cloudsharpback.Test/EntryPoint.sh", "cloudsharpback.Test/"]
+COPY ["tools", "tools"]
+ENV PATH="$PATH:/src/tools"
 WORKDIR "/src/cloudsharpback.Test"
-RUN mkdir /var/cloud-sharp/
-ENTRYPOINT ["dotnet", "test"]
+RUN chmod +x "/src/cloudsharpback.Test/EntryPoint.sh"
+RUN chmod +x "/src/tools"
+ENTRYPOINT ["/src/tools/checkEnv.sh", "/src/cloudsharpback.Test/EnvValues.json"]

@@ -1,3 +1,4 @@
+using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using MySql.Data.MySqlClient;
 using NSubstitute;
@@ -6,12 +7,10 @@ namespace cloudsharpback.Test.Tests.Repo;
 
 public static class DBConnectionFactoryMock
 {
-    public static IDBConnectionFactory Mock => GetIdbConnectionFactoryMock();
-    private const string connString = "Server=cs_db;Port=3306;Uid=root;Pwd=3279;Database=cloud_sharp;";
+    public static IDBConnectionFactory Mock = GetIdbConnectionFactoryMock();
     private static IDBConnectionFactory GetIdbConnectionFactoryMock()
     {
-        var mock = Substitute.For<IDBConnectionFactory>();
-        mock.Connection.Returns(new MySqlConnection(connString));
-        return mock;
+        var env = new EnvironmentValueStore();
+        return new DBConnectionFactory(env);
     }
 }

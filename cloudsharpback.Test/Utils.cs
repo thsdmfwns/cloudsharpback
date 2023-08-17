@@ -6,6 +6,10 @@ namespace cloudsharpback.Test;
 
 public static class Utils
 {
+    public static int PassCount = 0;
+    public static int FailCount = 0;
+    
+    
     public static string ClassToJson(object obj)
     {
         var dic = new SortedDictionary<string, object?>();

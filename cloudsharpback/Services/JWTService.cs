@@ -14,7 +14,7 @@ namespace cloudsharpback.Services
         private readonly SymmetricJwk _jwtKey;
         private readonly ILogger _logger;
 
-        public JWTService(IConfiguration configuration, ILogger<IJWTService> logger)
+        public JWTService(ILogger<IJWTService> logger)
         {
             string key;
             using (var sha512 = SHA512.Create())

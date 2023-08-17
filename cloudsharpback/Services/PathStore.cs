@@ -5,9 +5,9 @@ namespace cloudsharpback.Services;
 public class PathStore : IPathStore
 {
     private readonly string _volumePath;
-    public PathStore(IConfiguration configuration)
+    public PathStore(IEnvironmentValueStore environmentValueStore)
     {
-        _volumePath = configuration["VolumePath"];
+        _volumePath = environmentValueStore[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
         CreateDirIfNotExist(DirectoryPath);
         CreateDirIfNotExist(TusStorePath);
         CreateDirIfNotExist(ProfilePath);

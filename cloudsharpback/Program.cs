@@ -56,12 +56,6 @@ builder.Services.Configure<KestrelServerOptions>(options =>
 });
 var app = builder.Build();
 
-if (!app.Services.GetRequiredService<IEnvironmentValueStore>().CheckValues())
-{
-    Console.Error.WriteLine("There are some problems about environment values");
-    return;
-}
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
