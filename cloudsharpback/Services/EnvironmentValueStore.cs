@@ -10,7 +10,7 @@ public enum RequiredEnvironmentValueKey
     MYSQL_SERVER,
     MYSQL_PORT,
     MYSQL_USER,
-    MYSQL_PASSWORD,
+    MYSQL_PASSWORD
 }
 
 public class EnvironmentValueStore : IEnvironmentValueStore

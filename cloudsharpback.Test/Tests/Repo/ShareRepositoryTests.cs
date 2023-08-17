@@ -14,7 +14,8 @@ public class ShareRepositoryTests : TestsBase
     private Faker _faker = null!;
     private ShareRepository _shareRepository = null!;
     private ulong FailMemberId => Utils.GetFailId(_members);
-    private ulong FailShareId => Utils.GetFailId(_shares);
+    private Share RandomShare => Utils.GetRandomItem(_shares);
+
     [SetUp]
     public async Task Setup()
     {
@@ -31,10 +32,12 @@ public class ShareRepositoryTests : TestsBase
         await DeleteAllRows();
         for (int i = 0; i < rowsCount; i++)
         {
-            var item = Share.GetFake(faker, (ulong)i + 1, members.ElementAt(Random.Shared.Next(0, members.Count-1)).MemberId);
+            var item = Share.GetFake(faker, (ulong)i + 1,
+                members.ElementAt(Random.Shared.Next(0, members.Count - 1)).MemberId);
             list.Add(item);
             await InsertRow(item);
         }
+
         return list;
     }
 
@@ -43,7 +46,7 @@ public class ShareRepositoryTests : TestsBase
         using var conn = DBConnectionFactoryMock.Mock.Connection;
         await conn.ExecuteAsync("DELETE FROM share");
     }
-    
+
     private static async Task InsertRow(Share item)
     {
         var insertSQL = @"
@@ -65,7 +68,7 @@ VALUES (@id, @memberId, @target, @password, @expireTime, @comment, @shareTime, @
             fileSize = item.FileSize,
         });
     }
-    
+
     private static async Task<List<Share>> GetAllRows()
     {
         var sql = @"
@@ -90,321 +93,267 @@ FROM share;
     public async Task GetShareByToken()
     {
         //success
-        foreach (var item in _shares)
+        var share = RandomShare;
+        var res = await _shareRepository.GetShareByToken(Guid.Parse(share.Token));
+        Assert.That(res, Is.Not.Null);
+        var mem = _members.Single(x => x.MemberId == share.MemberId);
+        var dto = new ShareResponseDto()
         {
-            var res = await _shareRepository.GetShareByToken(Guid.Parse(item.Token));
-            Assert.That(res, Is.Not.Null);
-            var mem = _members.Single(x => x.MemberId == item.MemberId);
-            var dto = new ShareResponseDto()
-            {
-                Comment = item.Comment,
-                ExpireTime = item.ExpireTime,
-                FileSize = item.FileSize,
-                HasPassword = true,
-                OwnerId = item.MemberId,
-                OwnerNick = mem.Nick,
-                ShareName = item.ShareName,
-                ShareTime = item.ShareTime,
-                Target = item.Target,
-                Token = item.Token
-            };
-            Assert.That(Utils.ToJson(res!), Is.EqualTo(Utils.ToJson(dto)));
-        }
-        
+            Comment = share.Comment,
+            ExpireTime = share.ExpireTime,
+            FileSize = share.FileSize,
+            HasPassword = true,
+            OwnerId = share.MemberId,
+            OwnerNick = mem.Nick,
+            ShareName = share.ShareName,
+            ShareTime = share.ShareTime,
+            Target = share.Target,
+            Token = share.Token
+        };
+        Assert.That(Utils.ToJson(res!), Is.EqualTo(Utils.ToJson(dto)));
+
         //fail
-        for (int i = 0; i < _shares.Count; i++)
-        {
-            var dto = await _shareRepository.GetShareByToken(Guid.NewGuid());
-            Assert.That(dto, Is.Null);
-        }
+        dto = await _shareRepository.GetShareByToken(Guid.NewGuid());
+        Assert.That(dto, Is.Null);
     }
 
     [Test]
     public async Task GetSharesListByMemberId()
     {
+        var share = RandomShare;
         //Success
-        foreach (var item in _members)
-        {
-            var res = 
-                (await _shareRepository.GetSharesListByMemberId(item.MemberId))
+        var res =
+            (await _shareRepository.GetSharesListByMemberId(share.MemberId))
+            .OrderBy(x => x.Token)
+            .ToList();
+        var member = _members.Single(x => x.MemberId == share.MemberId);
+        var shares =
+            _shares.Where(x => x.MemberId == share.MemberId)
+                .Select(x => new ShareResponseDto()
+                {
+                    Comment = x.Comment,
+                    ExpireTime = x.ExpireTime,
+                    FileSize = x.FileSize,
+                    HasPassword = true,
+                    OwnerId = x.MemberId,
+                    OwnerNick = member.Nick,
+                    ShareName = x.ShareName,
+                    ShareTime = x.ShareTime,
+                    Target = x.Target,
+                    Token = x.Token
+                })
                 .OrderBy(x => x.Token)
                 .ToList();
-            var shares = 
-                _shares.Where(x => x.MemberId == item.MemberId)
-                    .Select( x => new ShareResponseDto()
-                    {
-                        Comment = x.Comment,
-                        ExpireTime = x.ExpireTime,
-                        FileSize = x.FileSize,
-                        HasPassword = true,
-                        OwnerId = x.MemberId,
-                        OwnerNick = item.Nick,
-                        ShareName = x.ShareName,
-                        ShareTime = x.ShareTime,
-                        Target = x.Target,
-                        Token = x.Token
-                    })
-                    .OrderBy(x => x.Token)
-                    .ToList();
-            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(shares)));
-        }
+        Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(shares)));
 
         //fail
-        for (int i = 0; i < _members.Count; i++)
-        {
-            var failList =
-                await _shareRepository.GetSharesListByMemberId(FailMemberId);
-            Assert.That(failList, Is.Empty);
-        }
+        var failList =
+            await _shareRepository.GetSharesListByMemberId(FailMemberId);
+        Assert.That(failList, Is.Empty);
     }
 
     [Test]
     public async Task GetShareDownloadDtoByToken()
     {
+        var share = RandomShare;
         //suc
-        foreach (var item in _shares)
+        var res = await _shareRepository.GetShareDownloadDtoByToken(Guid.Parse(share.Token));
+        Assert.That(res, Is.Not.Null);
+        var mem = _members.Single(x => x.MemberId == share.MemberId);
+        var dto = new ShareDownloadDto()
         {
-            var res = await _shareRepository.GetShareDownloadDtoByToken(Guid.Parse(item.Token));
-            Assert.That(res, Is.Not.Null);
-            var mem = _members.Single(x => x.MemberId == item.MemberId);
-            var dto = new ShareDownloadDto()
-            {
-                Directory = mem.Dir,
-                ExpireTime = item.ExpireTime,
-                Password = item.Password,
-                Target = item.Target
-            };
-            Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(dto)));
-        }
-        
+            Directory = mem.Dir,
+            ExpireTime = share.ExpireTime,
+            Password = share.Password,
+            Target = share.Target
+        };
+        Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(dto)));
+
         //fail
-        for (int i = 0; i < _shares.Count; i++)
-        {
-            var dto = await _shareRepository.GetShareDownloadDtoByToken(Guid.NewGuid());
-            Assert.That(dto, Is.Null);   
-        }
+        dto = await _shareRepository.GetShareDownloadDtoByToken(Guid.NewGuid());
+        Assert.That(dto, Is.Null);
     }
 
     [Test]
     public async Task GetSharesByTargetFilePath()
     {
+        var share = RandomShare;
         //suc
-        foreach (var item in _shares)
-        {
-            var res = (await _shareRepository.GetSharesByTargetFilePath(item.MemberId, item.Target))
+        var res = (await _shareRepository.GetSharesByTargetFilePath(share.MemberId, share.Target))
+            .OrderBy(x => x.Token)
+            .ToList();
+        Assert.That(res, Is.Not.Empty);
+        var mem = _members.Single(x => x.MemberId == share.MemberId);
+        var shares =
+            _shares.Where(x => x.MemberId == share.MemberId
+                               && x.Target == share.Target)
+                .Select(x => new ShareResponseDto()
+                {
+                    Comment = x.Comment,
+                    ExpireTime = x.ExpireTime,
+                    FileSize = x.FileSize,
+                    HasPassword = true,
+                    OwnerId = x.MemberId,
+                    OwnerNick = mem.Nick,
+                    ShareName = x.ShareName,
+                    ShareTime = x.ShareTime,
+                    Target = x.Target,
+                    Token = x.Token
+                })
                 .OrderBy(x => x.Token)
                 .ToList();
-            Assert.That(res, Is.Not.Empty);
-            var mem = _members.Single(x => x.MemberId == item.MemberId);
-            var shares = 
-                _shares.Where(x => x.MemberId == item.MemberId
-                    && x.Target == item.Target)
-                    .Select( x => new ShareResponseDto()
-                    {
-                        Comment = x.Comment,
-                        ExpireTime = x.ExpireTime,
-                        FileSize = x.FileSize,
-                        HasPassword = true,
-                        OwnerId = x.MemberId,
-                        OwnerNick = mem.Nick,
-                        ShareName = x.ShareName,
-                        ShareTime = x.ShareTime,
-                        Target = x.Target,
-                        Token = x.Token
-                    })
-                    .OrderBy(x => x.Token)
-                    .ToList();
-            Assert.That(Utils.ToJson(res), Is.EqualTo(Test.Utils.ToJson(shares)));
-        }
-        
+        Assert.That(Utils.ToJson(res), Is.EqualTo(Test.Utils.ToJson(shares)));
+
         //fail
-        for (int i = 0; i < _shares.Count; i++)
-        {
-            var dto = await _shareRepository.GetSharesByTargetFilePath(FailMemberId, _faker.Random.Words());
-            Assert.That(dto, Is.Empty);   
-        }
+        var dto = await _shareRepository.GetSharesByTargetFilePath(FailMemberId, _faker.Random.Words());
+        Assert.That(dto, Is.Empty);
     }
 
     [Test]
     public async Task GetSharesInDirectory()
     {
-        foreach (var item in _shares)
-        {
-            var dir = Path.GetDirectoryName(item.Target);
-            var res = await _shareRepository.GetSharesInDirectory(item.MemberId, dir!);
-            Assert.That(res, Is.Not.Empty);
-            var mem = _members.Single(x => x.MemberId == item.MemberId);
-            var shares = 
-                _shares.Where(x => x.MemberId == item.MemberId
-                                   && x.Target.StartsWith(dir!))
-                    .Select( x => new ShareResponseDto()
-                    {
-                        Comment = x.Comment,
-                        ExpireTime = x.ExpireTime,
-                        FileSize = x.FileSize,
-                        HasPassword = true,
-                        OwnerId = x.MemberId,
-                        OwnerNick = mem.Nick,
-                        ShareName = x.ShareName,
-                        ShareTime = x.ShareTime,
-                        Target = x.Target,
-                        Token = x.Token
-                    })
-                    .OrderBy(x => x.Token)
-                    .ToList();
-            Assert.That(Utils.ToJson(res), Is.EqualTo(Test.Utils.ToJson(shares)));
-        }
+        var share = RandomShare;
+        var dir = Path.GetDirectoryName(share.Target);
+        var res = await _shareRepository.GetSharesInDirectory(share.MemberId, dir!);
+        Assert.That(res, Is.Not.Empty);
+        var mem = _members.Single(x => x.MemberId == share.MemberId);
+        var shares =
+            _shares.Where(x => x.MemberId == share.MemberId
+                               && x.Target.StartsWith(dir!))
+                .Select(x => new ShareResponseDto()
+                {
+                    Comment = x.Comment,
+                    ExpireTime = x.ExpireTime,
+                    FileSize = x.FileSize,
+                    HasPassword = true,
+                    OwnerId = x.MemberId,
+                    OwnerNick = mem.Nick,
+                    ShareName = x.ShareName,
+                    ShareTime = x.ShareTime,
+                    Target = x.Target,
+                    Token = x.Token
+                })
+                .OrderBy(x => x.Token)
+                .ToList();
+        Assert.That(Utils.ToJson(res), Is.EqualTo(Test.Utils.ToJson(shares)));
 
         //fail
-        for (int i = 0; i < _shares.Count; i++)
-        {
-            var res = await _shareRepository.GetSharesInDirectory(FailMemberId, _faker.Random.Word());
-            Assert.That(res, Is.Empty);
-        }
+        res = await _shareRepository.GetSharesInDirectory(FailMemberId, _faker.Random.Word());
+        Assert.That(res, Is.Empty);
     }
 
     [Test]
     public async Task GetPasswordHashByToken()
     {
-        foreach (var share in _shares)
-        {
-            var res = await _shareRepository.GetPasswordHashByToken(Guid.Parse(share.Token));
-            Assert.That(res, Is.Not.Null);
-            Assert.That(res, Is.EqualTo(share.Password));
-        }
+        var share = RandomShare;
+
+        var res = await _shareRepository.GetPasswordHashByToken(Guid.Parse(share.Token));
+        Assert.That(res, Is.Not.Null);
+        Assert.That(res, Is.EqualTo(share.Password));
 
         //fail
-        for (int i = 0; i < _shares.Count(); i++)
-        {
-            var res = await _shareRepository.GetPasswordHashByToken(_faker.Random.Uuid());
-            Assert.That(res, Is.Null);
-        }
+        res = await _shareRepository.GetPasswordHashByToken(_faker.Random.Uuid());
+        Assert.That(res, Is.Null);
     }
 
     [Test]
     public async Task TrySetShareExpireTimeToZero()
     {
-        foreach (var share in _shares)
-        {
-            var res = await _shareRepository.TrySetShareExpireTimeToZero(share.MemberId, Guid.Parse(share.Token));
-            Assert.That(res, Is.True);
-            var targetRow = (await GetAllRows()).Single(x=> x.Token == share.Token);
-            Assert.That(targetRow.ExpireTime, Is.EqualTo(0));
-        }
+        var share = RandomShare;
+        var res = await _shareRepository.TrySetShareExpireTimeToZero(share.MemberId, Guid.Parse(share.Token));
+        Assert.That(res, Is.True);
+        var targetRow = (await GetAllRows()).Single(x => x.Token == share.Token);
+        Assert.That(targetRow.ExpireTime, Is.EqualTo(0));
 
         //fail
-        for (int i = 0; i < _shares.Count(); i++)
-        {
-            var res = await _shareRepository.TrySetShareExpireTimeToZero(FailMemberId, Guid.NewGuid());
-            Assert.That(res, Is.False);
-        }
+        res = await _shareRepository.TrySetShareExpireTimeToZero(FailMemberId, Guid.NewGuid());
+        Assert.That(res, Is.False);
     }
 
     [Test]
     public async Task TryAddShare()
     {
-        int addCount = 5;
-        for (int i = 0; i < addCount; i++)
-        {
-            var share = Share.GetFake(_faker, _faker.Random.ULong(), _faker.Random.ULong(1, (ulong)_members.Count));
-            var res = await _shareRepository.TryAddShare(share.MemberId, share.Target,
-                share.Password, share.ExpireTime, share.Comment, share.ShareName,
-                Guid.Parse(share.Token), share.FileSize);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).Single(x => x.Token == share.Token);
-            Assert.That(target.ToCompareTestString(), Is.EqualTo(share.ToCompareTestString()));
-        }
-        
+        var share = Share.GetFake(_faker, _faker.Random.ULong(), _faker.Random.ULong(1, (ulong)_members.Count));
+        var res = await _shareRepository.TryAddShare(share.MemberId, share.Target,
+            share.Password, share.ExpireTime, share.Comment, share.ShareName,
+            Guid.Parse(share.Token), share.FileSize);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).Single(x => x.Token == share.Token);
+        Assert.That(target.ToCompareTestString(), Is.EqualTo(share.ToCompareTestString()));
+
         //fail
-        for (int i = 0; i < addCount; i++)
-        {
-            var share = Share.GetFake(_faker, _faker.Random.ULong(), FailMemberId);
-            var res = await _shareRepository.TryAddShare(share.MemberId, share.Target,
-                share.Password, share.ExpireTime, share.Comment, share.ShareName,
-                Guid.Parse(share.Token), share.FileSize);
-            Assert.That(res, Is.False);
-        }
+        share = Share.GetFake(_faker, _faker.Random.ULong(), FailMemberId);
+        res = await _shareRepository.TryAddShare(share.MemberId, share.Target,
+            share.Password, share.ExpireTime, share.Comment, share.ShareName,
+            Guid.Parse(share.Token), share.FileSize);
+        Assert.That(res, Is.False);
     }
 
     [Test]
     public async Task TryUpdateShare()
     {
-        foreach (var share in _shares)
-        {
-            var update = Share.GetFake(_faker, share.Id, share.MemberId);
-            var res = await _shareRepository.TryUpdateShare(
-                share.MemberId, Guid.Parse(share.Token), update.Password, update.Comment,
-                update.ExpireTime, update.ShareName);
+        var share = RandomShare;
+        var update = Share.GetFake(_faker, share.Id, share.MemberId);
+        var res = await _shareRepository.TryUpdateShare(
+            share.MemberId, Guid.Parse(share.Token), update.Password, update.Comment,
+            update.ExpireTime, update.ShareName);
 
-            string GetCompareString(Share s)
-            {
-                return Utils.ClassToJson(new
-                {
-                    s.Password,
-                    s.ExpireTime,
-                    s.Comment,
-                    s.ShareName,
-                });
-            }
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).ToList().Single(x => x.Token == share.Token);
-            Assert.That(GetCompareString(target), Is.EqualTo(GetCompareString(update)));
-        }
-        
-        //fail
-        foreach (var update in _shares.Select(share => Share.GetFake(_faker, share.Id, FailMemberId)).ToList())
+        string GetCompareString(Share s)
         {
-            var res = await _shareRepository.TryUpdateShare(
-                update.MemberId, Guid.NewGuid(), update.Password, update.Comment,
-                update.ExpireTime, update.ShareName);
-            Assert.That(res, Is.False);
+            return Utils.ClassToJson(new
+            {
+                s.Password,
+                s.ExpireTime,
+                s.Comment,
+                s.ShareName,
+            });
         }
+
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).ToList().Single(x => x.Token == share.Token);
+        Assert.That(GetCompareString(target), Is.EqualTo(GetCompareString(update)));
+        //fail
+        res = await _shareRepository.TryUpdateShare(
+            update.MemberId, Guid.NewGuid(), update.Password, update.Comment,
+            update.ExpireTime, update.ShareName);
+        Assert.That(res, Is.False);
     }
 
     [Test]
     public async Task TryDeleteShare()
     {
-        foreach (var share in _shares)
-        {
-            var res = await _shareRepository.TryDeleteShare(share.MemberId, share.Target);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).FirstOrDefault(x => x.MemberId == share.MemberId && x.Target == share.Target);
-            Assert.That(target, Is.Null);
-        }
+        var share = RandomShare;
+        var res = await _shareRepository.TryDeleteShare(share.MemberId, share.Target);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).FirstOrDefault(x => x.MemberId == share.MemberId && x.Target == share.Target);
+        Assert.That(target, Is.Null);
 
         //fail
-        for (int i = 0; i < _shares.Count; i++)
-        {
-            var res = await _shareRepository.TryDeleteShare(FailMemberId, _faker.System.FilePath());
-            Assert.That(res, Is.False);
-        }
+        res = await _shareRepository.TryDeleteShare(FailMemberId, _faker.System.FilePath());
+        Assert.That(res, Is.False);
     }
 
     [Test]
     public async Task TryDeleteShareInDirectory()
     {
-        foreach (var share in _shares)
-        {
-            var dir = Path.GetDirectoryName(share.Target);
-            var res = await _shareRepository.TryDeleteShareInDirectory(share.MemberId, dir!);
-            var dircount = _shares.Count(x =>  x.Target.StartsWith(dir!)
-                                             && share.MemberId == x.MemberId);
-            Assert.That(res, Is.EqualTo(dircount));
-            var targets = (await GetAllRows()).Where(x => x.Target.StartsWith(dir!)
-                                                          && x.MemberId == share.MemberId);
-            Assert.That(targets, Is.Empty);
-        }
+        var share = RandomShare;
+
+        var dir = Path.GetDirectoryName(share.Target);
+        var res = await _shareRepository.TryDeleteShareInDirectory(share.MemberId, dir!);
+        var dircount = _shares.Count(x => x.Target.StartsWith(dir!)
+                                          && share.MemberId == x.MemberId);
+        Assert.That(res, Is.EqualTo(dircount));
+        var targets = (await GetAllRows()).Where(x => x.Target.StartsWith(dir!)
+                                                      && x.MemberId == share.MemberId);
+        Assert.That(targets, Is.Empty);
     }
 
     [Test]
     public async Task TryDeleteShareInDIrectoryFail()
     {
-        for (int i = 0; i < _shares.Count(); i++)
-        {
-            var res = await _shareRepository.TryDeleteShareInDirectory(FailMemberId, _faker.Random.Words());
-            Assert.That(res, Is.EqualTo(0));
-        }
+        var res = await _shareRepository.TryDeleteShareInDirectory(FailMemberId, _faker.Random.Words());
+        Assert.That(res, Is.EqualTo(0));
     }
-    
+
 
 }

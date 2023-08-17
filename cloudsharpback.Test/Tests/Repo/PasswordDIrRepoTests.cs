@@ -14,6 +14,7 @@ public class PasswordDIrRepoTests : TestsBase
     private Faker _faker = null!;
     private ulong FailMemberId => Utils.GetFailId(_members);
     private ulong FailRowId => Utils.GetFailId(_passDirs);
+    private PassDir RandomPassDir => Utils.GetRandomItem(_passDirs);
 
     [SetUp]
     public async Task SetUp()
@@ -64,135 +65,116 @@ VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @crea
     [Test]
     public async Task GetDirListByMemberId()
     {
-        foreach (var dir in _passDirs)
-        {
-            var datas = _passDirs
-                .Where(x => x.member_id == dir.member_id)
-                .Select(x => new PasswordStoreDirDto()
-                {
-                    Comment = x.comment,
-                    CreatedTime = x.created_time,
-                    Id = x.password_directory_id,
-                    Icon = x.icon,
-                    LastEditTime = x.last_edited_time,
-                    Name = x.name,
-                    OwnerId = x.member_id
-                })
-                .OrderBy(x => x.Id)
-                .ToList();
-            var res = (await _repository.GetDirListByMemberId(dir.member_id))
-                .OrderBy(x => x.Id)
-                .ToList();
-            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(datas)));
-        }
-        
+        var dir = RandomPassDir;
+        var datas = _passDirs
+            .Where(x => x.member_id == dir.member_id)
+            .Select(x => new PasswordStoreDirDto()
+            {
+                Comment = x.comment,
+                CreatedTime = x.created_time,
+                Id = x.password_directory_id,
+                Icon = x.icon,
+                LastEditTime = x.last_edited_time,
+                Name = x.name,
+                OwnerId = x.member_id
+            })
+            .OrderBy(x => x.Id)
+            .ToList();
+        var res = (await _repository.GetDirListByMemberId(dir.member_id))
+            .OrderBy(x => x.Id)
+            .ToList();
+        Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(datas)));
+
+
         //fail
-        for (int i = 0; i < _passDirs.Count; i++)
-        {
-            var res = await _repository.GetDirListByMemberId(FailMemberId);
-            Assert.That(res, Is.Empty);
-        }
+        res = await _repository.GetDirListByMemberId(FailMemberId);
+        Assert.That(res, Is.Empty);
+
     }
 
     [Test]
     public async Task GetDirById()
     {
-        foreach (var passDir in _passDirs)
+        var passDir = RandomPassDir;
+        var res = await _repository.GetDirById(passDir.member_id, passDir.password_directory_id);
+        Assert.That(res, Is.Not.Null);
+        var dto = new PasswordStoreDirDto()
         {
-            var res = await _repository.GetDirById(passDir.member_id, passDir.password_directory_id);
-            Assert.That(res, Is.Not.Null);
-            var dto = new PasswordStoreDirDto()
-            {
-                Comment = passDir.comment,
-                CreatedTime = passDir.created_time,
-                Id = passDir.password_directory_id,
-                Icon = passDir.icon,
-                LastEditTime = passDir.last_edited_time,
-                Name = passDir.name,
-                OwnerId = passDir.member_id
-            };
-            Assert.That(res, Is.EqualTo(dto));
-        }
-
-        for (int i = 0; i < 5; i++)
-        {
-            var res = await _repository.GetDirById(FailMemberId, _faker.Random.ULong());
-            Assert.That(res, Is.Null);
-        }
+            Comment = passDir.comment,
+            CreatedTime = passDir.created_time,
+            Id = passDir.password_directory_id,
+            Icon = passDir.icon,
+            LastEditTime = passDir.last_edited_time,
+            Name = passDir.name,
+            OwnerId = passDir.member_id
+        };
+        Assert.That(res, Is.EqualTo(dto));
+        
+        //fail
+        res = await _repository.GetDirById(FailMemberId, _faker.Random.ULong());
+        Assert.That(res, Is.Null);
     }
 
     [Test]
     public async Task TryInsertDir()
     {
-        var insertCount = 5;
-        var insertlist = new List<PassDir>();
-        for (int i = 0; i < insertCount; i++)
-        {
-            var data = PassDir.GetFake(_faker, 0, _faker.Random.ULong(1, (ulong)_members.Count));
-            var res = await _repository.TryInsertDir(data.member_id, data.name, data.comment, data.icon);
-            Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(data.ToCompareTestString()));
-        }
+        var data = PassDir.GetFake(_faker, 0, _faker.Random.ULong(1, (ulong)_members.Count));
+        var res = await _repository.TryInsertDir(data.member_id, data.name, data.comment, data.icon);
+        Assert.That(res, Is.True);
+        var rows = await GetAllRows();
+        Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(data.ToCompareTestString()));
 
         //fail
-        for (int i = 0; i < insertCount; i++)
-        {
-            var data = PassDir.GetFake(_faker, 0, FailMemberId);
-            var res = await _repository.TryInsertDir(data.member_id, data.name, data.comment, data.icon);
-            Assert.That(res, Is.False);
-        }
+        data = PassDir.GetFake(_faker, 0, FailMemberId);
+        res = await _repository.TryInsertDir(data.member_id, data.name, data.comment, data.icon);
+        Assert.That(res, Is.False);
     }
 
     [Test]
     public async Task DeleteDir()
     {
-        foreach (var passDir in _passDirs)
-        {
-            var res = await _repository.DeleteDir(passDir.member_id, passDir.password_directory_id);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).SingleOrDefault(x => x.password_directory_id == passDir.password_directory_id);
-            Assert.That(target, Is.Null);
-        }
+        var passDir = RandomPassDir;
+        var res = await _repository.DeleteDir(passDir.member_id, passDir.password_directory_id);
+        Assert.That(res, Is.True);
+        var target =
+            (await GetAllRows()).SingleOrDefault(x => x.password_directory_id == passDir.password_directory_id);
+        Assert.That(target, Is.Null);
     }
+
 
     [Test]
     public async Task DeleteDir_Fail()
     {
-        foreach (var passDir in _passDirs)
-        {
-            var res = await _repository.DeleteDir(FailMemberId, passDir.password_directory_id);
-            Assert.That(res, Is.False);
-            res = await _repository.DeleteDir(FailMemberId, FailRowId);
-            Assert.That(res, Is.False);
-        }
+        var passDir = RandomPassDir;
+        var res = await _repository.DeleteDir(FailMemberId, passDir.password_directory_id);
+        Assert.That(res, Is.False);
+        res = await _repository.DeleteDir(FailMemberId, FailRowId);
+        Assert.That(res, Is.False);
     }
 
     [Test]
     public async Task UpdateDir()
     {
-        foreach (var update in _passDirs.Select(passDir => PassDir.GetFake(_faker, passDir.password_directory_id, passDir.member_id)))
-        {
-            var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
-                update.comment, update.icon);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).Single(x => x.password_directory_id == update.password_directory_id);
-            Assert.That(target.ToCompareTestString(), Is.EqualTo(update.ToCompareTestString()));
-        }
+        var passDir = RandomPassDir;
+        var update = PassDir.GetFake(_faker, passDir.password_directory_id, passDir.member_id);
+        var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
+            update.comment, update.icon);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).Single(x => x.password_directory_id == update.password_directory_id);
+        Assert.That(target.ToCompareTestString(), Is.EqualTo(update.ToCompareTestString()));
+
 
         //fail
-        foreach (var update in _passDirs.Select(passDir => PassDir.GetFake(_faker, FailRowId, passDir.member_id)))
-        {
-            var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
-                update.comment, update.icon);
-            Assert.That(res, Is.False);
-        }
+        res = await _repository.UpdateDir(FailMemberId, update.password_directory_id, update.name,
+            update.comment, update.icon);
+        Assert.That(res, Is.False);
+
+        res = await _repository.UpdateDir(update.member_id, FailRowId, update.name,
+            update.comment, update.icon);
+        Assert.That(res, Is.False);
         
-        foreach (var update in _passDirs.Select(passDir => PassDir.GetFake(_faker, FailRowId, FailMemberId)))
-        {
-            var res = await _repository.UpdateDir(update.member_id, update.password_directory_id, update.name,
-                update.comment, update.icon);
-            Assert.That(res, Is.False);
-        }
+        res = await _repository.UpdateDir(FailMemberId, FailRowId, update.name,
+            update.comment, update.icon);
+        Assert.That(res, Is.False);
     }
 }

@@ -18,12 +18,15 @@ public abstract class TestsBase
         {
             Utils.FailCount++;
         }
-
+        if (testResult.Outcome == ResultState.Error)
+        {
+            Utils.ErrorCount++;
+        }
 
         Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
         Console.WriteLine($"Test Case '{test.Name}' {testResult.Outcome} ");
         Console.WriteLine($"From {test.ClassName}");
-        Console.WriteLine($"PASS : {Utils.PassCount} | FAIL : {Utils.FailCount}");
+        Console.WriteLine($"PASS : {Utils.PassCount} | FAIL : {Utils.FailCount} | ERROR : {Utils.ErrorCount}");
         Console.WriteLine($"|-------------------------------------------------------------------------------------------|");
     }
 }

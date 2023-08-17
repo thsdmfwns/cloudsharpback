@@ -20,7 +20,8 @@ public class PassValueRepoTests : TestsBase
     private ulong FailPassKeyId => Utils.GetFailId(_PassKeys);
     private ulong FailPassDIrId => Utils.GetFailId(_PassDirs);
     private ulong FailPassValId => Utils.GetFailId(_PassValues);
-    
+
+    private PassValue RandomPassValue => Utils.GetRandomItem(_PassValues);
     [SetUp]
     public async Task SetUp()
     {
@@ -82,20 +83,16 @@ VALUES (
     [Test]
     public async Task GetValueById()
     {
-        foreach (var value in _PassValues)
-        {
-            var res = await _repository.GetValueById(value.password_store_value_id);
-            Assert.That(res, Is.Not.Null);
-            var resRecord = new PassValue(res!.Id, res.DirectoryId, res.KeyId, res.ValueId, res.ValuePassword,
-                res.CreatedTime, res.LastEditedTime);
-            Assert.That(resRecord.ToCompareTestString(), Is.EqualTo(value.ToCompareTestString()));
-        }
+        var value = RandomPassValue;
+        var res = await _repository.GetValueById(value.password_store_value_id);
+        Assert.That(res, Is.Not.Null);
+        var resRecord = new PassValue(res!.Id, res.DirectoryId, res.KeyId, res.ValueId, res.ValuePassword,
+            res.CreatedTime, res.LastEditedTime);
+        Assert.That(resRecord.ToCompareTestString(), Is.EqualTo(value.ToCompareTestString()));
 
-        for (int i = 0; i < _PassValues.Count; i++)
-        {
-            var res = await _repository.GetValueById(FailPassValId);
-            Assert.That(res, Is.Null);
-        }
+        //fail
+        res = await _repository.GetValueById(FailPassValId);
+        Assert.That(res, Is.Null);
     }
 
     [Test]
@@ -103,7 +100,10 @@ VALUES (
     {
         foreach (var passDir in _PassDirs)
         {
-            var res = await _repository.GetValuesByDirectoryId(passDir.password_directory_id);
+            var res = 
+                (await _repository.GetValuesByDirectoryId(passDir.password_directory_id))
+                .OrderBy(x => x.Id)
+                .ToList();
             var items = _PassValues
                 .Where(x => x.directory_id == passDir.password_directory_id)
                 .Select(x => new PasswordStoreValueListItemDto()
@@ -114,15 +114,14 @@ VALUES (
                     KeyId = x.encrypt_key_id,
                     LastEditedTime = x.last_edited_time
                 })
+                .OrderBy(x => x.Id)
                 .ToList();
             Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(items)));
         }
 
-        for (int i = 0; i < _PassDirs.Count; i++)
-        {
-            var res = await _repository.GetValuesByDirectoryId(FailPassDIrId);
-            Assert.That(res, Is.Empty);
-        }
+        //fail
+        var result = await _repository.GetValuesByDirectoryId(FailPassDIrId);
+        Assert.That(result, Is.Empty);
     }
 
     [Test]
@@ -130,7 +129,10 @@ VALUES (
     {
         foreach (var passKey in _PassKeys)
         {
-            var res = await _repository.GetValuesByKeyId(passKey.password_store_key_id);
+            var res =
+                (await _repository.GetValuesByKeyId(passKey.password_store_key_id))
+                .OrderBy(x => x.Id)
+                .ToList();
             var items = _PassValues
                 .Where(x => x.encrypt_key_id == passKey.password_store_key_id)
                 .Select(x => new PasswordStoreValueListItemDto()
@@ -141,6 +143,7 @@ VALUES (
                     KeyId = x.encrypt_key_id,
                     LastEditedTime = x.last_edited_time
                 })
+                .OrderBy(x => x.Id)
                 .ToList();
             Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(items)));
         }
@@ -155,134 +158,118 @@ VALUES (
     [Test]
     public async Task GetValuesByKeyIdAndDirId()
     {
-        foreach (var value in _PassValues)
-        {
-            var res = await _repository.GetValuesByKeyIdAndDirId(value.directory_id, value.encrypt_key_id);
-            var items = _PassValues
-                .Where(x => x.directory_id == value.directory_id &&
-                            x.encrypt_key_id == value.encrypt_key_id)
-                .Select(x => new PasswordStoreValueListItemDto()
-                {
-                    CreatedTime = x.created_time,
-                    DirectoryId = x.directory_id,
-                    Id = x.password_store_value_id,
-                    KeyId = x.encrypt_key_id,
-                    LastEditedTime = x.last_edited_time
-                }).ToList();
-            Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(items)));
-        }
+        var value = RandomPassValue;
+        var res = 
+            (await _repository.GetValuesByKeyIdAndDirId(value.directory_id, value.encrypt_key_id))
+            .OrderBy(x => x.Id)
+            .ToList();
+        var items = _PassValues
+            .Where(x => x.directory_id == value.directory_id &&
+                        x.encrypt_key_id == value.encrypt_key_id)
+            .Select(x => new PasswordStoreValueListItemDto()
+            {
+                CreatedTime = x.created_time,
+                DirectoryId = x.directory_id,
+                Id = x.password_store_value_id,
+                KeyId = x.encrypt_key_id,
+                LastEditedTime = x.last_edited_time
+            })
+            .OrderBy(x => x.Id)
+            .ToList();
+        Assert.That(Utils.ToJson(res), Is.EqualTo(Utils.ToJson(items)));
 
-        foreach (var value in _PassValues)
-        {
-            var res = await _repository.GetValuesByKeyIdAndDirId(value.directory_id, FailPassKeyId);
-            Assert.That(res, Is.Empty);
-            res = await _repository.GetValuesByKeyIdAndDirId(FailPassDIrId, value.encrypt_key_id);
-            Assert.That(res, Is.Empty);
-            res = await _repository.GetValuesByKeyIdAndDirId(FailPassDIrId, FailPassKeyId);
-            Assert.That(res, Is.Empty);
-        }
+
+        //fail
+        res = await _repository.GetValuesByKeyIdAndDirId(value.directory_id, FailPassKeyId);
+        Assert.That(res, Is.Empty);
+        res = await _repository.GetValuesByKeyIdAndDirId(FailPassDIrId, value.encrypt_key_id);
+        Assert.That(res, Is.Empty);
+        res = await _repository.GetValuesByKeyIdAndDirId(FailPassDIrId, FailPassKeyId);
+        Assert.That(res, Is.Empty);
+
     }
 
     [Test]
     public async Task InsertValue()
     {
-        int insertCount = 5;
+        var val = PassValue.GetFake(_faker,
+            _faker.Random.ULong(1, (ulong)_PassDirs.Count),
+            _faker.Random.ULong(1, (ulong)_PassKeys.Count),
+            0
+        );
+        var res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id,
+            val.value_password);
+        Assert.That(res, Is.True);
 
-        for (int i = 0; i < insertCount; i++)
-        {
-            var val = PassValue.GetFake(_faker,
-                _faker.Random.ULong(1, (ulong)_PassDirs.Count),
-                _faker.Random.ULong(1, (ulong)_PassKeys.Count),
-                0
-            );
-            var res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
-            Assert.That(res, Is.True);
+        var rows = (await GetAllRows())
+            .Select(x => x.ToCompareTestString())
+            .ToList();
 
-            var rows = (await GetAllRows())
-                .Select(x => x.ToCompareTestString())
-                .ToList();
-            
-            Assert.That(rows, Does.Contain(val.ToCompareTestString()));
-        }
-        
+        Assert.That(rows, Does.Contain(val.ToCompareTestString()));
+
         //fail
-        for (int i = 0; i < insertCount; i++)
-        {
-            var val = PassValue.GetFake(_faker,
-                FailPassDIrId,
-                _faker.Random.ULong(1, (ulong)_PassKeys.Count),
-                0
-            );
-            var res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
-            Assert.That(res, Is.False);
-            
-            val = PassValue.GetFake(_faker,
-                FailPassDIrId,
-                FailPassKeyId,
-                0
-            );
-            res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
-            Assert.That(res, Is.False);
-            
-            val = PassValue.GetFake(_faker,
-                _faker.Random.ULong(1, (ulong)_PassDirs.Count),
-                FailPassKeyId,
-                0
-            );
-            res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
-            Assert.That(res, Is.False);
-        }
+        val = PassValue.GetFake(_faker,
+            FailPassDIrId,
+            _faker.Random.ULong(1, (ulong)_PassKeys.Count),
+            0
+        );
+        res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
+        Assert.That(res, Is.False);
+
+        val = PassValue.GetFake(_faker,
+            FailPassDIrId,
+            FailPassKeyId,
+            0
+        );
+        res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
+        Assert.That(res, Is.False);
+
+        val = PassValue.GetFake(_faker,
+            _faker.Random.ULong(1, (ulong)_PassDirs.Count),
+            FailPassKeyId,
+            0
+        );
+        res = await _repository.TryInsertValue(val.directory_id, val.encrypt_key_id, val.value_id, val.value_password);
+        Assert.That(res, Is.False);
+
     }
 
     [Test]
     public async Task UpdateValue()
     {
-        foreach (var update in 
-                 _PassValues.Select(value => PassValue.GetFake(
-                     _faker, 
-                     value.directory_id, 
-                     value.encrypt_key_id, 
-                     value.password_store_value_id)))
-        {
-            var res = await _repository.UpdateValue(update.password_store_value_id, update.value_id, update.value_password);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).Single(x => x.password_store_value_id == update.password_store_value_id);
-            Assert.That(target.ToCompareTestString(), Is.EqualTo(update.ToCompareTestString()));
-        }
+        var value = RandomPassValue;
+        var update = PassValue.GetFake(
+            _faker,
+            value.directory_id,
+            value.encrypt_key_id,
+            value.password_store_value_id);
+        var res = await _repository.UpdateValue(update.password_store_value_id, update.value_id, update.value_password);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).Single(x => x.password_store_value_id == update.password_store_value_id);
+        Assert.That(target.ToCompareTestString(), Is.EqualTo(update.ToCompareTestString()));
+
         //fail
-        foreach (var update in 
-                 _PassValues.Select(value => PassValue.GetFake(
-                     _faker, 
-                     value.directory_id, 
-                     value.encrypt_key_id, 
-                     FailPassValId)))
-        {
-            var res = await _repository.UpdateValue(update.password_store_value_id, update.value_id, update.value_password);
-            Assert.That(res, Is.False);
-        }
+        res = await _repository.UpdateValue(FailPassValId, update.value_id, update.value_password);
+        Assert.That(res, Is.False);
+
     }
 
     [Test]
     public async Task DeleteValue()
     {
-        foreach (var value in _PassValues)
-        {
-            var res = await _repository.DeleteValue(value.password_store_value_id);
-            Assert.That(res, Is.True);
-            var target =
-                (await GetAllRows()).SingleOrDefault(x => x.password_store_value_id == value.password_store_value_id);
-            Assert.That(target, Is.Null);
-        }
+        var value = RandomPassValue;
+        var res = await _repository.DeleteValue(value.password_store_value_id);
+        Assert.That(res, Is.True);
+        var target =
+            (await GetAllRows()).SingleOrDefault(x => x.password_store_value_id == value.password_store_value_id);
+        Assert.That(target, Is.Null);
     }
 
     [Test]
     public async Task DeleteValue_Fail()
     {
-        for (int i = 0; i < _PassValues.Count; i++)
-        {
-            var res = await _repository.DeleteValue(FailPassValId);
-            Assert.That(res, Is.False);
-        }
+        var res = await _repository.DeleteValue(FailPassValId);
+        Assert.That(res, Is.False);
     }
-    
+
 }

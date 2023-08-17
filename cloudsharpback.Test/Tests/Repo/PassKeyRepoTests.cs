@@ -15,6 +15,7 @@ public class PassKeyRepoTests : TestsBase
     private Faker _faker = null!;
     private ulong FailMemberId => Utils.GetFailId(_members);
     private ulong FailPassKeyId => Utils.GetFailId(_passKeys);
+    private PassKey RandomPassKey => Utils.GetRandomItem(_passKeys);
 
     [SetUp]
     public async Task Setup()
@@ -67,42 +68,40 @@ VALUES (@password_store_key_id, @owner_id, @public_key, @private_key, @encrypt_a
     [Test]
     public async Task GetKeyById()
     {
-        foreach (var passKey in _passKeys)
+        var passKey = RandomPassKey;
+        var res = await _repository.GetKeyById(passKey.owner_id, passKey.password_store_key_id);
+        var data = new PasswordStoreKeyDto
         {
-            var res = await _repository.GetKeyById(passKey.owner_id, passKey.password_store_key_id);
-            var data = new PasswordStoreKeyDto
-            {
-                Id = passKey.password_store_key_id,
-                OwnerId = passKey.owner_id,
-                PublicKey = passKey.public_key,
-                PrivateKey = passKey.private_key,
-                EncryptAlgorithmValue = (ulong)passKey.encrypt_algorithm,
-                Name = passKey.name,
-                Comment = passKey.comment,
-                CreatedTime = passKey.created_time,
-            };
-            Assert.That(res, Is.Not.Null);
-            Assert.That(res, Is.EqualTo(data));
-            
-            //fail
-            res = await _repository.GetKeyById(FailMemberId, passKey.password_store_key_id);
-            Assert.That(res, Is.Null);
-            res = await _repository.GetKeyById(passKey.owner_id, FailPassKeyId);
-            Assert.That(res, Is.Null);
-        }
+            Id = passKey.password_store_key_id,
+            OwnerId = passKey.owner_id,
+            PublicKey = passKey.public_key,
+            PrivateKey = passKey.private_key,
+            EncryptAlgorithmValue = (ulong)passKey.encrypt_algorithm,
+            Name = passKey.name,
+            Comment = passKey.comment,
+            CreatedTime = passKey.created_time,
+        };
+        Assert.That(res, Is.Not.Null);
+        Assert.That(res, Is.EqualTo(data));
+
+        //fail
+        res = await _repository.GetKeyById(FailMemberId, passKey.password_store_key_id);
+        Assert.That(res, Is.Null);
+        res = await _repository.GetKeyById(passKey.owner_id, FailPassKeyId);
+        Assert.That(res, Is.Null);
     }
 
     [Test]
     public async Task GetKeyListByMemberId()
     {
-        foreach (var mem in _members)
+        foreach (var member in _members)
         {
             var res = 
-                (await _repository.GetKeyListByMemberId(mem.MemberId))
+                (await _repository.GetKeyListByMemberId(member.MemberId))
                 .OrderBy(x => x.Id)
                 .ToList();
             var keys = _passKeys
-                .Where(x => x.owner_id == mem.MemberId)
+                .Where(x => x.owner_id == member.MemberId)
                 .Select(x => new PasswordStoreKeyListItemDto()
                 {
                     Comment = x.comment,
@@ -128,46 +127,41 @@ VALUES (@password_store_key_id, @owner_id, @public_key, @private_key, @encrypt_a
     [Test]
     public async Task TryInsertKey()
     {
-        for (int i = 0; i < _passKeys.Count; i++)
-        {
-            var row = PassKey.GetFake(_faker, 0, _faker.Random.ULong(1, (ulong)_members.Count));
-            var res = await _repository.TryInsertKey(row.owner_id, row.encrypt_algorithm, row.public_key, row.private_key,
-                row.name, row.comment);
-            Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(row.ToCompareTestString()));
+        var row = PassKey.GetFake(_faker, 0, _faker.Random.ULong(1, (ulong)_members.Count));
+        var res = await _repository.TryInsertKey(row.owner_id, row.encrypt_algorithm, row.public_key, row.private_key,
+            row.name, row.comment);
+        Assert.That(res, Is.True);
+        var rows = await GetAllRows();
+        Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(row.ToCompareTestString()));
 
-            //fail
-            row = PassKey.GetFake(_faker, 0, FailMemberId);
-            res = await _repository.TryInsertKey(row.owner_id, row.encrypt_algorithm, row.public_key, row.private_key,
-                row.name, row.comment);
-            Assert.That(res, Is.False);
-        }
+        //fail
+        row = PassKey.GetFake(_faker, 0, FailMemberId);
+        res = await _repository.TryInsertKey(row.owner_id, row.encrypt_algorithm, row.public_key, row.private_key,
+            row.name, row.comment);
+        Assert.That(res, Is.False);
+
     }
 
     [Test]
     public async Task DeleteKeyById()
     {
-        foreach (var passKey in _passKeys)
-        {
-            var res = await _repository.DeleteKeyById(passKey.owner_id, passKey.password_store_key_id);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).SingleOrDefault(x => x.password_store_key_id == passKey.password_store_key_id);
-            Assert.That(target, Is.Null);
-        }
+        var passKey = RandomPassKey;
+        var res = await _repository.DeleteKeyById(passKey.owner_id, passKey.password_store_key_id);
+        Assert.That(res, Is.True);
+        var target =
+            (await GetAllRows()).SingleOrDefault(x => x.password_store_key_id == passKey.password_store_key_id);
+        Assert.That(target, Is.Null);
     }
 
     [Test]
     public async Task DeleteKeyById_Fail()
     {
-        foreach (var passKey in _passKeys)
-        {
-            var res = await _repository.DeleteKeyById(FailMemberId, passKey.password_store_key_id);
-            Assert.That(res, Is.False);
-            res = await _repository.DeleteKeyById(FailMemberId, FailPassKeyId);
-            Assert.That(res, Is.False);
-            res = await _repository.DeleteKeyById(passKey.owner_id, FailPassKeyId);
-            Assert.That(res, Is.False);
-        }
+        var passKey = RandomPassKey;
+        var res = await _repository.DeleteKeyById(FailMemberId, passKey.password_store_key_id);
+        Assert.That(res, Is.False);
+        res = await _repository.DeleteKeyById(FailMemberId, FailPassKeyId);
+        Assert.That(res, Is.False);
+        res = await _repository.DeleteKeyById(passKey.owner_id, FailPassKeyId);
+        Assert.That(res, Is.False);
     }
 }

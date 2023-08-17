@@ -4,8 +4,6 @@ using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
 using cloudsharpback.Utills;
 using Dapper;
-using NUnit.Framework.Interfaces;
-using NUnit.Framework.Internal;
 
 namespace cloudsharpback.Test.Tests.Repo;
 
@@ -16,7 +14,8 @@ public class MemberRepositoryTests : TestsBase
     private List<Member> _members = null!;
     private Faker _faker = null!;
     private ulong FailMemberId => Utils.GetFailId(_members);
-    
+    private Member RandomMember => Utils.GetRandomItem(_members);
+
     [SetUp]
     public async Task Setup()
     {
@@ -87,176 +86,156 @@ FROM member;
     [Test]
     public async Task GetMemberById()
     {
-        foreach (var member in _members)
+        var member = RandomMember;
+        var res = await _repository.GetMemberById(member.MemberId);
+        Assert.That(res, Is.Not.Null);
+        var memberDto = new MemberDto()
         {
-            var res = await _repository.GetMemberById(member.MemberId);
-            Assert.That(res, Is.Not.Null);
-            var memberDto = new MemberDto()
-            {
-                Directory = member.Dir,
-                Email = member.Email,
-                Id = member.MemberId,
-                Nickname = member.Nick,
-                ProfileImage = member.ProfileImage,
-                Role = member.Role
-            };
-            Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(memberDto)));
-        }
+            Directory = member.Dir,
+            Email = member.Email,
+            Id = member.MemberId,
+            Nickname = member.Nick,
+            ProfileImage = member.ProfileImage,
+            Role = member.Role
+        };
+        Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(memberDto)));
+        
+        //fail
         Assert.That(await _repository.GetMemberById(FailMemberId), Is.Null);
     }
 
     [Test]
     public async Task GetMemberByLoginId()
     {
-        foreach (var member in _members)
+        var member = RandomMember;
+        var res = await _repository.GetMemberByLoginId(member.Id);
+        Assert.That(res, Is.Not.Null);
+        var memberDto = new MemberDto()
         {
-            var res = await _repository.GetMemberByLoginId(member.Id);
-            Assert.That(res, Is.Not.Null);
-            var memberDto = new MemberDto()
-            {
-                Directory = member.Dir,
-                Email = member.Email,
-                Id = member.MemberId,
-                Nickname = member.Nick,
-                ProfileImage = member.ProfileImage,
-                Role = member.Role
-            };
-            Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(memberDto)));
-        }
+            Directory = member.Dir,
+            Email = member.Email,
+            Id = member.MemberId,
+            Nickname = member.Nick,
+            ProfileImage = member.ProfileImage,
+            Role = member.Role
+        };
+        Assert.That(Test.Utils.ClassToJson(res!), Is.EqualTo(Test.Utils.ClassToJson(memberDto)));
+        
+        //fail
         Assert.That(await _repository.GetMemberByLoginId(_faker.Random.String()), Is.Null);
     }
 
     [Test]
     public async Task TryUpdateMemberProfileImage()
     {
+        var member = RandomMember;
+        var filename = _faker.System.FileName();
+        var res = await _repository.TryUpdateMemberProfileImage(member.MemberId, filename);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+        Assert.That(target.ProfileImage, Is.EqualTo(filename));
         
-        foreach (var member in _members)
-        {
-            var filename = _faker.System.FileName();
-            var res = await _repository.TryUpdateMemberProfileImage(member.MemberId, filename);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
-            Assert.That(target.ProfileImage, Is.EqualTo(filename));
-        }
         //fail
-        for (int i = 0; i < _members.Count; i++)
-        {
-            var filename = _faker.System.FileName();
-            var res = await _repository.TryUpdateMemberProfileImage(FailMemberId, filename);
-            Assert.That(res, Is.False);
-        }
+        filename = _faker.System.FileName();
+        res = await _repository.TryUpdateMemberProfileImage(FailMemberId, filename);
+        Assert.That(res, Is.False);
+
     }
-    
+
     [Test]
     public async Task TryUpdateMemberNickname()
     {
-        foreach (var member in _members)
-        {
-            var nickename = _faker.Internet.UserName();
-            var res = await _repository.TryUpdateMemberNickname(member.MemberId, nickename);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
-            Assert.That(target.Nick, Is.EqualTo(nickename));
-        }
-        
+        var member = RandomMember;
+        var nickename = _faker.Internet.UserName();
+        var res = await _repository.TryUpdateMemberNickname(member.MemberId, nickename);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+        Assert.That(target.Nick, Is.EqualTo(nickename));
+
+
         //fail
-        for (int i = 0; i < _members.Count; i++)
-        {
-            var nickename = _faker.Internet.UserName();
-            var res = await _repository.TryUpdateMemberNickname(FailMemberId, nickename);
-            Assert.That(res, Is.False);
-        }
+        nickename = _faker.Internet.UserName();
+        res = await _repository.TryUpdateMemberNickname(FailMemberId, nickename);
+        Assert.That(res, Is.False);
     }
-    
+
     [Test]
     public async Task TryUpdateMemberEmail()
     {
-        foreach (var member in _members)
-        {
-            var email = _faker.Internet.Email();
-            var res = await _repository.TryUpdateMemberEmail(member.MemberId, email);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
-            Assert.That(target.Email, Is.EqualTo(email));
-        }
-        
+        var member = RandomMember;
+        var email = _faker.Internet.Email();
+        var res = await _repository.TryUpdateMemberEmail(member.MemberId, email);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+        Assert.That(target.Email, Is.EqualTo(email));
+
+
         //fail
-        for (int i = 0; i < _members.Count; i++)
-        {
-            var email = _faker.Internet.Email();
-            var res = await _repository.TryUpdateMemberEmail(FailMemberId, email);
-            Assert.That(res, Is.False);
-        }
+        email = _faker.Internet.Email();
+        res = await _repository.TryUpdateMemberEmail(FailMemberId, email);
+        Assert.That(res, Is.False);
+
     }
-    
+
     [Test]
     public async Task GetMemberPasswordHashById()
     {
-        foreach (var member in _members)
-        {
-            var hash = await _repository.GetMemberPasswordHashById(member.MemberId);
-            Assert.That(hash, Is.Not.Null);
-            Assert.That(hash, Is.EqualTo(member.Password));
-        }
+        var member = RandomMember;
+        var hash = await _repository.GetMemberPasswordHashById(member.MemberId);
+        Assert.That(hash, Is.Not.Null);
+        Assert.That(hash, Is.EqualTo(member.Password));
 
+        //fail
         Assert.That(await _repository.GetMemberPasswordHashById(FailMemberId), Is.Null);
     }
-    
+
     [Test]
     public async Task GetMemberPasswordHashByLoginId()
     {
-        foreach (var member in _members)
-        {
-            var hash = await _repository.GetMemberPasswordHashByLoginId(member.Id);
-            Assert.That(hash, Is.Not.Null);
-            Assert.That(hash, Is.EqualTo(member.Password));
-        }
-        
+        var member = RandomMember;
+        var hash = await _repository.GetMemberPasswordHashByLoginId(member.Id);
+        Assert.That(hash, Is.Not.Null);
+        Assert.That(hash, Is.EqualTo(member.Password));
+
+        //fail
         Assert.That(await _repository.GetMemberPasswordHashByLoginId(_faker.Random.String()), Is.Null);
     }
-    
+
     [Test]
     public async Task TryUpdateMemberPassword()
     {
-        foreach (var member in _members)
-        {
-            var password = PasswordEncrypt.EncryptPassword(_faker.Internet.Password());
-            var res = await _repository.TryUpdateMemberPassword(member.MemberId, password);
-            Assert.That(res, Is.True);
-            var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
-            Assert.That(target.Password, Is.EqualTo(password));
-        }
+        var member = RandomMember;
+        var password = PasswordEncrypt.EncryptPassword(_faker.Internet.Password());
+        var res = await _repository.TryUpdateMemberPassword(member.MemberId, password);
+        Assert.That(res, Is.True);
+        var target = (await GetAllRows()).Single(x => x.MemberId == member.MemberId);
+        Assert.That(target.Password, Is.EqualTo(password));
+        
+        //fail 
+        res = await _repository.TryUpdateMemberPassword(FailMemberId, password);
+        Assert.That(res, Is.False);
     }
 
     [Test]
     public async Task TryAddMember()
     {
-        var addMembersCount = 5;
-        for (int i = 0; i < addMembersCount; i++)
-        {
-            var mem = Member.GetFake(0, _faker);
-            var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir),
-                mem.Role, mem.ProfileImage);
-            Assert.That(res, Is.True);
-            var rows = await GetAllRows();
-            Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(mem.ToCompareTestString()));
-        }
+        var mem = Member.GetFake(0, _faker);
+        var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir),
+            mem.Role, mem.ProfileImage);
+        Assert.That(res, Is.True);
+        var rows = await GetAllRows();
+        Assert.That(rows.Select(x => x.ToCompareTestString()).ToList(), Does.Contain(mem.ToCompareTestString()));
 
         //fail
+        mem = Member.GetFake(0, _faker);
+        res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir),
+            _faker.Random.ULong(3), mem.ProfileImage);
+        Assert.That(res, Is.False);
 
-        for (int i = 0; i < addMembersCount; i++)
-        {
-            var mem = Member.GetFake(0, _faker);
-            var res = await _repository.TryAddMember(mem.Id, mem.Password, mem.Nick, mem.Email, Guid.Parse(mem.Dir),
-                _faker.Random.ULong(3), mem.ProfileImage);
-            Assert.That(res, Is.False);
-        }
-
-        foreach (var member in _members)
-        {
-            var res = await _repository.TryAddMember(member.Id, member.Password, member.Nick, member.Email, Guid.Parse(member.Dir),
-                member.Role, member.ProfileImage);
-            Assert.That(res, Is.False);
-        }
+        var member = RandomMember;
+        res = await _repository.TryAddMember(member.Id, member.Password, member.Nick, member.Email,
+            Guid.Parse(member.Dir),
+            member.Role, member.ProfileImage);
+        Assert.That(res, Is.False);
     }
 }

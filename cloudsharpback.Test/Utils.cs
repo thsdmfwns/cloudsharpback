@@ -8,6 +8,7 @@ public static class Utils
 {
     public static int PassCount = 0;
     public static int FailCount = 0;
+    public static int ErrorCount = 0;
     
     
     public static string ClassToJson(object obj)
@@ -29,9 +30,6 @@ public static class Utils
     public static ulong GetFailId(IList rows, int max = 100)
         => (ulong)Random.Shared.Next(rows.Count + 1, max);
 
-    public static IConfiguration GetConfiguration()
-    => new ConfigurationBuilder()
-        .SetBasePath(AppContext.BaseDirectory)
-        .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-        .Build();
+    public static T GetRandomItem<T>(List<T> rows)
+        => rows.ElementAt(Random.Shared.Next(0, rows.Count - 1));
 }
