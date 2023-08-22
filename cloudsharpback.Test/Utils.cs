@@ -47,4 +47,14 @@ public static class Utils
             Role = 2
         };
     }
+
+    public static string MakeFakeFile(Faker faker, string fileDir, string? ext = null)
+    {
+        var fileName = faker.System.CommonFileName(ext);
+        var fileContent = faker.Lorem.Sentences();
+        var filePath = Path.Combine(fileDir, fileName);
+        Directory.CreateDirectory(fileDir);
+        File.WriteAllText(filePath, fileContent);
+        return filePath;
+    }
 }

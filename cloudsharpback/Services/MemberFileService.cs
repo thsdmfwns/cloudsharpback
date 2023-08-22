@@ -19,12 +19,20 @@ namespace cloudsharpback.Services
             _pathStore = pathStore;
         }
 
-        private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
-
-        private void MakeBaseDirectory(MemberDto memberDto)
+        private string MemberDirectory(string directoryId)
         {
-            var dir = MemberDirectory(memberDto.Directory);
-            string SubPath(string foldername) => Path.Combine(dir, foldername);
+            var path = _pathStore.MemberDirectory(directoryId);
+            if (!Directory.Exists(path))
+            {
+                MakeBaseDirectory(path);
+            }
+
+            return path;
+        }
+        
+        private void MakeBaseDirectory(string memberDirectory)
+        {
+            string SubPath(string foldername) => Path.Combine(memberDirectory, foldername);
             Directory.CreateDirectory(SubPath("Download"));
             Directory.CreateDirectory(SubPath("Music"));
             Directory.CreateDirectory(SubPath("Video"));
@@ -36,10 +44,6 @@ namespace cloudsharpback.Services
             try
             {
                 files = new List<FileInfoDto>();
-                if (!Directory.Exists(MemberDirectory(memberDto.Directory)))
-                {
-                    MakeBaseDirectory(memberDto);
-                }
                 var dirPath = Path.Combine(MemberDirectory(memberDto.Directory), path ?? string.Empty);
                 var targetDir = new DirectoryInfo(dirPath);
                 if (!targetDir.Exists)
@@ -168,7 +172,7 @@ namespace cloudsharpback.Services
                 }
                 ticketValue = new FileDownloadTicketValue()
                 {
-                    FileDownloadType = FileDownloadType.View,
+                    FileDownloadType = isView ? FileDownloadType.View : FileDownloadType.Download,
                     TargetFilePath = targetFilePath
                 };
                 return null;
@@ -199,7 +203,7 @@ namespace cloudsharpback.Services
             {
                 return new HttpResponseDto() { HttpCode = 409, Message = "File with the same name already exists" };
             }
-            var token = new FileUploadTicketValue()
+            ticketValue = new FileUploadTicketValue()
             {
                 FileName = uploadRequestDto.FileName,
                 UploadDirectoryPath = targetDir

@@ -20,21 +20,18 @@ public class FileStreamServiceTests : TestsBase
         _pathStore = new PathStore(env);
         _service = new FileStreamService(_pathStore, new NullLogger<IFileStreamService>());
         _faker = new Faker();
-        Directory.Delete(env[RequiredEnvironmentValueKey.CS_VOLUME_PATH]);
+        var volPath = env[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
+        if (Directory.Exists(volPath))
+        {
+            Directory.Delete(volPath);
+        }
     }
 
     [Test]
     public void GetFileStream()
     {
-        var memberDir = Guid.NewGuid().ToString();
-        var fileName = _faker.System.CommonFileName();
-        var fileContent = _faker.Lorem.Sentences();
-        var fileDir = _pathStore.MemberDirectory(memberDir);
-        var filePath = Path.Combine(fileDir, fileName);
-        Directory.CreateDirectory(fileDir);
-        
-        File.WriteAllText(filePath, fileContent);
-
+        var memberDir = _pathStore.MemberDirectory(Guid.NewGuid().ToString());
+        var filePath = Utils.MakeFakeFile(_faker, memberDir);
         var ticketValue = new FileDownloadTicketValue()
         {
             FileDownloadType = FileDownloadType.Download,
@@ -46,6 +43,7 @@ public class FileStreamServiceTests : TestsBase
         var res = _service.GetFileStream(ticket, out var fileStream);
         Assert.That(res, Is.Null);
         Assert.That(fileStream, Is.Not.Null);
+        Assert.That(fileStream!.CanRead, Is.True);
         Assert.That(fileStream!.Name, Is.EqualTo(filePath));
         
         //fail
