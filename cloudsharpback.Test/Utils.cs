@@ -48,13 +48,15 @@ public static class Utils
         };
     }
 
-    public static string MakeFakeFile(Faker faker, string fileDir, string? ext = null)
+    public static string MakeFakeFile(Faker faker, string memberDir, string? fileDir, string? ext = null, bool fullPath = false)
     {
+        fileDir ??= string.Empty;
         var fileName = faker.System.CommonFileName(ext);
         var fileContent = faker.Lorem.Sentences();
-        var filePath = Path.Combine(fileDir, fileName);
-        Directory.CreateDirectory(fileDir);
+        var filePath = Path.Combine(memberDir, fileDir, fileName);
+        Directory.CreateDirectory(memberDir);
         File.WriteAllText(filePath, fileContent);
-        return filePath;
+        var path = filePath.Remove(0, memberDir.Length);
+        return fullPath ? filePath : path.TrimStart('/');
     }
 }

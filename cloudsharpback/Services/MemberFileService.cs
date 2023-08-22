@@ -39,12 +39,26 @@ namespace cloudsharpback.Services
             Directory.CreateDirectory(SubPath("Document"));
         }
 
+        private string GetTargetFullPath(string memberDirectoryId, string? targetPath)
+        {
+            var memberDirectory = MemberDirectory(memberDirectoryId);
+            targetPath ??= string.Empty;
+            if (Path.IsPathRooted(targetPath))
+            {
+                throw new ArgumentException("Target path is rooted");
+            }
+            return Path.Combine(memberDirectory, targetPath);
+        }
+
+        private string GetTargetFullPath(MemberDto memberDto, string? targetPath)
+            => GetTargetFullPath(memberDto.Directory, targetPath);
+
         public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileInfoDto> files, bool onlyDir = false)
         {
             try
             {
                 files = new List<FileInfoDto>();
-                var dirPath = Path.Combine(MemberDirectory(memberDto.Directory), path ?? string.Empty);
+                var dirPath = GetTargetFullPath(memberDto, path);
                 var targetDir = new DirectoryInfo(dirPath);
                 if (!targetDir.Exists)
                 {
@@ -90,7 +104,7 @@ namespace cloudsharpback.Services
             try
             {
                 fileDto = null;
-                var filepath = Path.Combine(MemberDirectory(member.Directory), path);
+                var filepath = GetTargetFullPath(member, path);
                 if (!FileExist(filepath))
                 {
                     return new HttpResponseDto()
@@ -121,7 +135,7 @@ namespace cloudsharpback.Services
             try
             {
                 fileDtos = new List<FileInfoDto>();
-                var filepath = Path.Combine(MemberDirectory(member.Directory), path);
+                var filepath = GetTargetFullPath(member, path);
                 if (!FileExist(filepath))
                 {
                     return new HttpResponseDto()
@@ -161,7 +175,7 @@ namespace cloudsharpback.Services
             try
             {
                 ticketValue = null;
-                var targetFilePath = Path.Combine(MemberDirectory(member.Directory), targetPath);
+                var targetFilePath = GetTargetFullPath(member, targetPath);;
                 if (!FileExist(targetFilePath))
                 {
                     return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
@@ -193,7 +207,7 @@ namespace cloudsharpback.Services
         public HttpResponseDto? GetUploadTicketValue(MemberDto member, FileUploadRequestDto uploadRequestDto, out FileUploadTicketValue? ticketValue)
         {
             ticketValue = null;
-            var targetDir = Path.Combine(MemberDirectory(member.Directory), uploadRequestDto.UploadDirectory ?? string.Empty);
+            var targetDir = GetTargetFullPath(member, uploadRequestDto.UploadDirectory);;
             if (!Directory.Exists(targetDir))
             {
                 return new HttpResponseDto() { HttpCode = 404, Message = "Directory not found" };
@@ -221,7 +235,7 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 400, Message = "Bad Directory Name" };
                 }
-                var targetDirPath = Path.Combine(MemberDirectory(memberDto.Directory), targetPath ?? string.Empty);
+                var targetDirPath = GetTargetFullPath(memberDto, targetPath);;
                 var makingDirPath = Path.Combine(targetDirPath, dirName);
                 var targetDir = new DirectoryInfo(targetDirPath);
                 if (!targetDir.Exists)
@@ -258,7 +272,7 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 400 };
                 }
-                var targetDirPath = Path.Combine(MemberDirectory(memberDto.Directory), targetPath);
+                var targetDirPath = GetTargetFullPath(memberDto, targetPath);;
                 var targetdir = new DirectoryInfo(targetDirPath);
                 if (!targetdir.Exists)
                 {

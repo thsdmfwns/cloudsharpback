@@ -20,9 +20,10 @@ public class MemberFileServiceTests : TestsBase
     {
         var env = new EnvironmentValueStore();
         var volPath = env[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
-        if (Directory.Exists(volPath))
+        var volDir = new DirectoryInfo(volPath);
+        if (volDir.Exists)
         {
-            Directory.Delete(volPath);
+            volDir.Delete(true);
         }
         _faker = new Faker();
         _memberDto = Utils.GetFakeMemberDto(_faker);
@@ -50,7 +51,7 @@ public class MemberFileServiceTests : TestsBase
     [Test]
     public void GerFiles()
     {
-        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory));
+        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null);
         var res = _service.GetFiles(_memberDto, null, out var files);
         Assert.That(res, Is.Null);
         var names = files
@@ -59,7 +60,7 @@ public class MemberFileServiceTests : TestsBase
         Assert.That(names.Single(), Is.EqualTo(Path.GetFileName(filePath)));
         
         //fail
-        res = _service.GetFiles(_memberDto, _faker.System.DirectoryPath(), out files);
+        res = _service.GetFiles(_memberDto, _faker.System.DirectoryPath().TrimStart('/'), out files);
         Assert.That(res, Is.Not.Null);
         Assert.That(files, Is.Empty);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
@@ -68,13 +69,13 @@ public class MemberFileServiceTests : TestsBase
     [Test]
     public void DeleteFile()
     {
-        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory));
+        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null);
         var res = _service.DeleteFile(_memberDto, filePath, out var files);
         Assert.That(res, Is.Null);
         Assert.That(files, Is.Empty);
         
         //fail
-        res = _service.DeleteFile(_memberDto, _faker.System.FilePath(), out files);
+        res = _service.DeleteFile(_memberDto, _faker.System.FilePath().TrimStart('/'), out files);
         Assert.That(res, Is.Not.Null);
         Assert.That(files, Is.Empty);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
@@ -83,19 +84,19 @@ public class MemberFileServiceTests : TestsBase
     [Test]
     public void GetDownloadTicketValue_DL()
     {
-        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory));
+        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null);
         var res = _service.GetDownloadTicketValue(_memberDto, filePath, out var ticketValue);
         Assert.That(res, Is.Null);
         Assert.That(ticketValue, Is.Not.Null);
         var targetTicket = new FileDownloadTicketValue()
         {
             FileDownloadType = FileDownloadType.Download,
-            TargetFilePath = filePath,
+            TargetFilePath = Path.Combine(_pathStore.MemberDirectory(_memberDto.Directory), filePath),
         };
         Assert.That(Utils.ClassToJson(ticketValue!), Is.EqualTo(Utils.ClassToJson(targetTicket)));
         
         //fail
-        res = _service.GetDownloadTicketValue(_memberDto, _faker.System.FilePath(), out ticketValue);
+        res = _service.GetDownloadTicketValue(_memberDto, _faker.System.FilePath().TrimStart('/'), out ticketValue);
         Assert.That(res, Is.Not.Null);
         Assert.That(ticketValue, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
@@ -104,24 +105,24 @@ public class MemberFileServiceTests : TestsBase
     [Test]
     public void GetDownloadTicketValue_View()
     {
-        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), "png");
+        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null, "png");
         var res = _service.GetDownloadTicketValue(_memberDto, filePath, out var ticketValue, true);
         Assert.That(res, Is.Null);
         Assert.That(ticketValue, Is.Not.Null);
         var targetTicket = new FileDownloadTicketValue()
         {
             FileDownloadType = FileDownloadType.View,
-            TargetFilePath = filePath,
+            TargetFilePath = Path.Combine(_pathStore.MemberDirectory(_memberDto.Directory), filePath),
         };
         Assert.That(Utils.ClassToJson(ticketValue!), Is.EqualTo(Utils.ClassToJson(targetTicket)));
         
         //fail
-        res = _service.GetDownloadTicketValue(_memberDto, _faker.System.FilePath(), out ticketValue);
+        res = _service.GetDownloadTicketValue(_memberDto, _faker.System.FilePath().TrimStart('/'), out ticketValue);
         Assert.That(res, Is.Not.Null);
         Assert.That(ticketValue, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
 
-        filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), ext: "aabbcc");
+        filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null, ext: "aabbcc");
         res = _service.GetDownloadTicketValue(_memberDto, filePath, out ticketValue, true);
         Assert.That(res, Is.Not.Null);
         Assert.That(ticketValue, Is.Null);
@@ -132,7 +133,7 @@ public class MemberFileServiceTests : TestsBase
     public void GetUploadTicketValue()
     {
         var fileName = _faker.System.CommonFileName();
-        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory));
+        var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null);
         var uploadreq = new FileUploadRequestDto()
         {
             FileName = fileName,
@@ -162,7 +163,7 @@ public class MemberFileServiceTests : TestsBase
         uploadreq = new FileUploadRequestDto()
         {
             FileName = _faker.System.CommonFileName(),
-            UploadDirectory = _faker.System.DirectoryPath()
+            UploadDirectory = _faker.System.DirectoryPath().TrimStart('/')
         };
         res = _service.GetUploadTicketValue(_memberDto, uploadreq, out ticketValue);
         Assert.That(res, Is.Not.Null);

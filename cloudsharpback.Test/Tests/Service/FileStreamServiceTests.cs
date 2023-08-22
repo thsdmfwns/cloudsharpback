@@ -21,9 +21,10 @@ public class FileStreamServiceTests : TestsBase
         _service = new FileStreamService(_pathStore, new NullLogger<IFileStreamService>());
         _faker = new Faker();
         var volPath = env[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
-        if (Directory.Exists(volPath))
+        var volDir = new DirectoryInfo(volPath);
+        if (volDir.Exists)
         {
-            Directory.Delete(volPath);
+            volDir.Delete(true);
         }
     }
 
@@ -31,7 +32,7 @@ public class FileStreamServiceTests : TestsBase
     public void GetFileStream()
     {
         var memberDir = _pathStore.MemberDirectory(Guid.NewGuid().ToString());
-        var filePath = Utils.MakeFakeFile(_faker, memberDir);
+        var filePath = Utils.MakeFakeFile(_faker, memberDir, null, null, true);
         var ticketValue = new FileDownloadTicketValue()
         {
             FileDownloadType = FileDownloadType.Download,
