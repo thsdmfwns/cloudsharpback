@@ -170,4 +170,64 @@ public class MemberFileServiceTests : TestsBase
         Assert.That(ticketValue, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
     }
+
+    [Test]
+    public void MakeDirectory()
+    {
+        var dirName = _faker.Random.Word();
+        var res = _service.MakeDirectory(_memberDto, null, dirName, out var files);
+        var names = files
+            .Select(x => x.Name)
+            .OrderBy(x => x)
+            .ToList();
+        var targets = new List<string>() 
+                { "Download", "Music", "Video", "Document", dirName }
+            .OrderBy(x => x)
+            .ToList();
+        Assert.That(Utils.ToJson(names), Is.EqualTo(Utils.ToJson(targets)));
+        
+        //fails
+        res = _service.MakeDirectory(_memberDto, null, _faker.Random.String(), out files);
+        Assert.That(res, Is.Not.Null);
+        Assert.That(files, Is.Empty);
+        Assert.That(res!.HttpCode, Is.EqualTo(400));
+        
+        res = _service.MakeDirectory(_memberDto, null, dirName, out files);
+        Assert.That(res, Is.Not.Null);
+        Assert.That(files, Is.Empty);
+        Assert.That(res!.HttpCode, Is.EqualTo(409));
+        
+        res = _service.MakeDirectory(_memberDto, Guid.NewGuid().ToString(), dirName, out files);
+        Assert.That(res, Is.Not.Null);
+        Assert.That(files, Is.Empty);
+        Assert.That(res!.HttpCode, Is.EqualTo(404));
+    }
+
+    [Test]
+    public void RemoveDirectory()
+    {
+        var res = _service.RemoveDirectory(_memberDto, "Download", out var files);
+        var targets = new List<string>() 
+                { "Music", "Video", "Document" }
+            .OrderBy(x => x)
+            .ToList();
+        var names = files
+            .Select(x => x.Name)
+            .OrderBy(x => x)
+            .ToList();
+        Assert.That(Utils.ToJson(names), Is.EqualTo(Utils.ToJson(targets)));
+        
+        //fails
+        
+        res = _service.RemoveDirectory(_memberDto, "/", out files);
+        Assert.That(res, Is.Not.Null);
+        Assert.That(files, Is.Empty);
+        Assert.That(res!.HttpCode, Is.EqualTo(400));
+        
+        res = _service.RemoveDirectory(_memberDto, "Download", out files);
+        Assert.That(res, Is.Not.Null);
+        Assert.That(files, Is.Empty);
+        Assert.That(res!.HttpCode, Is.EqualTo(404));
+    }
+    
 }
