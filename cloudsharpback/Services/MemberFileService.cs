@@ -23,30 +23,12 @@ namespace cloudsharpback.Services
 
         private void MakeBaseDirectory(MemberDto memberDto)
         {
-            try
-            {
-                if (Directory.Exists(MemberDirectory(memberDto.Directory)))
-                {
-                    return;
-                }
-
-                string SubPath(string foldername) => Path.Combine(MemberDirectory(memberDto.Directory), foldername);
-                Directory.CreateDirectory(SubPath("Download"));
-                Directory.CreateDirectory(SubPath("Music"));
-                Directory.CreateDirectory(SubPath("Video"));
-                Directory.CreateDirectory(SubPath("Document"));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.StackTrace);
-                _logger.LogError(ex.Message);
-                throw new HttpErrorException(new HttpResponseDto
-                {
-                    HttpCode = 500,
-                    Message = "fail to make template directory",
-                });
-            }
-
+            var dir = MemberDirectory(memberDto.Directory);
+            string SubPath(string foldername) => Path.Combine(dir, foldername);
+            Directory.CreateDirectory(SubPath("Download"));
+            Directory.CreateDirectory(SubPath("Music"));
+            Directory.CreateDirectory(SubPath("Video"));
+            Directory.CreateDirectory(SubPath("Document"));
         }
 
         public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileInfoDto> files, bool onlyDir = false)
@@ -58,7 +40,6 @@ namespace cloudsharpback.Services
                 {
                     MakeBaseDirectory(memberDto);
                 }
-
                 var dirPath = Path.Combine(MemberDirectory(memberDto.Directory), path ?? string.Empty);
                 var targetDir = new DirectoryInfo(dirPath);
                 if (!targetDir.Exists)

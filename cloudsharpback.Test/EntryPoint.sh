@@ -1,11 +1,14 @@
 #!/bin/bash
 
-/src/tools/checkEnv.sh ./EnvValues.json
-result=$?
+source /src/tools/checkEnv.sh ./EnvValues.json
 
-if [ $result != 0 ]; then
+if [ $validate_result != 0 ]; then
     echo "There are enviornment value problems"
     exit 1
 fi
 
-exec dotnet test
+if  [ -z "$FILTER" ]; then
+    exec dotnet test    
+fi
+
+exec dotnet test --filter "$FILTER"

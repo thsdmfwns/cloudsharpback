@@ -8,22 +8,20 @@ public class PathStore : IPathStore
     public PathStore(IEnvironmentValueStore environmentValueStore)
     {
         _volumePath = environmentValueStore[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
-        CreateDirIfNotExist(DirectoryPath);
-        CreateDirIfNotExist(TusStorePath);
-        CreateDirIfNotExist(ProfilePath);
     }
 
-    private void CreateDirIfNotExist(string path)
+    private string CreateDirIfNotExist(string path)
     {
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
         }
+        return path;
     }
     
-    public string DirectoryPath => Path.Combine(_volumePath, "Directory");
-    public string TusStorePath => Path.Combine(_volumePath, "TusStore");
-    public string ProfilePath => Path.Combine(_volumePath, "Profile");
+    public string DirectoryPath => CreateDirIfNotExist(Path.Combine(_volumePath, "Directory"));
+    public string TusStorePath => CreateDirIfNotExist(Path.Combine(_volumePath, "TusStore"));
+    public string ProfilePath => CreateDirIfNotExist(Path.Combine(_volumePath, "Profile"));
     public string MemberDirectory(string memberDirectoryId) =>
         Path.Combine(DirectoryPath, memberDirectoryId);
     

@@ -1,8 +1,6 @@
 #!/bin/bash
 
-echo "============build Image.."
 docker build .. --file ./Dockerfile -t cs_test
-echo "============run Container.."
 docker run \
 --network cloudsharp \
 --name cs_test \
@@ -11,4 +9,5 @@ docker run \
 -e MYSQL_PORT=3306 \
 -e MYSQL_USER="root" \
 -e MYSQL_PASSWORD=3279 \
+-e FILTER="$1" \
 cs_test

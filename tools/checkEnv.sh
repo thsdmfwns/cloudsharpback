@@ -47,4 +47,3 @@ for row in $(echo "${json_data}" | base64 --decode | jq -r '.[] | @base64'); do
 done
 
 echo "Done!"
-exit ${validate_result}

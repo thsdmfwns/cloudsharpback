@@ -10,4 +10,5 @@ ENV PATH="$PATH:/src/tools"
 WORKDIR "/src/cloudsharpback.Test"
 RUN chmod +x "/src/cloudsharpback.Test/EntryPoint.sh"
 RUN chmod +x "/src/tools"
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
 ENTRYPOINT ["/src/cloudsharpback.Test/EntryPoint.sh"]

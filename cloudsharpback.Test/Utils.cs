@@ -1,4 +1,6 @@
 using System.Collections;
+using Bogus;
+using cloudsharpback.Models.DTO.Member;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
@@ -32,4 +34,17 @@ public static class Utils
 
     public static T GetRandomItem<T>(List<T> rows)
         => rows.ElementAt(Random.Shared.Next(0, rows.Count - 1));
+
+    public static MemberDto GetFakeMemberDto(Faker faker)
+    {
+        return new MemberDto()
+        {
+            Directory = Guid.NewGuid().ToString(),
+            Email = faker.Internet.Email(),
+            Id = (ulong)faker.UniqueIndex,
+            Nickname = faker.Internet.UserName(),
+            ProfileImage = null,
+            Role = 2
+        };
+    }
 }

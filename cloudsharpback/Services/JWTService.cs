@@ -16,12 +16,11 @@ namespace cloudsharpback.Services
 
         public JWTService(ILogger<IJWTService> logger)
         {
-            string key;
+            byte[] key;
             using (var sha512 = SHA512.Create())
             {
                 var inputBytes = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
-                var hashBytes = sha512.ComputeHash(inputBytes);
-                key = Encoding.UTF8.GetString(Base64.Encode(hashBytes));
+                key = sha512.ComputeHash(inputBytes);
             }
             _jwtKey = new SymmetricJwk(key, SignatureAlgorithm.HmacSha512);
             _logger = logger;
@@ -61,7 +60,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        string IJWTService.WriteRefreshToken(MemberDto data)
+        public string WriteRefreshToken(MemberDto data)
         {
             try
             {
