@@ -11,3 +11,4 @@ docker run \
 -e MYSQL_PASSWORD=3279 \
 -e FILTER="$1" \
 cs_test
+docker rmi cs_test
