@@ -1,4 +1,4 @@
-namespace cloudsharpback.Utills;
+namespace cloudsharpback.Utils;
 
 public class IpAdressUtil
 {
