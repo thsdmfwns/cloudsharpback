@@ -2,7 +2,7 @@ using Bogus;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 using Dapper;
 
 namespace cloudsharpback.Test.Tests.Repo;

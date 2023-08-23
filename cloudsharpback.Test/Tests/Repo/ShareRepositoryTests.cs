@@ -2,7 +2,6 @@ using Bogus;
 using cloudsharpback.Models.DTO.Share;
 using cloudsharpback.Repository;
 using cloudsharpback.Test.Records;
-using cloudsharpback.Utills;
 using Dapper;
 
 namespace cloudsharpback.Test.Tests.Repo;
