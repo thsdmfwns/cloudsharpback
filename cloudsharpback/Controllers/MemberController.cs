@@ -78,7 +78,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("updateNick")]
         public async Task<IActionResult> UpdateNickName(string nickname)
         {
-            var err = await _memberService.UpadteNickname(Member, nickname);
+            var err = await _memberService.UpdateNickname(Member, nickname);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);
@@ -89,7 +89,7 @@ namespace cloudsharpback.Controllers
         [HttpPost("updateEmail")]
         public async Task<IActionResult> UpdateEmail(string email)
         {
-            var err = await _memberService.UpadteEmail(Member, email);
+            var err = await _memberService.UpdateEmail(Member, email);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);
