@@ -1,6 +1,6 @@
 using Bogus;
 using Bogus.DataSets;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 
 namespace cloudsharpback.Test.Records;
 

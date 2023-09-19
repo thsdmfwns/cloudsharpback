@@ -32,23 +32,6 @@ public class MemberFileServiceTests : TestsBase
     }
 
     [Test]
-    public void MakeBaseDirectory()
-    {
-        var res = _service.GetFiles(_memberDto, null, out var files);
-        Assert.That(res, Is.Null);
-        var names = files
-            .Select(x => x.Name)
-            .OrderBy(x => x)
-            .ToList();
-        var targets = new List<string>() 
-            { "Download", "Music", "Video", "Document" }
-            .OrderBy(x => x)
-            .ToList();
-        
-        Assert.That(Utils.ToJson(names), Is.EqualTo(Utils.ToJson(targets)));
-    }
-
-    [Test]
     public void GerFiles()
     {
         var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null);
@@ -174,15 +157,12 @@ public class MemberFileServiceTests : TestsBase
     [Test]
     public void MakeDirectory()
     {
-        var dirName = _faker.Random.Word();
+        var dirName = Guid.NewGuid().ToString();
         var res = _service.MakeDirectory(_memberDto, null, dirName, out var files);
         var names = files
             .Select(x => x.Name)
-            .OrderBy(x => x)
             .ToList();
-        var targets = new List<string>() 
-                { "Download", "Music", "Video", "Document", dirName }
-            .OrderBy(x => x)
+        var targets = new List<string>() { dirName }
             .ToList();
         Assert.That(Utils.ToJson(names), Is.EqualTo(Utils.ToJson(targets)));
         
@@ -206,16 +186,22 @@ public class MemberFileServiceTests : TestsBase
     [Test]
     public void RemoveDirectory()
     {
-        var res = _service.RemoveDirectory(_memberDto, "Download", out var files);
-        var targets = new List<string>() 
-                { "Music", "Video", "Document" }
-            .OrderBy(x => x)
-            .ToList();
+        var targets = new List<string>();
+        string path(string dirName) => _pathStore.GetMemberTargetPath(_memberDto.Directory, dirName);
+        for (int i = 0; i < 3; i++)
+        {
+            var dirname = Guid.NewGuid().ToString();
+            targets.Add(dirname);
+            Directory.CreateDirectory(path(dirname));
+        }
+        var deleteTarget = Guid.NewGuid().ToString();
+        Directory.CreateDirectory(path(deleteTarget));
+        var res = _service.RemoveDirectory(_memberDto, deleteTarget, out var files);
         var names = files
             .Select(x => x.Name)
             .OrderBy(x => x)
             .ToList();
-        Assert.That(Utils.ToJson(names), Is.EqualTo(Utils.ToJson(targets)));
+        Assert.That(Utils.ToJson(names), Is.EqualTo(Utils.ToJson(targets.OrderBy(x => x).ToList())));
         
         //fails
         

@@ -1,5 +1,5 @@
 using Bogus;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 
 namespace cloudsharpback.Test.Records;
 

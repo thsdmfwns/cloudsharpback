@@ -1,6 +1,6 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 using System.Net.Mail;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;

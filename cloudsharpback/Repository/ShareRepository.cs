@@ -30,8 +30,7 @@ public class ShareRepository : IShareRepository
         );
 
     public async Task<bool> TryAddShare(ulong memberId, string target, string? password, ulong expireTime,
-        string? comment,
-        string? shareName, Guid token, ulong fileSize)
+        string? comment, string? shareName, Guid token, ulong fileSize)
     {
         try
         {

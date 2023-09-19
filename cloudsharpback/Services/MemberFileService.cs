@@ -4,7 +4,7 @@ using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.FIle;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 
 namespace cloudsharpback.Services
 {
@@ -18,47 +18,19 @@ namespace cloudsharpback.Services
             _logger = logger;
             _pathStore = pathStore;
         }
-
-        private string MemberDirectory(string directoryId)
-        {
-            var path = _pathStore.MemberDirectory(directoryId);
-            if (!Directory.Exists(path))
-            {
-                MakeBaseDirectory(path);
-            }
-
-            return path;
-        }
         
-        private void MakeBaseDirectory(string memberDirectory)
-        {
-            string SubPath(string foldername) => Path.Combine(memberDirectory, foldername);
-            Directory.CreateDirectory(SubPath("Download"));
-            Directory.CreateDirectory(SubPath("Music"));
-            Directory.CreateDirectory(SubPath("Video"));
-            Directory.CreateDirectory(SubPath("Document"));
-        }
+        private string GetMemberTargetPath(MemberDto memberDto, string? targetPath)
+            => _pathStore.GetMemberTargetPath(memberDto.Directory, targetPath);
 
-        private string GetTargetFullPath(string memberDirectoryId, string? targetPath)
-        {
-            var memberDirectory = MemberDirectory(memberDirectoryId);
-            targetPath ??= string.Empty;
-            if (Path.IsPathRooted(targetPath))
-            {
-                throw new ArgumentException("Target path is rooted");
-            }
-            return Path.Combine(memberDirectory, targetPath);
-        }
-
-        private string GetTargetFullPath(MemberDto memberDto, string? targetPath)
-            => GetTargetFullPath(memberDto.Directory, targetPath);
-
+        private string MemberDirectory(string memberDirectoryId)
+            => _pathStore.MemberDirectory(memberDirectoryId); 
+        
         public HttpResponseDto? GetFiles(MemberDto memberDto, string? path, out List<FileInfoDto> files, bool onlyDir = false)
         {
             try
             {
                 files = new List<FileInfoDto>();
-                var dirPath = GetTargetFullPath(memberDto, path);
+                var dirPath = GetMemberTargetPath(memberDto, path);
                 var targetDir = new DirectoryInfo(dirPath);
                 if (!targetDir.Exists)
                 {
@@ -104,7 +76,7 @@ namespace cloudsharpback.Services
             try
             {
                 fileDto = null;
-                var filepath = GetTargetFullPath(member, path);
+                var filepath = GetMemberTargetPath(member, path);
                 if (!FileExist(filepath))
                 {
                     return new HttpResponseDto()
@@ -135,7 +107,7 @@ namespace cloudsharpback.Services
             try
             {
                 fileDtos = new List<FileInfoDto>();
-                var filepath = GetTargetFullPath(member, path);
+                var filepath = GetMemberTargetPath(member, path);
                 if (!FileExist(filepath))
                 {
                     return new HttpResponseDto()
@@ -175,7 +147,7 @@ namespace cloudsharpback.Services
             try
             {
                 ticketValue = null;
-                var targetFilePath = GetTargetFullPath(member, targetPath);;
+                var targetFilePath = GetMemberTargetPath(member, targetPath);;
                 if (!FileExist(targetFilePath))
                 {
                     return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
@@ -207,7 +179,7 @@ namespace cloudsharpback.Services
         public HttpResponseDto? GetUploadTicketValue(MemberDto member, FileUploadRequestDto uploadRequestDto, out FileUploadTicketValue? ticketValue)
         {
             ticketValue = null;
-            var targetDir = GetTargetFullPath(member, uploadRequestDto.UploadDirectory);;
+            var targetDir = GetMemberTargetPath(member, uploadRequestDto.UploadDirectory);;
             if (!Directory.Exists(targetDir))
             {
                 return new HttpResponseDto() { HttpCode = 404, Message = "Directory not found" };
@@ -235,7 +207,7 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 400, Message = "Bad Directory Name" };
                 }
-                var targetDirPath = GetTargetFullPath(memberDto, targetPath);;
+                var targetDirPath = GetMemberTargetPath(memberDto, targetPath);;
                 var makingDirPath = Path.Combine(targetDirPath, dirName);
                 var targetDir = new DirectoryInfo(targetDirPath);
                 if (!targetDir.Exists)
@@ -272,7 +244,7 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 400 };
                 }
-                var targetDirPath = GetTargetFullPath(memberDto, targetPath);;
+                var targetDirPath = GetMemberTargetPath(memberDto, targetPath);;
                 var targetdir = new DirectoryInfo(targetDirPath);
                 if (!targetdir.Exists)
                 {

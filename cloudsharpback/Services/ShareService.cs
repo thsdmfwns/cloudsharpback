@@ -4,7 +4,7 @@ using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Models.DTO.Share;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 
 namespace cloudsharpback.Services
 {
@@ -20,23 +20,29 @@ namespace cloudsharpback.Services
             _shareRepository = shareRepository;
             _logger = logger;
         }
-
-        string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
-        bool FileExist(string filePath) => File.Exists(filePath);
+        
+        private string GetMemberTargetPath(MemberDto member, string? targetPath) =>
+            GetMemberTargetPath(member.Directory, targetPath);
+        
+        private string GetMemberTargetPath(string memberDirectoryId, string? targetPath) =>
+            _pathStore.GetMemberTargetPath(memberDirectoryId, targetPath);
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="member"></param>
         /// <param name="req"></param>
+        /// <param name="token"></param>
         /// <returns>404 : no file for share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<HttpResponseDto?> Share(MemberDto member, ShareRequestDto req)
+        public async Task<HttpResponseDto?> Share(MemberDto member, ShareRequestDto req, Guid? token = null)
         {
             try
             {
-                var filepath = Path.Combine(MemberDirectory(member.Directory), req.Target);
-                if (!FileExist(filepath))
+                token ??= Guid.NewGuid();
+                var filepath = GetMemberTargetPath(member, req.Target);
+                var fileinfo = new FileInfo(filepath);
+                if (!fileinfo.Exists)
                 {
                     return new HttpResponseDto
                     {
@@ -44,13 +50,17 @@ namespace cloudsharpback.Services
                         Message = $"no file for share",
                     };
                 }
-                var fileinfo = new FileInfo(filepath);
-                var password = req.Password;
-                if (password is not null)
-                {
-                    password = PasswordEncrypt.EncryptPassword(password);
-                }
-                var res = await _shareRepository.TryAddShare(member.Id, req, password, fileinfo);
+                var res = await _shareRepository.TryAddShare(
+                    member.Id,
+                    req.Target,
+                    req.Password is not null 
+                        ? PasswordEncrypt.EncryptPassword(req.Password) : null,
+                    req.ExpireTime ?? (ulong)DateTime.MaxValue.Ticks,
+                    req.Comment,
+                    req.ShareName,
+                    token.Value,
+                    (ulong)fileinfo.Length
+                    );
                 return res ? null : new HttpResponseDto(){HttpCode = 400};
             }
             catch (Exception ex)
@@ -134,6 +144,7 @@ namespace cloudsharpback.Services
                 {
                     return (new HttpResponseDto() { HttpCode = 400 }, null);
                 }
+
                 var dto = await _shareRepository.GetShareDownloadDtoByToken(token);
                 if (dto is null)
                 {
@@ -144,8 +155,9 @@ namespace cloudsharpback.Services
                     };
                     return (res, null);
                 }
-                if (dto.Password is not null 
-                    && (req.Password is null 
+
+                if (dto.Password is not null
+                    && (req.Password is null
                         || !PasswordEncrypt.VerifyPassword(req.Password, dto.Password)))
                 {
                     var res = new HttpResponseDto
@@ -155,7 +167,8 @@ namespace cloudsharpback.Services
                     };
                     return (res, null);
                 }
-                if (dto.ExpireTime is not null 
+
+                if (dto.ExpireTime is not null
                     && dto.ExpireTime < (ulong)DateTime.UtcNow.Ticks)
                 {
                     return (new HttpResponseDto
@@ -165,7 +178,7 @@ namespace cloudsharpback.Services
                     }, null);
                 }
 
-                var filePath = Path.Combine(MemberDirectory(dto.Directory), dto.Target);
+                var filePath = GetMemberTargetPath(dto.Directory, dto.Target);
                 if (!File.Exists(filePath))
                 {
                     return (new HttpResponseDto
@@ -259,7 +272,7 @@ namespace cloudsharpback.Services
         {
             try
             {
-                if (!Directory.Exists(Path.Combine(MemberDirectory(memberDto.Directory), targetDir)))
+                if (!Directory.Exists(GetMemberTargetPath(memberDto, targetDir)))
                 {
                     return (new HttpResponseDto() { HttpCode = 404, Message = "Directory Not Found" }, new List<ShareResponseDto>());
                 }
@@ -304,10 +317,12 @@ namespace cloudsharpback.Services
 
         public async Task<HttpResponseDto?> DeleteSharesInDirectory(MemberDto memberDto, string targetDirectoryPath)
         {
-            var targetDirPath = Path.Combine(MemberDirectory(memberDto.Directory), targetDirectoryPath);
+            var targetDirPath = GetMemberTargetPath(memberDto, targetDirectoryPath);
             var targetdir = new DirectoryInfo(targetDirPath);
             if (!targetdir.Exists)
             {
+                
+                
                 return new HttpResponseDto() { HttpCode = 404, Message = "Directory not found" };
             }
             var shares = await _shareRepository.GetSharesInDirectory(memberDto.Id, targetDirectoryPath);

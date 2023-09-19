@@ -17,7 +17,7 @@ namespace cloudsharpback.Services.Interfaces
         Task<(HttpResponseDto? err, ShareResponseDto? result)> GetShareAsync(Guid token);
         Task<List<ShareResponseDto>> GetSharesAsync(MemberDto member);
         /// <returns>404 : no file for share</returns>
-        Task<HttpResponseDto?> Share(MemberDto member, ShareRequestDto req);
+        Task<HttpResponseDto?> Share(MemberDto member, ShareRequestDto req, Guid? token = null);
         Task<HttpResponseDto?> UpdateShareAsync(ShareUpdateDto dto, Guid token, MemberDto member);
         /// <returns>404 : NotFound Share</returns>
         Task<(HttpResponseDto? err, bool? result)> ValidatePassword(string password, Guid token);

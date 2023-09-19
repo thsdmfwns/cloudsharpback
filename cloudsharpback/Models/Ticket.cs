@@ -1,6 +1,6 @@
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 using Org.BouncyCastle.Asn1.X509;
 
 namespace cloudsharpback.Models;
