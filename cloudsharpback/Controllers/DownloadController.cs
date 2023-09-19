@@ -1,6 +1,6 @@
 using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace cloudsharpback.Controllers;

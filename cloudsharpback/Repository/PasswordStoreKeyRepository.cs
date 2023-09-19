@@ -4,6 +4,7 @@ using cloudsharpback.Models.DTO.PasswordStore;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Repository;
 
@@ -22,7 +23,7 @@ public class PasswordStoreKeyRepository : IPasswordStoreKeyRepository
 SELECT  password_store_key_id Id, 
         owner_id OwnerId, 
         public_key PublicKey, 
-        private_key privateKey, 
+        private_key PrivateKey, 
         encrypt_algorithm EncryptAlgorithmValue,
         name AS Name,
         comment AS Comment,
@@ -51,7 +52,26 @@ WHERE owner_id  = @memberId;
         return res.ToList();
     }
 
-    public async Task<bool> InsertKey(ulong memberId, int encryptAlgorithm, string? publicKey, string privateKey,
+    public async Task<bool> TryInsertKey(ulong memberId, int encryptAlgorithm, string? publicKey, string privateKey,
+        string name, string? comment)
+    {
+        try
+        {
+            return await InsertKey(memberId, encryptAlgorithm, publicKey, privateKey, name, comment);
+        }
+        catch (MySqlException ex)
+        {
+            if (ex.Number  == 1452 
+                || ex.Number == 1451
+                || ex.Number == 1062)
+            {
+                return false;
+            }
+            throw;
+        }
+    }
+
+    private async Task<bool> InsertKey(ulong memberId, int encryptAlgorithm, string? publicKey, string privateKey,
         string name, string? comment)
     {
         const string sql = @"

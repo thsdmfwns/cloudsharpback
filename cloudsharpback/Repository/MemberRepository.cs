@@ -1,9 +1,8 @@
-using cloudsharpback.Models;
-using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace cloudsharpback.Repository;
 
@@ -107,19 +106,43 @@ public class MemberRepository : IMemberRepository
         return result > 0;
     }
 
-    public async Task<bool> TryAddMember(RegisterDto registerDto, ulong role)
+    public async Task<bool> TryAddMember(RegisterDto dto, ulong role)
+        => await TryAddMember(dto.Id, dto.Pw, dto.Nick, dto.Email, Guid.NewGuid(), role, null);
+    
+    public async Task<bool> TryAddMember(string id, string pw, string nick, string email, Guid dir, ulong role,
+        string? profileImage)
+    {
+        try
+        {
+            return await AddMember(id, pw, nick, email, dir, role, profileImage);
+        }
+        catch (MySqlException ex)
+        {
+            if (ex.Number  == 1452 
+                || ex.Number == 1451
+                || ex.Number == 1062)
+            {
+                return false;
+            }
+            throw;
+        }
+    }
+
+    private async Task<bool> AddMember(string id, string pw, string nick, string email, Guid dir, ulong role,
+        string? profileImage)
     {
         using var conn = _connService.Connection;
-        const string sql = "INSERT INTO member(id, password, nickname, role_id, email, directory) " +
-                    "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory))";
+        const string sql = "INSERT INTO member(id, password, nickname, role_id, email, directory, profile_image) " +
+                    "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory), @ProfileImage)";
         var result = await conn.ExecuteAsync(sql, new
         {
-            Id = registerDto.Id,
-            Pw = registerDto.Pw,
-            Nick = registerDto.Nick,
+            Id = id,
+            Pw = pw,
+            Nick = nick,
             Role = role,
-            Email = registerDto.Email,
-            Directory = Guid.NewGuid().ToString(),
+            Email = email,
+            Directory = dir.ToString(),
+            ProfileImage = profileImage
         });
         return result > 0;
     }

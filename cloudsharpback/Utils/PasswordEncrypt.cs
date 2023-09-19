@@ -1,6 +1,6 @@
 ﻿using BC = BCrypt.Net.BCrypt;
 
-namespace cloudsharpback.Utills
+namespace cloudsharpback.Utils
 {
     public static class PasswordEncrypt
     {

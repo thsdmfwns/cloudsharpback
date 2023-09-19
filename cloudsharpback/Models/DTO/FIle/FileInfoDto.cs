@@ -21,7 +21,7 @@
             {
                 Name = directoryInfo.Name,
                 FileType = FileType.Folder,
-                Path = directoryInfo.FullName[(memberDirectoryPath.Length + 1)..]
+                Path = directoryInfo.FullName[memberDirectoryPath.Length..].TrimStart('/')
             };
         }
 
@@ -32,7 +32,7 @@
                 Extention = fileInfo.Extension,
                 LastWriteTime = fileInfo.LastWriteTime.ToUniversalTime().Ticks,
                 Size = (ulong?)fileInfo.Length,
-                Path = fileInfo.FullName[(memberDirectoryPath.Length + 1)..],
+                Path = fileInfo.FullName[memberDirectoryPath.Length..].TrimStart('/'),
             };
     }
 }

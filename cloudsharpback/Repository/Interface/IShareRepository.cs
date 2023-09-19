@@ -7,14 +7,18 @@ namespace cloudsharpback.Repository.Interface;
 public interface IShareRepository
 {
     Task<bool> TryAddShare(ulong memberId, ShareRequestDto req, string? password, FileInfo fileinfo);
-    Task<ShareResponseDto?> GetShareByToken(string token);
+    Task<bool> TryAddShare(ulong memberId, string target, string? password, ulong expireTime,
+        string? comment,
+        string? shareName, Guid token, ulong fileSize);
+    Task<ShareResponseDto?> GetShareByToken(Guid token);
     Task<List<ShareResponseDto>> GetSharesByTargetFilePath(ulong memberid, string targetFilePath);
     Task<List<ShareResponseDto>> GetSharesListByMemberId(ulong memberId);
-    Task<ShareDownloadDto?> GetShareDownloadDtoByToken(string token);
-    Task<bool> TrySetShareExpireTimeToZero(ulong memberId, string token);
-    Task<bool> TryUpdateShare(ulong memberId, string token, ShareUpdateDto dto, string? password);
+    Task<ShareDownloadDto?> GetShareDownloadDtoByToken(Guid token);
+    Task<bool> TrySetShareExpireTimeToZero(ulong memberId, Guid token);
+    Task<bool> TryUpdateShare(ulong memberId, Guid token, string? password, string? comment,
+        ulong? expireTime, string? shareName);
     Task<bool> TryDeleteShare(ulong memberId, string targetFilePath);
-    Task<bool> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath, int sharesCount);
+    Task<int> TryDeleteShareInDirectory(ulong memberId, string targetDirectoryPath);
     Task<List<ShareResponseDto>> GetSharesInDirectory(ulong memberid, string targetDirectoryPath);
-    Task<string?> GetPasswordHashByToken(string token);
+    Task<string?> GetPasswordHashByToken(Guid token);
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
 
-namespace cloudsharpback.Utills
+namespace cloudsharpback.Utils
 {
     public static class MimeTypeUtil
     {

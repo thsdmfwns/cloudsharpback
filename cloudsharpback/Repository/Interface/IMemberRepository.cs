@@ -16,4 +16,5 @@ public interface IMemberRepository
     Task<bool> TryLoginIdDuplicate(string id);
     Task<bool> TryUpdateMemberPassword(ulong id, string password);
     Task<bool> TryAddMember(RegisterDto registerDto, ulong role);
+    Task<bool> TryAddMember(string id, string pw, string nick, string email, Guid dir, ulong role, string? profileImage);
 }

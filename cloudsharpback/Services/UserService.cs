@@ -3,7 +3,7 @@ using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 using Dapper;
 
 namespace cloudsharpback.Services
@@ -11,12 +11,14 @@ namespace cloudsharpback.Services
     public class UserService : IUserService
     {
         private readonly IMemberRepository _memberRepository;
+        private readonly IPathStore _pathStore;
         private readonly ILogger _logger;
 
-        public UserService(ILogger<IUserService> logger, IMemberRepository memberRepository)
+        public UserService(ILogger<IUserService> logger, IMemberRepository memberRepository, IPathStore pathStore)
         {
             _logger = logger;
             _memberRepository = memberRepository;
+            _pathStore = pathStore;
         }
 
         private async Task<string?> GetPasswordHash(string id)
@@ -58,15 +60,26 @@ namespace cloudsharpback.Services
         /// </summary>
         /// <param name="registerDto"></param>
         /// <param name="role"></param>
+        /// <param name="directoryId"></param>
         /// <returns>404 : bad json </returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<HttpResponseDto?> Register(RegisterDto registerDto, ulong role)
+        public async Task<HttpResponseDto?> Register(RegisterDto registerDto, ulong role, Guid? directoryId = null)
         {
             try
             {
-                registerDto.Pw = PasswordEncrypt.EncryptPassword(registerDto.Pw);
-                var result = await _memberRepository.TryAddMember(registerDto, role);
-                return result ? null : new HttpResponseDto() { HttpCode = 400 };
+                var password = PasswordEncrypt.EncryptPassword(registerDto.Pw);
+                directoryId ??= Guid.NewGuid();
+                var result = await _memberRepository.TryAddMember(
+                    registerDto.Id,
+                    password,
+                    registerDto.Nick,
+                    registerDto.Email,
+                    directoryId.Value,
+                    role,
+                    null);
+                if (!result) return new HttpResponseDto() { HttpCode = 400 };
+                MakeBaseDirectory(directoryId.Value);
+                return null;
             }
             catch (Exception ex)
             {
@@ -79,6 +92,14 @@ namespace cloudsharpback.Services
                 });
             }
         }
-
+        private void MakeBaseDirectory(Guid memberDirectoryId)
+        {
+            var dir = _pathStore.MemberDirectory(memberDirectoryId.ToString());
+            string SubPath(string foldername) => Path.Combine(dir, foldername);
+            Directory.CreateDirectory(SubPath("Download"));
+            Directory.CreateDirectory(SubPath("Music"));
+            Directory.CreateDirectory(SubPath("Video"));
+            Directory.CreateDirectory(SubPath("Document"));
+        }
     }
 }

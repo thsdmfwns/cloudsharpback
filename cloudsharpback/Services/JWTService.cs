@@ -1,8 +1,11 @@
-﻿using cloudsharpback.Models;
+﻿using System.Security.Cryptography;
+using System.Text;
+using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services.Interfaces;
 using JsonWebToken;
+using Org.BouncyCastle.Utilities.Encoders;
 
 namespace cloudsharpback.Services
 {
@@ -11,9 +14,15 @@ namespace cloudsharpback.Services
         private readonly SymmetricJwk _jwtKey;
         private readonly ILogger _logger;
 
-        public JWTService(IConfiguration configuration, ILogger<IJWTService> logger)
+        public JWTService(ILogger<IJWTService> logger)
         {
-            _jwtKey = new SymmetricJwk(configuration["JWT:key"], SignatureAlgorithm.HmacSha512);
+            byte[] key;
+            using (var sha512 = SHA512.Create())
+            {
+                var inputBytes = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
+                key = sha512.ComputeHash(inputBytes);
+            }
+            _jwtKey = new SymmetricJwk(key, SignatureAlgorithm.HmacSha512);
             _logger = logger;
         }
 
@@ -51,7 +60,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        string IJWTService.WriteRefreshToken(MemberDto data)
+        public string WriteRefreshToken(MemberDto data)
         {
             try
             {

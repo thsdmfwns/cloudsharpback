@@ -1,6 +1,6 @@
 ﻿using cloudsharpback.Models;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utills;
+using cloudsharpback.Utils;
 using System.Net.Mail;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
@@ -44,11 +44,12 @@ namespace cloudsharpback.Services
         }
 
         /// <returns>415 : bad type, 409 : try again, 404: member not found</returns>
-        public async Task<HttpResponseDto?> UploadProfileImage(IFormFile imageFile, MemberDto member)
+        public async Task<HttpResponseDto?> UploadProfileImage(IFormFile imageFile, MemberDto member,
+            Guid? profileId = null)
         {
             try
             {
-                var profileId = Guid.NewGuid();
+                profileId ??= Guid.NewGuid();
                 var extension = Path.GetExtension(imageFile.FileName);
                 var mime = MimeTypeUtil.GetMimeType(extension);
                 if (mime is null 
@@ -86,13 +87,13 @@ namespace cloudsharpback.Services
             try
             {
                 fileStream = null;
+                contentType = null;
                 var filepath = Path.Combine(_profilePath, profileImage);
-                contentType = MimeTypeUtil.GetMimeType(profileImage);
-                if (!File.Exists(filepath)
-                    || contentType is null)
+                if (!File.Exists(filepath))
                 {
                     return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };
                 }
+                contentType = MimeTypeUtil.GetMimeType(profileImage);
                 fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
                 return null;
             }
@@ -108,7 +109,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        public async Task<HttpResponseDto?> UpadteNickname(MemberDto member, string changeNick)
+        public async Task<HttpResponseDto?> UpdateNickname(MemberDto member, string changeNick)
         {
             try
             {
@@ -131,7 +132,7 @@ namespace cloudsharpback.Services
             }
         }
 
-        public async Task<HttpResponseDto?> UpadteEmail(MemberDto member, string changeEmail)
+        public async Task<HttpResponseDto?> UpdateEmail(MemberDto member, string changeEmail)
         {
             try
             {

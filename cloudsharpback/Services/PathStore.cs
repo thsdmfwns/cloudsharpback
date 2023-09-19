@@ -5,26 +5,46 @@ namespace cloudsharpback.Services;
 public class PathStore : IPathStore
 {
     private readonly string _volumePath;
-    public PathStore(IConfiguration configuration)
+    public PathStore(IEnvironmentValueStore environmentValueStore)
     {
-        _volumePath = configuration["VolumePath"];
-        CreateDirIfNotExist(DirectoryPath);
-        CreateDirIfNotExist(TusStorePath);
-        CreateDirIfNotExist(ProfilePath);
+        _volumePath = environmentValueStore[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
     }
 
-    private void CreateDirIfNotExist(string path)
+    private string CreateDirIfNotExist(string path)
     {
         if (!Directory.Exists(path))
         {
             Directory.CreateDirectory(path);
         }
+        return path;
     }
     
-    public string DirectoryPath => Path.Combine(_volumePath, "Directory");
-    public string TusStorePath => Path.Combine(_volumePath, "TusStore");
-    public string ProfilePath => Path.Combine(_volumePath, "Profile");
-    public string MemberDirectory(string memberDirectoryId) =>
-        Path.Combine(DirectoryPath, memberDirectoryId);
+    public string DirectoryPath => CreateDirIfNotExist(Path.Combine(_volumePath, "Directory"));
+    public string TusStorePath => CreateDirIfNotExist(Path.Combine(_volumePath, "TusStore"));
+    public string ProfilePath => CreateDirIfNotExist(Path.Combine(_volumePath, "Profile"));
+    
+    public string MemberDirectory(string directoryId)
+    {
+        if (!Guid.TryParse(directoryId, out _))
+        {
+            throw new IOException("DirectoryId is not guid");
+        }
+        var dir = new DirectoryInfo(Path.Combine(DirectoryPath, directoryId));
+        if (dir.Exists) return dir.FullName;
+        
+        Directory.CreateDirectory(dir.FullName);
+        return dir.FullName;
+    }
+    
+    public string GetMemberTargetPath(string memberDirectoryId, string? targetPath)
+    {
+        var memberDirectory = MemberDirectory(memberDirectoryId);
+        targetPath ??= string.Empty;
+        if (Path.IsPathRooted(targetPath))
+        {
+            throw new IOException("Target path is rooted");
+        }
+        return Path.Combine(memberDirectory, targetPath);
+    }
     
 }

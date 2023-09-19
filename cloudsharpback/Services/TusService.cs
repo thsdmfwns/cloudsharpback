@@ -12,24 +12,25 @@ namespace cloudsharpback.Services
         private readonly ILogger _logger;
         private readonly IPathStore _pathStore;
         private readonly ITicketStore _ticketStore;
+        private readonly string _tusStorePath;
 
         public TusService(ILogger<ITusService> logger, IPathStore pathStore, ITicketStore ticketStore)
         {
             _logger = logger;
             _pathStore = pathStore;
             _ticketStore = ticketStore;
+            _tusStorePath = _pathStore.TusStorePath;
         }
         
         private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
-        private string TusStorePath => _pathStore.TusStorePath;
         bool FileExist(string filePath) => File.Exists(filePath);
 
         public DefaultTusConfiguration GetTusConfiguration()
         {
-            if (!Directory.Exists(TusStorePath)) Directory.CreateDirectory(TusStorePath);
+            if (!Directory.Exists(_tusStorePath)) Directory.CreateDirectory(_tusStorePath);
             return new DefaultTusConfiguration
             {
-                Store = new TusDiskStore(TusStorePath),
+                Store = new TusDiskStore(_tusStorePath),
                 UrlPath = "/api/upload",
                 Events = new Events
                 {

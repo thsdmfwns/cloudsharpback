@@ -36,6 +36,7 @@ builder.Services.AddSingleton<IDBConnectionFactory, DBConnectionFactory>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<ITicketStore, TicketStore>();
 builder.Services.AddSingleton<IPathStore, PathStore>();
+builder.Services.AddSingleton<IEnvironmentValueStore, EnvironmentValueStore>();
 //transient
 builder.Services.AddTransient<ITusService, TusService>();
 

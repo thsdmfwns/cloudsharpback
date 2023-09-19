@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace cloudsharpback.Utills
+namespace cloudsharpback.Utils
 {
     public static class Base64
     {
