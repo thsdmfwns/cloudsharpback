@@ -2,13 +2,9 @@ using cloudsharpback.Services.Interfaces;
 
 namespace cloudsharpback.Services;
 
-public class PathStore : IPathStore
+public class PathStore(IEnvironmentValueStore environmentValueStore) : IPathStore
 {
-    private readonly string _volumePath;
-    public PathStore(IEnvironmentValueStore environmentValueStore)
-    {
-        _volumePath = environmentValueStore[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
-    }
+    private readonly string _volumePath = environmentValueStore[RequiredEnvironmentValueKey.CS_VOLUME_PATH];
 
     private string CreateDirIfNotExist(string path)
     {

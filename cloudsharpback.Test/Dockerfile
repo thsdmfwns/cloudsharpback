@@ -7,6 +7,7 @@ COPY . .
 COPY ["cloudsharpback.Test/EntryPoint.sh", "cloudsharpback.Test/"]
 COPY ["tools", "tools"]
 ENV PATH="$PATH:/src/tools"
+ENV TOOLPATH="/src/tools"
 WORKDIR "/src/cloudsharpback.Test"
 RUN chmod +x "/src/cloudsharpback.Test/EntryPoint.sh"
 RUN chmod +x "/src/tools"

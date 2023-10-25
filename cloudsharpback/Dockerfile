@@ -4,6 +4,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
+COPY tools /tools
+COPY cloudsharpback/EntryPoint.sh .
+ENV PATH="$PATH:/tools"
+ENV TOOLPATH="/tools"
+RUN chmod +x "/tools"
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
@@ -26,4 +31,4 @@ COPY --from=publish /app/publish .
 #dev
 ENV ASPNETCORE_ENVIRONMENT=Development 
 ###
-ENTRYPOINT ["dotnet", "cloudsharpback.dll"]
+ENTRYPOINT ["/app/EntryPoint.sh"]
