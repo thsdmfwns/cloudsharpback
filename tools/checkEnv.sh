@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Check environment values..."
 
-json_file="$1"
+json_file="$TOOLPATH/EnvValues.json"
 json_data=$(cat "${json_file}" | base64)
 
 validate_result=0
@@ -16,7 +16,7 @@ validate_env_var() {
             export "${key}"="${default}"
             return
         fi
-        echo "Environment value ${key} is not set."
+        echo "Environment value ${key} is need to set."
         validate_result=1
         return
     fi
