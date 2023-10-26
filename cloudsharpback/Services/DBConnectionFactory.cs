@@ -7,7 +7,7 @@ namespace cloudsharpback.Services
     public class DBConnectionFactory : IDBConnectionFactory
     {
         private readonly string _mysqlConnStr;
-        private readonly ConfigurationOptions _redisOption;
+        private readonly ConnectionMultiplexer _connectionMultiplexer;
         public DBConnectionFactory(IEnvironmentValueStore environmentValueStore)
         {
             var mysqlDatabase = "cloud_sharp";
@@ -22,11 +22,12 @@ namespace cloudsharpback.Services
             //Server=<server_address>;Port=<port_number>;Database=<database_name>;Uid=<username>;Pwd=<password>;
 
             _mysqlConnStr = $"Server={mysqlServer};Port={mysqlPort};Database={mysqlDatabase};Uid={mysqlUser};Pwd={mysqlPassword};";
-            _redisOption = ConfigurationOptions.Parse($"{redisServer}:{redisPort}");
-            _redisOption.Password = redisPassword;
+            var redisOption = ConfigurationOptions.Parse($"{redisServer}:{redisPort}");
+            redisOption.Password = redisPassword;
+            _connectionMultiplexer = ConnectionMultiplexer.Connect(redisOption);
         }
 
         public MySqlConnection MySqlConnection => new MySqlConnection(_mysqlConnStr);
-        public ConnectionMultiplexer Redis => ConnectionMultiplexer.Connect(_redisOption);
+        public IDatabase Redis =>  _connectionMultiplexer.GetDatabase();
     }
 }
