@@ -1,6 +1,15 @@
-CREATE DATABASE cloud_sharp;
-
 USE cloud_sharp;
+
+-- role: table
+CREATE TABLE `role` (
+                        `role_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                        `name` varchar(255) DEFAULT NULL,
+                        UNIQUE KEY `role_id` (`role_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO role(role_id, name) VALUES (1, 'user');
+INSERT INTO role(role_id, name) VALUES (2, 'member');
+
 
 -- member: table
 CREATE TABLE `member` (
@@ -31,7 +40,7 @@ CREATE TABLE `password_store_directory` (
                                             `member_id` bigint unsigned NOT NULL,
                                             PRIMARY KEY (`password_directory_id`),
                                             KEY `member_id` (`member_id`),
-                                            CONSTRAINT `member_id` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`)
+                                            CONSTRAINT `member_id` FOREIGN KEY (`member_id`) REFERENCES `member` (`member_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- password_store_keys: table
@@ -57,23 +66,13 @@ CREATE TABLE `password_store_value` (
                                         `value_id` varchar(1024) DEFAULT NULL,
                                         `value_password` varchar(1024) NOT NULL COMMENT '키로 암호화 ',
                                         `created_time` bigint unsigned NOT NULL,
-                                        `last_edited_time` bigint NOT NULL,
+                                        `last_edited_time` bigint unsigned NOT NULL,
                                         PRIMARY KEY (`password_store_value_id`),
                                         KEY `password_store_value_directory_id` (`directory_id`),
                                         KEY `password_store_value_encrypt_key_id` (`encrypt_key_id`),
                                         CONSTRAINT `password_store_value_directory_id` FOREIGN KEY (`directory_id`) REFERENCES `password_store_directory` (`password_directory_id`) ON DELETE CASCADE,
                                         CONSTRAINT `password_store_value_encrypt_key_id` FOREIGN KEY (`encrypt_key_id`) REFERENCES `password_store_keys` (`password_store_key_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- role: table
-CREATE TABLE `role` (
-                        `role_id` bigint unsigned NOT NULL AUTO_INCREMENT,
-                        `name` varchar(255) DEFAULT NULL,
-                        UNIQUE KEY `role_id` (`role_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-INSERT INTO role(role_id, name) VALUES (1, 'user');
-INSERT INTO role(role_id, name) VALUES (2, 'member');
 
 -- share: table
 CREATE TABLE `share` (
