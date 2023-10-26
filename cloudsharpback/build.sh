@@ -1,1 +1,0 @@
-docker build .. --file ./Dockerfile --no-cache -t dev
