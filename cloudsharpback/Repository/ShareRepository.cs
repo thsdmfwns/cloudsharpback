@@ -53,7 +53,7 @@ public class ShareRepository : IShareRepository
     {
         const string sql = "INSERT INTO share(member_id, target, password, expire_time, comment, share_time, share_name, token, file_size) " +
                            "VALUES(@MemberID, @Target, @Password, @ExpireTime, @Comment, @ShareTime, @ShareName, UUID_TO_BIN(@Token), @FileSize)";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res =await conn.ExecuteAsync(sql, new
         {
             MemberId = memberId,
@@ -85,7 +85,7 @@ public class ShareRepository : IShareRepository
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
                            "WHERE s.token = UUID_TO_BIN(@Token)";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QueryFirstOrDefaultAsync<ShareResponseDto>(sql, new { Token = token.ToString() });
     }
 
@@ -105,7 +105,7 @@ public class ShareRepository : IShareRepository
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
                            "WHERE s.member_id = @ID AND s.expire_time >= @Now";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var result = await conn.QueryAsync<ShareResponseDto>(sql, 
             new { ID = memberId, Now = (ulong)DateTime.UtcNow.Ticks });
         return result.ToList();
@@ -118,7 +118,7 @@ public class ShareRepository : IShareRepository
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
                            "WHERE s.token = UUID_TO_BIN(@Token)";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QueryFirstOrDefaultAsync<ShareDownloadDto?>(sql, new { Token = token });
     }
 
@@ -127,7 +127,7 @@ public class ShareRepository : IShareRepository
         const string sql = "UPDATE share " +
                            "SET expire_time = 0 " +
                            "WHERE member_id = @Id AND token = UUID_TO_BIN(@Token)";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var result = await conn.ExecuteAsync(sql, new
         {
             Id = memberId,
@@ -142,7 +142,7 @@ public class ShareRepository : IShareRepository
         const string sql = "UPDATE share " +
                            "SET password = @Password, expire_time = @Expire, comment = @Comment, share_name = @ShareName " +
                            "WHERE member_id = @Id AND token = UUID_TO_BIN(@Token)";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new
         {
             Password = password,
@@ -171,7 +171,7 @@ public class ShareRepository : IShareRepository
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
                            "WHERE s.member_id = @Id AND target = @Target ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return (await conn.QueryAsync<ShareResponseDto>(sql, new { Id = memberid, Target = targetFilePath })).ToList();
     }
     
@@ -192,7 +192,7 @@ public class ShareRepository : IShareRepository
                            "INNER JOIN member AS m " +
                            "ON s.member_id = m.member_id " +
                            "WHERE s.member_id = @Id AND target Like @Target ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return (await conn.QueryAsync<ShareResponseDto>(sql, new { Id = memberid, Target = targetPath })).ToList();
     }
 
@@ -200,7 +200,7 @@ public class ShareRepository : IShareRepository
     {
         const string sql = "DELETE FROM share " +
                            "WHERE member_id = @Id AND target = @Target";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new
         {
             Target = targetFilePath,
@@ -214,7 +214,7 @@ public class ShareRepository : IShareRepository
         var targetPath = Path.Combine(targetDirectoryPath, "%");
         const string sql = "DELETE FROM share " +
                            "WHERE member_id = @Id AND target Like @Target";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new
         {
             Target = targetPath,
@@ -226,7 +226,7 @@ public class ShareRepository : IShareRepository
     public async Task<string?> GetPasswordHashByToken(Guid token)
     {
         var sql = "Select password FROM share WHERE token = UUID_TO_BIN(@Token)";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QueryFirstOrDefaultAsync<string>(sql, new
         {
             Token = token,

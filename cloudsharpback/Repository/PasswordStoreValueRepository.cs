@@ -32,7 +32,7 @@ SELECT password_store_value_id Id,
 FROM password_store_value
 WHERE password_store_value_id = @id;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QueryFirstOrDefaultAsync<PasswordStoreValueDto?>(sql, new
         {
             id
@@ -50,7 +50,7 @@ SELECT password_store_value_id Id,
 FROM password_store_value
 WHERE directory_id = @dirId ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.QueryAsync<PasswordStoreValueListItemDto>(sql, new { dirId });
         return res.ToList();
     }
@@ -66,7 +66,7 @@ SELECT password_store_value_id Id,
 FROM password_store_value
 WHERE encrypt_key_id = @keyId ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.QueryAsync<PasswordStoreValueListItemDto>(sql, new { keyId });
         return res.ToList();
     }
@@ -82,7 +82,7 @@ SELECT password_store_value_id Id,
 FROM password_store_value
 WHERE encrypt_key_id = @keyId AND directory_id = @dirId;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.QueryAsync<PasswordStoreValueListItemDto>(sql, new { keyId, dirId });
         return res.ToList();
     }
@@ -111,7 +111,7 @@ WHERE encrypt_key_id = @keyId AND directory_id = @dirId;
 INSERT INTO password_store_value(directory_id, encrypt_key_id, value_id, value_password, last_edited_time, created_time) 
 VALUES (@dirid, @keyid, @valueId, @valuePassword, @lastEditedTIme, @createdTime) ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new
         {
             dirId,
@@ -131,7 +131,7 @@ UPDATE password_store_value
 SET value_id = @valueId, value_password = @valuePassword, last_edited_time = @lastEditTIme
 WHERE password_store_value_id = @itemId;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new { itemId, valueId, valuePassword, lastEditTIme = DateTime.UtcNow.Ticks });
         return res > 0;
     }
@@ -142,7 +142,7 @@ WHERE password_store_value_id = @itemId;
 DELETE FROM password_store_value
 WHERE password_store_value_id = @itemId ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new
         {
             itemId

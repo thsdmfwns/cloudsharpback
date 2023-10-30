@@ -3,6 +3,7 @@ using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Models.DTO.Share;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utils;
 using Microsoft.AspNetCore.Authorization;
@@ -70,14 +71,13 @@ namespace cloudsharpback.Controllers
                 _jwtService.TryValidateAccessToken(auth, out member);
             }
             
-            var result = await _shareService.GetDownloadTicketValue(requestDto);
-            if (result.err is not null || result.ticketValue is null)
+            var result = await _shareService.GetDownloadTicketValue(requestDto, member);
+            if (result.err is not null || result.ticket is null)
             {
                 return StatusCode(result.err!.HttpCode, result);
             }
-            var ticket = new Ticket(IpAdressUtil.Get(HttpContext), member, TicketType.Download, result.ticketValue);
-            _ticketStore.Add(ticket);
-            return Ok(ticket.Token.ToString());
+            await _ticketStore.TryAddDownloadTicketAsync(result.ticket);
+            return Ok(result.ticket.Token.ToString());
         }
 
         [HttpPost("close")]

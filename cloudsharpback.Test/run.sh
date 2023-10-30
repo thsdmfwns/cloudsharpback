@@ -10,5 +10,7 @@ docker run \
 -e MYSQL_USER="cloudsharp" \
 -e MYSQL_PASSWORD="cloudsharp" \
 -e FILTER="$1" \
+-e REDIS_SERVER="redis-stack" \
+-e REDIS_PASSWORD="mypassword" \
 cs_test
 docker rmi cs_test

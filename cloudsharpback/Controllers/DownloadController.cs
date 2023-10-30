@@ -1,4 +1,5 @@
 using cloudsharpback.Models;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utils;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +20,15 @@ public class DownloadController : ControllerBase
     }
 
     [HttpGet("{ticketToken}")]
-    public IActionResult Download(string ticketToken)
+    public async Task<IActionResult> Download(string ticketToken)
     {
-        if (!Guid.TryParse(ticketToken, out var ticketGuidToken))
+        if (!Guid.TryParse(ticketToken, out var guidToken))
         {
             return StatusCode(400, "bad token");
         }
-        if (!_ticketStore.TryGet(ticketGuidToken, out var ticket)
-            || ticket is null)
+
+        var ticket = await _ticketStore.GetDownloadTicket(guidToken);
+        if (ticket is null)
         {
             return StatusCode(404, "ticket not found");
         }
@@ -39,11 +41,11 @@ public class DownloadController : ControllerBase
         {
             EnableRangeProcessing = true
         };
-        if (((FileDownloadTicketValue)ticket.Value!).FileDownloadType == FileDownloadType.Download)
+        if (((DownloadTicket)ticket).FileDownloadType == FileDownloadType.Download)
         {
             res.FileDownloadName = Path.GetFileName(fs.Name);
         }
-        _ticketStore.Remove(ticketGuidToken);
+        await _ticketStore.RemoveDownloadTicket(ticket);
         return res;
     }
 }

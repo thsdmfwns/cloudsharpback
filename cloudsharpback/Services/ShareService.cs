@@ -2,6 +2,7 @@
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Models.DTO.Share;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utils;
@@ -134,9 +135,11 @@ namespace cloudsharpback.Services
         /// 
         /// </summary>
         /// <param name="req"></param>
+        /// <param name="memberDto"></param>
         /// <returns>404 : file doesnt exist , 403 : bad password, 410 : expired share</returns>
         /// <exception cref="HttpErrorException"></exception>
-        public async Task<(HttpResponseDto? err, FileDownloadTicketValue? ticketValue)> GetDownloadTicketValue(ShareDowonloadRequestDto req)
+        public async Task<(HttpResponseDto? err, DownloadTicket? ticket)> GetDownloadTicketValue(
+            ShareDowonloadRequestDto req, MemberDto? memberDto)
         {
             try
             {
@@ -188,10 +191,11 @@ namespace cloudsharpback.Services
                     }, null);
                 }
 
-                var val = new FileDownloadTicketValue()
+                var val = new DownloadTicket()
                 {
                     FileDownloadType = FileDownloadType.Download,
-                    TargetFilePath = filePath
+                    TargetFilePath = filePath,
+                    Owner = memberDto
                 };
                 return (null, val);
             }

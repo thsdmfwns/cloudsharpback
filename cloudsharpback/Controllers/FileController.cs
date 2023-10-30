@@ -2,6 +2,7 @@
 using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.FIle;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,43 +39,40 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("dlTicket")]
-        public IActionResult GetDownloadTicket(string path)
+        public async Task<IActionResult> GetDownloadTicket(string path)
         {
-            var err = _memberFileService.GetDownloadTicketValue(Member, path, out var ticketValue);
-            if (err is not null)
-            {
-                return StatusCode(err.HttpCode, err.Message);
-            }
-            var ticket = new Ticket(HttpContext, TicketType.Download, ticketValue);
-            _ticketStore.Add(ticket);
-            return Ok(ticket.Token.ToString());
-        }
-
-        [HttpGet("viTicket")]
-        public IActionResult GetViewTicket(string path)
-        {
-            var err = _memberFileService.GetDownloadTicketValue(Member, path, out var ticketValue, true);
+            var err = _memberFileService.GetDownloadTicket(Member, path, out var ticket);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);
             }
             
-            var ticket = new Ticket(HttpContext, TicketType.ViewFile, ticketValue);
-            _ticketStore.Add(ticket);
-            return Ok(ticket.Token.ToString());
+            await _ticketStore.TryAddDownloadTicketAsync(ticket!);
+            return Ok(ticket!.Token.ToString());
         }
 
-        [HttpPost("ulTicket")]
-        public IActionResult GetUploadToken(FileUploadRequestDto requestDto)
+        [HttpGet("viTicket")]
+        public async Task<IActionResult> GetViewTicket(string path)
         {
-            var err = _memberFileService.GetUploadTicketValue(Member, requestDto, out var ticketValue);
+            var err = _memberFileService.GetDownloadTicket(Member, path, out var ticket, true);
             if (err is not null)
             {
                 return StatusCode(err.HttpCode, err.Message);
             }
-            var ticket = new Ticket(HttpContext, DateTime.Now.AddDays(3), TicketType.TusUpload, ticketValue);
-            _ticketStore.Add(ticket);
-            return Ok(ticket.Token.ToString());
+            await _ticketStore.TryAddDownloadTicketAsync(ticket!);
+            return Ok(ticket!.Token.ToString());
+        }
+
+        [HttpPost("ulTicket")]
+        public async Task<IActionResult> GetUploadToken(FileUploadRequestDto requestDto)
+        {
+            var err = _memberFileService.GetUploadTicket(Member, requestDto, out var ticket);
+            if (err is not null)
+            {
+                return StatusCode(err.HttpCode, err.Message);
+            }
+            await _ticketStore.TryAddUpLoadTicketAsync(ticket!);
+            return Ok(ticket!.Token.ToString());
         }
 
         [HttpPost("rm")]

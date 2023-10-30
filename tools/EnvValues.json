@@ -23,5 +23,20 @@
     "Key" : "MYSQL_PASSWORD",
     "Pattern" : null,
     "Default" : null
+  },
+  {
+    "Key" : "REDIS_SERVER",
+    "Pattern" : null,
+    "Default" : "cs_redis"
+  },
+  {
+    "Key" : "REDIS_PORT",
+    "Pattern" : null,
+    "Default" : 6379
+  },
+  {
+    "Key" : "REDIS_PASSWORD",
+    "Pattern" : null,
+    "Default" : null
   }
 ]

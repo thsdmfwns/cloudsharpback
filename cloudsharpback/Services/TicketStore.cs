@@ -1,38 +1,66 @@
-using System.Collections.Concurrent;
-using cloudsharpback.Models;
+using NRedisStack;
+using NRedisStack.RedisStackCommands;
+using cloudsharpback.Models.Ticket;
+using cloudsharpback.Services.Interfaces;
+using StackExchange.Redis;
 using ITicketStore = cloudsharpback.Services.Interfaces.ITicketStore;
 
 namespace cloudsharpback.Services;
 
 public class TicketStore : ITicketStore
 {
-    private readonly ConcurrentDictionary<Guid, Ticket> _tickets = new();
+    
+    //todo add Redis
+    private readonly IDBConnectionFactory _dbConnectionFactory;
 
-    private void RemoveExpired() => _tickets
-        .Where(x => x.Value.ExpireTime < DateTime.Now)
-        .Select(x => x.Key)
-        .ToList()
-        .ForEach(x => _tickets.Remove(x, out _));
-
-    public void Add(Ticket ticket)
-        => _tickets.TryAdd(ticket.Token, ticket);
-
-    public bool TryGet(Guid ticketToken, out Ticket? ticket)
+    public TicketStore(IDBConnectionFactory dbConnectionFactory)
     {
-        RemoveExpired();
-        ticket = null;
-        if (!_tickets.TryGetValue(ticketToken, out var value)
-            || value.ExpireTime < DateTime.Now)
+        _dbConnectionFactory = dbConnectionFactory;
+    }
+
+    public async ValueTask<bool> TryAdd(string key, Guid token, object obj, TimeSpan? timeSpan = null)
+    {
+        var res = await _dbConnectionFactory.Redis.JSON().SetAsync($"{key}:{token}", "$", obj);
+        if (timeSpan is not null)
         {
-            return false;    
+            _dbConnectionFactory.Redis.KeyExpire($"{key}:{token}", timeSpan);
         }
-        ticket = value;
-        return true;
+
+        return res;
     }
 
-    public void Remove(Guid ticketToken)
+    public async ValueTask<bool> TryAddDownloadTicketAsync(DownloadTicket downloadTicket)
+        => await TryAdd(DownloadTicket.RedisKey, downloadTicket.Token, downloadTicket, TimeSpan.FromSeconds(30));
+
+
+    public async ValueTask<bool> TryAddUpLoadTicketAsync(UploadTicket uploadTicket)
+        => await TryAdd(UploadTicket.RedisKey, uploadTicket.Token, uploadTicket, TimeSpan.FromSeconds(30));
+
+    
+
+    public async ValueTask<string?> GetAsync(string key, Guid ticketToken)
     {
-        RemoveExpired();
-        _tickets.Remove(ticketToken, out _);
+        var result = await _dbConnectionFactory.Redis.JSON().GetAsync($"{key}:{ticketToken}");
+        return result.ToString();
     }
+
+    public async ValueTask<DownloadTicket?> GetDownloadTicket(Guid guidToken)
+        => DownloadTicket.FromJson(await GetAsync(DownloadTicket.RedisKey, guidToken));
+
+    
+    public async ValueTask<UploadTicket?> GetUploadTicket(Guid guidToken)
+        => UploadTicket.FromJson(await GetAsync(UploadTicket.RedisKey, guidToken));
+    
+    public async ValueTask<bool> Remove(string key, Guid ticketToken)
+    {
+        return await _dbConnectionFactory.Redis.JSON().DelAsync($"{key}:{ticketToken}") > 0;
+    }
+    
+    public async ValueTask<bool> RemoveDownloadTicket(DownloadTicket downloadTicket)
+        => await Remove(DownloadTicket.RedisKey, downloadTicket.Token);
+    
+    public async ValueTask<bool> RemoveUploadTicket(UploadTicket uploadTicket)
+        => await Remove(UploadTicket.RedisKey, uploadTicket.Token);
+    
+    
 }

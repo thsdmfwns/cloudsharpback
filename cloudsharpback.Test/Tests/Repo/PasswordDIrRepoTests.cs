@@ -41,7 +41,7 @@ public class PasswordDIrRepoTests : TestsBase
 
     private static async Task DeleteAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         await conn.ExecuteAsync("DELETE FROM password_store_directory;");
     }
 
@@ -51,13 +51,13 @@ public class PasswordDIrRepoTests : TestsBase
 INSERT INTO password_store_directory
 VALUES (@password_directory_id, @name, @comment, @icon, @last_edited_time, @created_time, @member_id);
 ";
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         await conn.ExecuteAsync(sql, passDir);
     }
     
     private static async Task<List<PassDir>> GetAllRows() 
     {
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         var res = await conn.QueryAsync<PassDir>("SELECT * FROM password_store_directory;");
         return res.ToList();
     }

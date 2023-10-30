@@ -3,6 +3,7 @@ using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.FIle;
 using cloudsharpback.Models.DTO.Member;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services.Interfaces;
 using cloudsharpback.Utils;
 
@@ -142,11 +143,11 @@ namespace cloudsharpback.Services
             }
         }
         
-        public HttpResponseDto? GetDownloadTicketValue(MemberDto member, string targetPath, out FileDownloadTicketValue? ticketValue, bool isView = false)
+        public HttpResponseDto? GetDownloadTicket(MemberDto member, string targetPath, out DownloadTicket? ticket, bool isView = false)
         {
             try
             {
-                ticketValue = null;
+                ticket = null;
                 var targetFilePath = GetMemberTargetPath(member, targetPath);;
                 if (!FileExist(targetFilePath))
                 {
@@ -156,10 +157,11 @@ namespace cloudsharpback.Services
                 {
                     return new HttpResponseDto() { HttpCode = 415, Message = "file can not view" };
                 }
-                ticketValue = new FileDownloadTicketValue()
+                ticket = new DownloadTicket()
                 {
                     FileDownloadType = isView ? FileDownloadType.View : FileDownloadType.Download,
-                    TargetFilePath = targetFilePath
+                    TargetFilePath = targetFilePath,
+                    Owner = member
                 };
                 return null;
             }
@@ -176,9 +178,9 @@ namespace cloudsharpback.Services
             
         }
 
-        public HttpResponseDto? GetUploadTicketValue(MemberDto member, FileUploadRequestDto uploadRequestDto, out FileUploadTicketValue? ticketValue)
+        public HttpResponseDto? GetUploadTicket(MemberDto member, FileUploadRequestDto uploadRequestDto, out UploadTicket? ticket)
         {
-            ticketValue = null;
+            ticket = null;
             var targetDir = GetMemberTargetPath(member, uploadRequestDto.UploadDirectory);;
             if (!Directory.Exists(targetDir))
             {
@@ -189,10 +191,11 @@ namespace cloudsharpback.Services
             {
                 return new HttpResponseDto() { HttpCode = 409, Message = "File with the same name already exists" };
             }
-            ticketValue = new FileUploadTicketValue()
+            ticket = new UploadTicket()
             {
                 FileName = uploadRequestDto.FileName,
-                UploadDirectoryPath = targetDir
+                UploadDirectoryPath = targetDir,
+                Owner = member
             };
             return null;
         }
