@@ -1,11 +1,9 @@
-using NRedisStack;
-using NRedisStack.RedisStackCommands;
 using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services.Interfaces;
-using StackExchange.Redis;
-using ITicketStore = cloudsharpback.Services.Interfaces.ITicketStore;
+using NRedisStack.RedisStackCommands;
+using cloudsharpback.Repository.Interface;
 
-namespace cloudsharpback.Services;
+namespace cloudsharpback.Repository;
 
 public class TicketStore : ITicketStore
 {

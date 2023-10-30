@@ -1,7 +1,6 @@
-using cloudsharpback.Models;
 using cloudsharpback.Models.Ticket;
 
-namespace cloudsharpback.Services.Interfaces;
+namespace cloudsharpback.Repository.Interface;
 
 public interface ITicketStore
 {

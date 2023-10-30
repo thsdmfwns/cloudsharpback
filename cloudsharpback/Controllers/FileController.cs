@@ -3,6 +3,7 @@ using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.FIle;
 using cloudsharpback.Models.Ticket;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
