@@ -128,9 +128,9 @@ namespace cloudsharpback.Controllers
             {
                 Owner = Member
             };
-            await _ticketStore.TryAdd(SignalrTicket.RedisKey, ticket.Token, ticket, TimeSpan.FromSeconds(30));
+            await _ticketStore.AddTicket(ticket);
             return Ok(ticket.Token.ToString());
         }
-
+        
     }
 }

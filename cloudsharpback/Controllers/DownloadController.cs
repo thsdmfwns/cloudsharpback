@@ -28,7 +28,7 @@ public class DownloadController : ControllerBase
             return StatusCode(400, "bad token");
         }
 
-        var ticket = await _ticketStore.GetDownloadTicket(guidToken);
+        var ticket = await _ticketStore.GetTicket<DownloadTicket>(guidToken);
         if (ticket is null)
         {
             return StatusCode(404, "ticket not found");
@@ -46,7 +46,7 @@ public class DownloadController : ControllerBase
         {
             res.FileDownloadName = Path.GetFileName(fs.Name);
         }
-        await _ticketStore.RemoveDownloadTicket(ticket);
+        await _ticketStore.RemoveTicket(ticket);
         return res;
     }
 }

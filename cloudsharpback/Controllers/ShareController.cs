@@ -77,7 +77,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(result.err!.HttpCode, result);
             }
-            await _ticketStore.TryAddDownloadTicketAsync(result.ticket);
+            await _ticketStore.AddTicket(result.ticket);
             return Ok(result.ticket.Token.ToString());
         }
 

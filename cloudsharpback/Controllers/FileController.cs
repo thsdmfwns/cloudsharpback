@@ -48,7 +48,7 @@ namespace cloudsharpback.Controllers
                 return StatusCode(err.HttpCode, err.Message);
             }
             
-            await _ticketStore.TryAddDownloadTicketAsync(ticket!);
+            await _ticketStore.AddTicket(ticket!);
             return Ok(ticket!.Token.ToString());
         }
 
@@ -60,7 +60,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(err.HttpCode, err.Message);
             }
-            await _ticketStore.TryAddDownloadTicketAsync(ticket!);
+            await _ticketStore.AddTicket(ticket!);
             return Ok(ticket!.Token.ToString());
         }
 
@@ -72,7 +72,7 @@ namespace cloudsharpback.Controllers
             {
                 return StatusCode(err.HttpCode, err.Message);
             }
-            await _ticketStore.TryAddUpLoadTicketAsync(ticket!);
+            await _ticketStore.AddTicket(ticket!);
             return Ok(ticket!.Token.ToString());
         }
 
