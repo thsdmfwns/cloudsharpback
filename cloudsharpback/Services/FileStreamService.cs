@@ -1,5 +1,6 @@
 using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services.Interfaces;
 
 namespace cloudsharpback.Services;
@@ -18,17 +19,11 @@ public class FileStreamService : IFileStreamService
     private string MemberDirectory(string directoryId) => _pathStore.MemberDirectory(directoryId);
     private bool FileExist(string filePath) => File.Exists(filePath);
     
-    public HttpResponseDto? GetFileStream(Ticket ticket, out FileStream? fileStream)
+    public HttpResponseDto? GetFileStream(DownloadTicket downloadToken, out FileStream? fileStream)
     {
         try
         {
             fileStream = null;
-            if (ticket.Value is null ||
-                (ticket.TicketType != TicketType.Download && ticket.TicketType != TicketType.ViewFile) ||
-                ticket.Value is not FileDownloadTicketValue downloadToken)
-            {
-                return new HttpResponseDto() { HttpCode = 404, Message = "wrong ticket" };
-            }
             if (!FileExist(downloadToken.TargetFilePath))
             {
                 return new HttpResponseDto() { HttpCode = 404, Message = "file not found" };

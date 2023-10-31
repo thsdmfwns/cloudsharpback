@@ -54,7 +54,7 @@ namespace cloudsharpback.Services
                 var torrentInfo = await client.TorrentAddAsync(torrent);
                 var sql = "INSERT INTO torrent(owner_member_id, torrent_hash, download_path) " +
                         "VALUES(@memberId, @torrent_hash, @download_path)";
-                using var conn = _connService.Connection;
+                using var conn = _connService.MySqlConnection;
                 await conn.ExecuteAsync(sql, new
                 {
                     memberId = member.Id,
@@ -98,7 +98,7 @@ namespace cloudsharpback.Services
                 var torrentInfo = await client.TorrentAddAsync(torrent);
                 var sql = "INSERT INTO torrent(owner_member_id, torrent_hash, download_path) " +
                         "VALUES(@memberId, @torrent_hash, @download_path)";
-                using var conn = _connService.Connection;
+                using var conn = _connService.MySqlConnection;
                 await conn.ExecuteAsync(sql, new
                 {
                     memberId = member.Id,
@@ -126,7 +126,7 @@ namespace cloudsharpback.Services
                 var sql = "SELECT torrent_hash " +
                     "FROM torrent " +
                     "WHERE owner_member_id = @memberId";
-                using var conn = _connService.Connection;
+                using var conn = _connService.MySqlConnection;
                 var hashes = await conn.QueryAsync<string>(sql, new
                 {
                     memberId = member.Id
@@ -171,7 +171,7 @@ namespace cloudsharpback.Services
                 "FROM torrent " +
                 "WHERE owner_member_id = @memberId AND torrent_hash = @torrentHash";
                 var rmSql = "DELETE FROM torrent WHERE torrent_hash = @torrentHash";
-                using var conn = _connService.Connection;
+                using var conn = _connService.MySqlConnection;
                 var info = await FindTorrentByHash(hash);
                 if (!(await conn.QueryAsync<long>(sql, new { memberId = member.Id, torrentHash = hash})).Any()
                     || info is null)
@@ -204,7 +204,7 @@ namespace cloudsharpback.Services
             var sql = "SELECT torrent_id " +
             "FROM torrent " +
             "WHERE owner_member_id = @memberId AND torrent_hash = @torrentHash";
-            using var conn = _connService.Connection;
+            using var conn = _connService.MySqlConnection;
             var info = await FindTorrentByHash(hash);
             if (!(await conn.QueryAsync<long>(sql, new { memberId = member.Id, torrentHash = hash })).Any()
                 || info is null)

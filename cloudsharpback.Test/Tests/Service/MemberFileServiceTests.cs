@@ -2,6 +2,7 @@ using Bogus;
 using cloudsharpback.Models;
 using cloudsharpback.Models.DTO.FIle;
 using cloudsharpback.Models.DTO.Member;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -68,20 +69,22 @@ public class MemberFileServiceTests : TestsBase
     public void GetDownloadTicketValue_DL()
     {
         var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null);
-        var res = _service.GetDownloadTicketValue(_memberDto, filePath, out var ticketValue);
+        var res = _service.GetDownloadTicket(_memberDto, filePath, out var ticket);
         Assert.That(res, Is.Null);
-        Assert.That(ticketValue, Is.Not.Null);
-        var targetTicket = new FileDownloadTicketValue()
+        Assert.That(ticket, Is.Not.Null);
+        var targetTicket = new DownloadTicket()
         {
             FileDownloadType = FileDownloadType.Download,
             TargetFilePath = Path.Combine(_pathStore.MemberDirectory(_memberDto.Directory), filePath),
+            Owner = _memberDto,
+            Token = ticket!.Token,
         };
-        Assert.That(Utils.ClassToJson(ticketValue!), Is.EqualTo(Utils.ClassToJson(targetTicket)));
+        Assert.That(Utils.ClassToJson(ticket!), Is.EqualTo(Utils.ClassToJson(targetTicket)));
         
         //fail
-        res = _service.GetDownloadTicketValue(_memberDto, _faker.System.FilePath().TrimStart('/'), out ticketValue);
+        res = _service.GetDownloadTicket(_memberDto, _faker.System.FilePath().TrimStart('/'), out ticket);
         Assert.That(res, Is.Not.Null);
-        Assert.That(ticketValue, Is.Null);
+        Assert.That(ticket, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
     }
     
@@ -89,26 +92,27 @@ public class MemberFileServiceTests : TestsBase
     public void GetDownloadTicketValue_View()
     {
         var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null, "png");
-        var res = _service.GetDownloadTicketValue(_memberDto, filePath, out var ticketValue, true);
+        var res = _service.GetDownloadTicket(_memberDto, filePath, out var ticket, true);
         Assert.That(res, Is.Null);
-        Assert.That(ticketValue, Is.Not.Null);
-        var targetTicket = new FileDownloadTicketValue()
+        Assert.That(ticket, Is.Not.Null);
+        var targetTicket = new DownloadTicket()
         {
             FileDownloadType = FileDownloadType.View,
             TargetFilePath = Path.Combine(_pathStore.MemberDirectory(_memberDto.Directory), filePath),
+            Owner = _memberDto,
+            Token = ticket!.Token,
         };
-        Assert.That(Utils.ClassToJson(ticketValue!), Is.EqualTo(Utils.ClassToJson(targetTicket)));
+        Assert.That(Utils.ClassToJson(ticket!), Is.EqualTo(Utils.ClassToJson(targetTicket)));
         
         //fail
-        res = _service.GetDownloadTicketValue(_memberDto, _faker.System.FilePath().TrimStart('/'), out ticketValue);
+        res = _service.GetDownloadTicket(_memberDto, _faker.System.FilePath().TrimStart('/'), out ticket);
         Assert.That(res, Is.Not.Null);
-        Assert.That(ticketValue, Is.Null);
+        Assert.That(ticket, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
-
         filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_memberDto.Directory), null, ext: "aabbcc");
-        res = _service.GetDownloadTicketValue(_memberDto, filePath, out ticketValue, true);
+        res = _service.GetDownloadTicket(_memberDto, filePath, out ticket, true);
         Assert.That(res, Is.Not.Null);
-        Assert.That(ticketValue, Is.Null);
+        Assert.That(ticket, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(415));
     }
 
@@ -122,15 +126,17 @@ public class MemberFileServiceTests : TestsBase
             FileName = fileName,
             UploadDirectory = null
         };
-        var res = _service.GetUploadTicketValue(_memberDto, uploadreq, out var ticketValue);
-        var target =  new FileUploadTicketValue()
+        var res = _service.GetUploadTicket(_memberDto, uploadreq, out var ticket);
+        var target =  new UploadTicket()
         {
             FileName = fileName,
-            UploadDirectoryPath = _pathStore.MemberDirectory(_memberDto.Directory)
+            UploadDirectoryPath = _pathStore.MemberDirectory(_memberDto.Directory),
+            Owner = _memberDto,
+            Token = ticket!.Token,
         };
         Assert.That(res, Is.Null);
-        Assert.That(ticketValue, Is.Not.Null);
-        Assert.That(Utils.ClassToJson(ticketValue!), Is.EqualTo(Utils.ClassToJson(target)));
+        Assert.That(ticket, Is.Not.Null);
+        Assert.That(Utils.ClassToJson(ticket!), Is.EqualTo(Utils.ClassToJson(target)));
         
         //fail
         uploadreq = new FileUploadRequestDto()
@@ -138,9 +144,9 @@ public class MemberFileServiceTests : TestsBase
             FileName = Path.GetFileName(filePath),
             UploadDirectory = null
         };
-        res = _service.GetUploadTicketValue(_memberDto, uploadreq, out ticketValue);
+        res = _service.GetUploadTicket(_memberDto, uploadreq, out ticket);
         Assert.That(res, Is.Not.Null);
-        Assert.That(ticketValue, Is.Null);
+        Assert.That(ticket, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(409));
         
         uploadreq = new FileUploadRequestDto()
@@ -148,9 +154,9 @@ public class MemberFileServiceTests : TestsBase
             FileName = _faker.System.CommonFileName(),
             UploadDirectory = _faker.System.DirectoryPath().TrimStart('/')
         };
-        res = _service.GetUploadTicketValue(_memberDto, uploadreq, out ticketValue);
+        res = _service.GetUploadTicket(_memberDto, uploadreq, out ticket);
         Assert.That(res, Is.Not.Null);
-        Assert.That(ticketValue, Is.Null);
+        Assert.That(ticket, Is.Null);
         Assert.That(res!.HttpCode, Is.EqualTo(404));
     }
 

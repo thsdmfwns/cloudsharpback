@@ -4,13 +4,17 @@ using cloudsharpback.Services.Interfaces;
 
 namespace cloudsharpback.Services;
 
+// ReSharper disable InconsistentNaming
 public enum RequiredEnvironmentValueKey
 {
     CS_VOLUME_PATH,
     MYSQL_SERVER,
     MYSQL_PORT,
     MYSQL_USER,
-    MYSQL_PASSWORD
+    MYSQL_PASSWORD,
+    REDIS_SERVER,
+    REDIS_PORT,
+    REDIS_PASSWORD,
 }
 
 public class EnvironmentValueStore : IEnvironmentValueStore

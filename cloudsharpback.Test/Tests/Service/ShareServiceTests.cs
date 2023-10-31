@@ -1,6 +1,8 @@
 using Bogus;
+using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Models.DTO.Share;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
@@ -93,10 +95,10 @@ public class ShareServiceTests : TestsBase
             Password = PasswordEncrypt.EncryptPassword(password),
             Target = filePath
         });
-        var res = await _service.GetDownloadTicketValue(req);
+        var res = await _service.GetDownloadTicketValue(req, _memberDto);
         Assert.That(res.err, Is.Null);
-        Assert.That(res.ticketValue, Is.Not.Null);
-        Assert.That(res.ticketValue!.TargetFilePath, Is.EqualTo(fileFullPath));
+        Assert.That(res.ticket, Is.Not.Null);
+        Assert.That(res.ticket!.TargetFilePath, Is.EqualTo(fileFullPath));
         
         //fail
         
@@ -107,9 +109,9 @@ public class ShareServiceTests : TestsBase
             Password = PasswordEncrypt.EncryptPassword(_faker.Internet.Password()),
             Target = filePath
         });
-        res = await _service.GetDownloadTicketValue(req);
+        res = await _service.GetDownloadTicketValue(req, _memberDto);
         Assert.That(res.err, Is.Not.Null);
-        Assert.That(res.ticketValue, Is.Null);
+        Assert.That(res.ticket, Is.Null);
         Assert.That(res.err!.HttpCode, Is.EqualTo(403));
         
         _repositoryStub.GetShareDownloadDtoByToken(token).Returns(new ShareDownloadDto()
@@ -119,9 +121,9 @@ public class ShareServiceTests : TestsBase
             Password = PasswordEncrypt.EncryptPassword(password),
             Target = filePath
         });
-        res = await _service.GetDownloadTicketValue(req);
+        res = await _service.GetDownloadTicketValue(req, _memberDto);
         Assert.That(res.err, Is.Not.Null);
-        Assert.That(res.ticketValue, Is.Null);
+        Assert.That(res.ticket, Is.Null);
         Assert.That(res.err!.HttpCode, Is.EqualTo(410));
         
         _repositoryStub.GetShareDownloadDtoByToken(token).Returns(new ShareDownloadDto()
@@ -131,9 +133,9 @@ public class ShareServiceTests : TestsBase
             Password = PasswordEncrypt.EncryptPassword(password),
             Target = _faker.System.FileName()
         });
-        res = await _service.GetDownloadTicketValue(req);
+        res = await _service.GetDownloadTicketValue(req, _memberDto);
         Assert.That(res.err, Is.Not.Null);
-        Assert.That(res.ticketValue, Is.Null);
+        Assert.That(res.ticket, Is.Null);
         Assert.That(res.err!.HttpCode, Is.EqualTo(404));
     }
     

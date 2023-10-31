@@ -2,6 +2,8 @@
 using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
+using cloudsharpback.Models.Ticket;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -120,12 +122,15 @@ namespace cloudsharpback.Controllers
         }
         
         [HttpGet("signalrTicket")]
-        public IActionResult GetSignalrToken()
+        public async Task<IActionResult> GetSignalrToken()
         {
-            var ticket = new Ticket(HttpContext, TicketType.SignalrConnect, null);
-            _ticketStore.Add(ticket);
+            var ticket = new SignalrTicket()
+            {
+                Owner = Member
+            };
+            await _ticketStore.AddTicket(ticket);
             return Ok(ticket.Token.ToString());
         }
-
+        
     }
 }

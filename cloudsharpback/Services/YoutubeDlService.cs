@@ -5,12 +5,16 @@ using cloudsharpback.Hubs;
 using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
 namespace cloudsharpback.Services;
 
+/// <summary>
+///  TODO Refactor this
+/// </summary>
 public class YoutubeDlService : IYoutubeDlService
 {
     private readonly IHubContext<YoutubeDlHub> _hubContext;
@@ -53,8 +57,8 @@ public class YoutubeDlService : IYoutubeDlService
 
     public async Task<bool> ValidateConnectionToken(string connId, string tokenString)
     {
-        if (!Guid.TryParse(tokenString, out var token) 
-            || !_ticketStore.TryGet(token, out var ticket))
+        /*if (!Guid.TryParse(tokenString, out var token) 
+            || !_ticketStore.GetAsync(token, out var ticket))
         {
             var err = new HttpResponseDto()
             {
@@ -64,8 +68,7 @@ public class YoutubeDlService : IYoutubeDlService
             await SendHubConnectionResult(connId, JsonConvert.SerializeObject(err));
             return false;   
         }
-        if (ticket?.Owner is null 
-            || ticket.TicketType != TicketType.SignalrConnect)
+        if (ticket?.Owner is null)
         {
             var err = new HttpResponseDto()
             {
@@ -76,14 +79,14 @@ public class YoutubeDlService : IYoutubeDlService
             return false;
         }
         _signalrUsers.Add(ticket.Owner.Id, (connId, ticket.Owner));
-        _ticketStore.Remove(token);
         var res = new HttpResponseDto()
         {
             HttpCode = 200,
             Message = "Connected"
         };
         await SendHubConnectionResult(connId, JsonConvert.SerializeObject(res));
-        return true;
+        return true;*/
+        throw new ArgumentNullException();
     }
 
     public HttpResponseDto? Download(MemberDto member, string youtubeUrl, string? path, Guid requestToken)

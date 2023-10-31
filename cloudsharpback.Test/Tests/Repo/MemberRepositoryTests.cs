@@ -30,7 +30,7 @@ public class MemberRepositoryTests : TestsBase
 INSERT INTO member
 VALUES (@memberId, @id, @password, @nick, @role, @email, UUID_TO_BIN(@dir), @profileImage);
 ";
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         await conn.ExecuteAsync(insertSql, new
         {
             memberId = mem.MemberId,
@@ -58,13 +58,13 @@ SELECT member_id MemberId,
        profile_image ProfileImage 
 FROM member;
 ";
-        var conn = DBConnectionFactoryMock.Mock.Connection;
+        var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         return (await conn.QueryAsync<Member>(sql)).ToList();
     }
 
     private static async Task DeleteMembers()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         await conn.ExecuteAsync("DELETE FROM member");   
     }
 

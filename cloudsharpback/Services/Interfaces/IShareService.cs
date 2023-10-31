@@ -2,6 +2,7 @@
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Models.DTO.Share;
+using cloudsharpback.Models.Ticket;
 
 namespace cloudsharpback.Services.Interfaces
 {
@@ -12,7 +13,8 @@ namespace cloudsharpback.Services.Interfaces
         Task<HttpResponseDto?> DeleteShareAsync(string target, MemberDto member);
         Task<HttpResponseDto?> DeleteSharesInDirectory(MemberDto memberDto, string targetDirectoryPath);
         /// <returns>404 : share doesnt exist , 403 : bad password, 410 : expired share</returns>
-        Task<(HttpResponseDto? err, FileDownloadTicketValue? ticketValue)> GetDownloadTicketValue(ShareDowonloadRequestDto req);
+        Task<(HttpResponseDto? err, DownloadTicket? ticket)> GetDownloadTicketValue(ShareDowonloadRequestDto req,
+            MemberDto? memberDto);
         /// <returns>410 : expired share </returns>
         Task<(HttpResponseDto? err, ShareResponseDto? result)> GetShareAsync(Guid token);
         Task<List<ShareResponseDto>> GetSharesAsync(MemberDto member);

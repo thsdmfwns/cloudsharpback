@@ -64,19 +64,19 @@ VALUES (
         @last_edited_time
 );";
 
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         await conn.ExecuteAsync(sql, passValue);
     }
 
     private static async Task DeleteAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         await conn.ExecuteAsync("DELETE FROM password_store_value");
     }
 
     private static async Task<List<PassValue>> GetAllRows()
     {
-        using var conn = DBConnectionFactoryMock.Mock.Connection;
+        using var conn = DBConnectionFactoryMock.Mock.MySqlConnection;
         return (await conn.QueryAsync<PassValue>("SELECT * FROM password_store_value")).ToList();
     }
 

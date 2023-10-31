@@ -31,7 +31,7 @@ SELECT  password_store_key_id Id,
 FROM password_store_keys
 WHERE password_store_key_id = @keyId AND owner_id = @memberId;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QueryFirstOrDefaultAsync<PasswordStoreKeyDto?>(sql, new { keyId, memberId });
     }
 
@@ -47,7 +47,7 @@ SELECT  password_store_key_id Id,
 FROM password_store_keys
 WHERE owner_id  = @memberId;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.QueryAsync<PasswordStoreKeyListItemDto>(sql, new { memberId });
         return res.ToList();
     }
@@ -78,7 +78,7 @@ WHERE owner_id  = @memberId;
 Insert Into password_store_keys(owner_id, encrypt_algorithm, public_key, private_key, name, comment, created_time)
 VALUES (@memberId, @encryptAlgorithm, @publicKey, @privateKey, @name, @comment, @created);
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new
         {
             memberId,
@@ -98,7 +98,7 @@ VALUES (@memberId, @encryptAlgorithm, @publicKey, @privateKey, @name, @comment, 
 DELETE FROM password_store_keys
 WHERE owner_id = @memberId AND password_store_key_id = @itemId ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new { memberId, itemId });
         return res > 0;
     }

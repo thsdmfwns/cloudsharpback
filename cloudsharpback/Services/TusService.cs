@@ -1,10 +1,12 @@
 ﻿using cloudsharpback.Models;
+using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using tusdotnet.Interfaces;
 using tusdotnet.Models;
 using tusdotnet.Models.Configuration;
 using tusdotnet.Stores;
 
+//todo this service will replace with tusd
 namespace cloudsharpback.Services
 {
     public class TusService : ITusService
@@ -49,26 +51,9 @@ namespace cloudsharpback.Services
                 context.FailRequest(System.Net.HttpStatusCode.Unauthorized, "token is required in header");
                 return Task.CompletedTask;
             }
-            if (!_ticketStore.TryGet(guidToken, out var ticket) ||
-                ticket?.TicketType != TicketType.TusUpload || 
-                ticket.Value is not FileUploadTicketValue uploadTarget)
-            {
-                context.FailRequest(System.Net.HttpStatusCode.BadRequest, "bad token");
-                return Task.CompletedTask;
-            }
-            if (!Directory.Exists(uploadTarget.UploadDirectoryPath))
-            {
-                context.FailRequest(System.Net.HttpStatusCode.NotFound);
-                _ticketStore.Remove(guidToken);
-                return Task.CompletedTask;
-            }
-            var target = Path.Combine(uploadTarget.UploadDirectoryPath, uploadTarget.FileName);
-            if (FileExist(target))
-            {
-                context.FailRequest(System.Net.HttpStatusCode.Conflict);
-                _ticketStore.Remove(guidToken);
-                return Task.CompletedTask;
-            }
+            // todo validate ticket
+            // todo validate directory exist
+            // todo validate file exist
             return Task.CompletedTask;
         }
 
@@ -79,23 +64,9 @@ namespace cloudsharpback.Services
                 ITusFile file = await ctx.GetFileAsync();
                 var terminationStore = (ITusTerminationStore)ctx.Store;
                 var request = ctx.HttpContext.Request;
-                if (!request.Headers.TryGetValue("token", out var token) ||
-                    !Guid.TryParse(token, out var guidToken) ||
-                    !_ticketStore.TryGet(guidToken, out var ticket) ||
-                    ticket?.TicketType != TicketType.TusUpload || 
-                    ticket.Value is not FileUploadTicketValue uploadTarget)
-                {
-                    await terminationStore.DeleteFileAsync(file.Id, ctx.CancellationToken);
-                    throw new Exception("Can not find directoryId");
-                }
-                var target = Path.Combine(uploadTarget.UploadDirectoryPath, uploadTarget.FileName);
-                using (var targetStream = File.Create(target))
-                using (Stream content = await file.GetContentAsync(ctx.CancellationToken))
-                {
-                    content.CopyTo(targetStream);
-                }
-                await terminationStore.DeleteFileAsync(file.Id, ctx.CancellationToken);
-                _ticketStore.Remove(guidToken);
+                // todo validate ticket
+                // todo validate directory exist
+                // todo copy to target
             }
             catch (Exception ex)
             {

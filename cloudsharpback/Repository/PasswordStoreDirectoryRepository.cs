@@ -30,7 +30,7 @@ SELECT password_directory_id Id,
 FROM password_store_directory 
 WHERE member_id = @memberId ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return (await conn.QueryAsync<PasswordStoreDirDto>(sql, new { memberId })).ToList();
     }
 
@@ -47,7 +47,7 @@ SELECT password_directory_id Id,
 FROM password_store_directory 
 WHERE password_directory_id = @dirId AND member_id = @memberId;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QueryFirstOrDefaultAsync<PasswordStoreDirDto?>(sql, new { dirId, memberId });
     }
 
@@ -57,7 +57,7 @@ WHERE password_directory_id = @dirId AND member_id = @memberId;
 INSERT INTO password_store_directory(name, comment, icon, last_edited_time, created_time, member_id)
 VALUES (@name, @comment, @icon, @lastEdit, @created, @memberId);
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new
         {
             name,
@@ -97,7 +97,7 @@ VALUES (@name, @comment, @icon, @lastEdit, @created, @memberId);
 DELETE FROM password_store_directory
 WHERE password_directory_id = @id AND member_id = @memberId ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql, new { id, memberId });
         return res > 0;
     }
@@ -109,7 +109,7 @@ UPDATE password_store_directory
 SET name = @name, comment = @comment, icon = @icon, last_edited_time = @last
 WHERE password_directory_id = @itemId AND member_id = @memberId ;
 ";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var res = await conn.ExecuteAsync(sql,
             new { name, comment, icon, itemId, memberId, last = DateTime.UtcNow.Ticks });
         

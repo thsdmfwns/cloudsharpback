@@ -21,7 +21,7 @@ public class MemberRepository : IMemberRepository
                     "BIN_TO_UUID(directory) directory, profile_image profileImage " +
                     "FROM member " +
                     "WHERE member_id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QuerySingleOrDefaultAsync<MemberDto>(sql, new { Id = id });
     }
     
@@ -31,7 +31,7 @@ public class MemberRepository : IMemberRepository
                     "BIN_TO_UUID(directory) directory, profile_image profileImage " +
                     "FROM member " +
                     "WHERE id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QuerySingleOrDefaultAsync<MemberDto>(sql, new { Id = id });
     }
 
@@ -40,7 +40,7 @@ public class MemberRepository : IMemberRepository
         const string sql = "UPDATE member " +
                            "SET profile_image = @Filename " +
                            "WHERE member_id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var result = await conn.ExecuteAsync(sql, new
         {
             Filename = imageFileName,
@@ -54,7 +54,7 @@ public class MemberRepository : IMemberRepository
         const string sql = "UPDATE member " +
                            "SET nickname = @ChangeNick " +
                            "WHERE member_id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var result = await conn.ExecuteAsync(sql, new
         {
             ChangeNick = nickname,
@@ -68,7 +68,7 @@ public class MemberRepository : IMemberRepository
         const string sql = "UPDATE member " +
                      "SET email = @Email " +
                      "WHERE member_id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var result = await conn.ExecuteAsync(sql, new
         {
             Email = email,
@@ -80,28 +80,28 @@ public class MemberRepository : IMemberRepository
     public async Task<string?> GetMemberPasswordHashById(ulong id)
     {
         const string sql = "SELECT password FROM member WHERE member_id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QuerySingleOrDefaultAsync<string?>(sql, new { Id = id });
     }
     
     public async Task<string?> GetMemberPasswordHashByLoginId(string id)
     {
         const string sql = "SELECT password FROM member WHERE id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return await conn.QuerySingleOrDefaultAsync<string?>(sql, new { Id = id });
     }
     
     public async Task<bool> TryLoginIdDuplicate(string id)
     {
         const string sql = "SELECT member_id FROM member WHERE id = @id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         return (await conn.QueryAsync(sql, new { Id = id })).Any();
     }
     
     public async Task<bool> TryUpdateMemberPassword(ulong id, string password)
     {
         const string sql = "UPDATE member SET password = @Password WHERE member_id = @Id";
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         var result = await conn.ExecuteAsync(sql, new { Password = password, Id = id});
         return result > 0;
     }
@@ -131,7 +131,7 @@ public class MemberRepository : IMemberRepository
     private async Task<bool> AddMember(string id, string pw, string nick, string email, Guid dir, ulong role,
         string? profileImage)
     {
-        using var conn = _connService.Connection;
+        using var conn = _connService.MySqlConnection;
         const string sql = "INSERT INTO member(id, password, nickname, role_id, email, directory, profile_image) " +
                     "VALUES(@Id, @Pw, @Nick, @Role, @Email, UUID_TO_BIN(@Directory), @ProfileImage)";
         var result = await conn.ExecuteAsync(sql, new

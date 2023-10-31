@@ -1,5 +1,6 @@
 using Bogus;
 using cloudsharpback.Models;
+using cloudsharpback.Models.Ticket;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -33,13 +34,12 @@ public class FileStreamServiceTests : TestsBase
     {
         var memberDir = _pathStore.MemberDirectory(Guid.NewGuid().ToString());
         var filePath = Utils.MakeFakeFile(_faker, memberDir, null, null, true);
-        var ticketValue = new FileDownloadTicketValue()
+        var ticket= new DownloadTicket()
         {
             FileDownloadType = FileDownloadType.Download,
             TargetFilePath = filePath
         };
 
-        var ticket = new Ticket(_faker.Internet.Ip(), null, TicketType.Download, ticketValue);
 
         var res = _service.GetFileStream(ticket, out var fileStream);
         Assert.That(res, Is.Null);
@@ -48,7 +48,11 @@ public class FileStreamServiceTests : TestsBase
         Assert.That(fileStream!.Name, Is.EqualTo(filePath));
         
         //fail
-        var fakeTicket = new Ticket(_faker.Internet.Ip(), null, TicketType.Download, null);
+        var fakeTicket = new DownloadTicket
+        {
+            TargetFilePath = "123",
+            FileDownloadType = FileDownloadType.Download
+        };
         res = _service.GetFileStream(fakeTicket, out fileStream);
         Assert.That(res, Is.Not.Null);
         Assert.That(fileStream, Is.Null);
