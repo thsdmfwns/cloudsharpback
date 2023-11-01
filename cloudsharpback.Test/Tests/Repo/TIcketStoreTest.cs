@@ -52,6 +52,18 @@ public class TIcketStoreTest : TestsBase
         Assert.That(redisTicket, Is.Null);
     }
     
+    private async Task AddAndSetExpireAndGet<T> (ITicket<T> ticket) where T : ITicket<T>
+    {
+        var res = await _ticketStore.AddTicket(ticket);
+        Assert.That(res, Is.True);
+        var redisTicket = await _ticketStore.GetTicket<T>(ticket.Token);
+        Assert.That(redisTicket, Is.Not.Null);
+        res = await _ticketStore.SetTicketExpire<T>(ticket.Token, TimeSpan.Zero);
+        Assert.That(res, Is.True);
+        redisTicket = await _ticketStore.GetTicket<T>(ticket.Token);
+        Assert.That(redisTicket, Is.Null);
+    }
+    
     private DownloadTicket GetDownloadTicket()
     {
         var filePath = Utils.MakeFakeFile(_faker, _pathStore.MemberDirectory(_member.Directory), null);
@@ -152,6 +164,27 @@ public class TIcketStoreTest : TestsBase
     {
         var ticket = GetSignalrTicket();
         await AddAndExist(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndSetExpireAndGet_Download()
+    {
+        var ticket = GetDownloadTicket();
+        await AddAndSetExpireAndGet(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndSetExpireAndGet_Upload()
+    {
+        var ticket = GetUploadTicket();
+        await AddAndSetExpireAndGet(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndSetExpireAndGet_Signalr()
+    {
+        var ticket = GetSignalrTicket();
+        await AddAndSetExpireAndGet(ticket);
     }
 
 }

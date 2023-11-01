@@ -42,6 +42,11 @@ public class TicketStore : ITicketStore
     {
         return await _dbConnectionFactory.Redis.KeyExistsAsync($"{key}:{token}");
     }
+    
+    private async ValueTask<bool> SetExpire(string key, Guid token, TimeSpan timeSpan)
+    {
+        return await _dbConnectionFactory.Redis.KeyExpireAsync($"{key}:{token}", timeSpan);
+    }
 
 
 
@@ -59,4 +64,6 @@ public class TicketStore : ITicketStore
     
     public async ValueTask<bool> ExistTicket<T>(Guid ticketToken) where T : ITicket<T>
         => await Exist(T.RedisKey, ticketToken);
+    public async ValueTask<bool> SetTicketExpire<T>(Guid ticketToken, TimeSpan timeSpan) where T : ITicket<T>
+        => await SetExpire(T.RedisKey, ticketToken, timeSpan);
 }
