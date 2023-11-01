@@ -15,11 +15,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Protobuf Include="Protos\tusd.proto" GrpcServices="Server" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="CliWrap" Version="3.6.3" />
     <PackageReference Include="Dapper" Version="2.0.138" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.59.0-pre1" />
     <PackageReference Include="JsonWebToken" Version="1.9.3" />
     <PackageReference Include="MySql.Data" Version="8.0.33" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
