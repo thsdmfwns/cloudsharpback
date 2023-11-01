@@ -24,8 +24,8 @@ public class TIcketStoreTest : TestsBase
         _ticketStore = new TicketStore(DBConnectionFactoryMock.Mock);
         _pathStore = new PathStore(new EnvironmentValueStore());
     }
-    
-    public async Task AddAndGet<T> (ITicket<T> ticket) where T : ITicket<T>
+
+    private async Task AddAndGet<T> (ITicket<T> ticket) where T : ITicket<T>
     {
         var res = await _ticketStore.AddTicket(ticket);
         Assert.That(res, Is.True);
@@ -33,14 +33,34 @@ public class TIcketStoreTest : TestsBase
         Assert.That(redisTicket, Is.Not.Null);
         Assert.That(JsonConvert.SerializeObject(redisTicket), Is.EqualTo(JsonConvert.SerializeObject(ticket)));
     }
-    
-    public async Task AddAndRemoveAndGet<T> (ITicket<T> ticket) where T : ITicket<T>
+
+    private async Task AddAndExist<T> (ITicket<T> ticket) where T : ITicket<T>
+    {
+        var res = await _ticketStore.AddTicket(ticket);
+        Assert.That(res, Is.True);
+        var redisTicket = await _ticketStore.ExistTicket<T>(ticket.Token);
+        Assert.That(redisTicket, Is.True);
+    }
+
+    private async Task AddAndRemoveAndGet<T> (ITicket<T> ticket) where T : ITicket<T>
     {
         var res = await _ticketStore.AddTicket(ticket);
         Assert.That(res, Is.True);
         res = await _ticketStore.RemoveTicket(ticket);
         Assert.That(res, Is.True);
         var redisTicket = await _ticketStore.GetTicket<T>(ticket.Token);
+        Assert.That(redisTicket, Is.Null);
+    }
+    
+    private async Task AddAndSetExpireAndGet<T> (ITicket<T> ticket) where T : ITicket<T>
+    {
+        var res = await _ticketStore.AddTicket(ticket);
+        Assert.That(res, Is.True);
+        var redisTicket = await _ticketStore.GetTicket<T>(ticket.Token);
+        Assert.That(redisTicket, Is.Not.Null);
+        res = await _ticketStore.SetTicketExpire<T>(ticket.Token, TimeSpan.Zero);
+        Assert.That(res, Is.True);
+        redisTicket = await _ticketStore.GetTicket<T>(ticket.Token);
         Assert.That(redisTicket, Is.Null);
     }
     
@@ -123,6 +143,48 @@ public class TIcketStoreTest : TestsBase
     {
         var ticket = GetSignalrTicket();
         await AddAndRemoveAndGet(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndExist_Download()
+    {
+        var ticket = GetDownloadTicket();
+        await AddAndExist(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndExist_Upload()
+    {
+        var ticket = GetUploadTicket();
+        await AddAndExist(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndExist_Signalr()
+    {
+        var ticket = GetSignalrTicket();
+        await AddAndExist(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndSetExpireAndGet_Download()
+    {
+        var ticket = GetDownloadTicket();
+        await AddAndSetExpireAndGet(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndSetExpireAndGet_Upload()
+    {
+        var ticket = GetUploadTicket();
+        await AddAndSetExpireAndGet(ticket);
+    }
+    
+    [Test]
+    public async Task AddAndSetExpireAndGet_Signalr()
+    {
+        var ticket = GetSignalrTicket();
+        await AddAndSetExpireAndGet(ticket);
     }
 
 }
