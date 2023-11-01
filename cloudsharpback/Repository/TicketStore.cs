@@ -38,6 +38,11 @@ public class TicketStore : ITicketStore
         return await _dbConnectionFactory.Redis.JSON().DelAsync($"{key}:{ticketToken}") > 0;
     }
 
+    private async ValueTask<bool> Exist(string key, Guid token)
+    {
+        return await _dbConnectionFactory.Redis.KeyExistsAsync($"{key}:{token}");
+    }
+
 
 
     public async ValueTask<bool> AddTicket<T>(ITicket<T> ticket) where T : ITicket<T>
@@ -50,4 +55,8 @@ public class TicketStore : ITicketStore
 
     public async ValueTask<bool> RemoveTicket<T>(ITicket<T> ticket) where T : ITicket<T>
         => await Remove(T.RedisKey, ticket.Token);
+    
+    
+    public async ValueTask<bool> ExistTicket<T>(Guid ticketToken) where T : ITicket<T>
+        => await Exist(T.RedisKey, ticketToken);
 }
