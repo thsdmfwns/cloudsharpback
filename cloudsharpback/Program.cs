@@ -1,14 +1,12 @@
 using cloudsharpback.Filter;
 using cloudsharpback.Hubs;
 using cloudsharpback.Middleware;
-using cloudsharpback.Models;
 using cloudsharpback.Repository;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using tusdotnet;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -36,9 +34,7 @@ builder.Services.AddScoped<ITicketStore, TicketStore>();
 builder.Services.AddSingleton<IDBConnectionFactory, DBConnectionFactory>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<IPathStore, PathStore>();
-builder.Services.AddSingleton<IEnvironmentValueStore, EnvironmentValueStore>();
-//transient
-builder.Services.AddTransient<ITusService, TusService>();
+builder.Services.AddSingleton<IEnvironmentValueStore, EnvironmentValueStore>(); ;
 //grpc
 builder.Services.AddGrpc();
 
@@ -66,12 +62,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(x => x
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowAnyOrigin()
-                .WithExposedHeaders(tusdotnet.Helpers.CorsHelper.GetExposedHeaders()));
-
-app.UseTus(ctx => ctx.RequestServices.GetService<ITusService>()!.GetTusConfiguration());
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowAnyOrigin());
 
 app.UseMiddleware<HttpErrorMiddleware>();
 
