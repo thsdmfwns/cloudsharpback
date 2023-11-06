@@ -17,7 +17,8 @@ namespace cloudsharpback.Controllers
         private readonly ITicketStore _ticketStore;
         private readonly IShareService _shareService;
 
-        public FileController(IMemberFileService memberFileService, IShareService shareService, ITicketStore ticketStore)
+        public FileController(IMemberFileService memberFileService, IShareService shareService,
+            ITicketStore ticketStore)
         {
             this._memberFileService = memberFileService;
             this._shareService = shareService;

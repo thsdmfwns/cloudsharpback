@@ -1,7 +1,6 @@
 using System.Collections;
 using Bogus;
 using cloudsharpback.Models.DTO.Member;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
 namespace cloudsharpback.Test;
@@ -58,5 +57,15 @@ public static class Utils
         File.WriteAllText(filePath, fileContent);
         var path = filePath.Remove(0, memberDir.Length);
         return fullPath ? filePath : path.TrimStart('/');
+    }
+    
+    public static string MakeFakeFileAtDirectory(Faker faker, string dirPath, string? filename = null)
+    {
+        var fileName = filename ??faker.System.CommonFileName();
+        var fileContent = faker.Lorem.Paragraphs();
+        Directory.CreateDirectory(dirPath);
+        var path = Path.Combine(dirPath, fileName);
+        File.WriteAllText(path, fileContent);
+        return path;
     }
 }
