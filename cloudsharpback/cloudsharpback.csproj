@@ -15,11 +15,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <Protobuf Include="Protos\tusd.proto" GrpcServices="Server" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="CliWrap" Version="3.6.3" />
     <PackageReference Include="Dapper" Version="2.0.138" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.59.0-pre1" />
     <PackageReference Include="JsonWebToken" Version="1.9.3" />
     <PackageReference Include="MySql.Data" Version="8.0.33" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
@@ -27,11 +32,6 @@
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Transmission.API.RPC" Version="2.1.2" />
-    <PackageReference Include="tusdotnet" Version="2.7.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="SQL" />
   </ItemGroup>
 
   <ItemGroup>

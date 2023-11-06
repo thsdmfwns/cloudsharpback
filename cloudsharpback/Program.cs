@@ -31,14 +31,16 @@ builder.Services.AddScoped<IPasswordStoreService, PasswordStoreService>();
 builder.Services.AddScoped<IPasswordStoreDirectoryRepository, PasswordStoreDirectoryRepository>();
 builder.Services.AddScoped<IPasswordStoreValueRepository, PasswordStoreValueRepository>();
 builder.Services.AddScoped<IPasswordStoreKeyRepository, PasswordStoreKeyRepository>();
+builder.Services.AddScoped<ITicketStore, TicketStore>();
 //singleton
 builder.Services.AddSingleton<IDBConnectionFactory, DBConnectionFactory>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-builder.Services.AddSingleton<ITicketStore, TicketStore>();
 builder.Services.AddSingleton<IPathStore, PathStore>();
 builder.Services.AddSingleton<IEnvironmentValueStore, EnvironmentValueStore>();
 //transient
 builder.Services.AddTransient<ITusService, TusService>();
+//grpc
+builder.Services.AddGrpc();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
@@ -72,6 +74,8 @@ app.UseCors(x => x
 app.UseTus(ctx => ctx.RequestServices.GetService<ITusService>()!.GetTusConfiguration());
 
 app.UseMiddleware<HttpErrorMiddleware>();
+
+app.MapGrpcService<TusdHookService>();
 
 app.UseAuthorization();
 
