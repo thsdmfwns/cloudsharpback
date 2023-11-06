@@ -37,53 +37,13 @@ public class TusdHookService : Tusd.Protos.HookHandler.HookHandlerBase
             _ => GetResponse(string.Empty, 200, isFail: false)
         };
     }
-    
-    private Dictionary<string, string> GetMetaData(Event hookEvent)
-        => hookEvent.Upload.MetaData.ToDictionary(x => x.Key, x => x.Value);
-
-    private bool TryGetTicket(Dictionary<string, string> metadata, out Guid token)
-    {
-        token = Guid.Empty;
-        if (!metadata.TryGetValue("token", out var tokenStr)
-            || !Guid.TryParse(tokenStr, out var result))
-        {
-            return false;
-        }
-        token = result;
-        return true;
-    }
-
-    private bool GetOverwrite(Dictionary<string, string> metadata)
-    {
-        if (!metadata.TryGetValue("overwrite", out var boolStr)
-            || !bool.TryParse(boolStr, out var result))
-        {
-            return false;
-        }
-        return result;
-    }
-    
-    private HookResponse GetResponse(string body, long code, bool isFail = true)
-    {
-        return new HookResponse()
-        {
-            HttpResponse = new HTTPResponse()
-            {
-                StatusCode = code,
-                Body = body
-            },
-            RejectUpload = !isFail,
-            StopUpload = !isFail
-        };
-    }
-
     private async ValueTask<HookResponse> OnBeforeCreate(Event hookEvent)
     {
         // validate ticket
         var metadata = GetMetaData(hookEvent);
         if (!TryGetTicket(metadata, out var token))
         {
-            return GetResponse("not found token", 404);
+            return GetResponse("no token", 400);
         }
         var ticket = await _ticketStore.GetTicket<UploadTicket>(token);
         if (ticket is null)
@@ -143,15 +103,15 @@ public class TusdHookService : Tusd.Protos.HookHandler.HookHandlerBase
             return GetResponse("not found directory", 404);
         }
         
+        var overwrite = GetOverwrite(metadata);
         var targetInfo = new System.IO.FileInfo(Path.Combine(dir.FullName, ticket.FileName));
-        if (targetInfo.Exists)
+        if (!overwrite && targetInfo.Exists)
         {
             return GetResponse("there is same name of file", 409);
         }
-        var overwrite = GetOverwrite(metadata);
 
         var uploadedFileInfo = new System.IO.FileInfo(Path.Combine(_pathStore.TusStorePath, hookEvent.Upload.Id));
-        if (!overwrite && !uploadedFileInfo.Exists)
+        if (!uploadedFileInfo.Exists)
         {
             return GetResponse("not found uploaded file", 404);
         }
@@ -192,4 +152,42 @@ public class TusdHookService : Tusd.Protos.HookHandler.HookHandlerBase
         return GetResponse(string.Empty, 200, false);
     }
     
+    private Dictionary<string, string> GetMetaData(Event hookEvent)
+        => hookEvent.Upload.MetaData.ToDictionary(x => x.Key, x => x.Value);
+
+    private bool TryGetTicket(Dictionary<string, string> metadata, out Guid token)
+    {
+        token = Guid.Empty;
+        if (!metadata.TryGetValue("token", out var tokenStr)
+            || !Guid.TryParse(tokenStr, out var result))
+        {
+            return false;
+        }
+        token = result;
+        return true;
+    }
+
+    private bool GetOverwrite(Dictionary<string, string> metadata)
+    {
+        if (!metadata.TryGetValue("overwrite", out var boolStr)
+            || !bool.TryParse(boolStr, out var result))
+        {
+            return false;
+        }
+        return result;
+    }
+    
+    private HookResponse GetResponse(string body, long code, bool isFail = true)
+    {
+        return new HookResponse()
+        {
+            HttpResponse = new HTTPResponse()
+            {
+                StatusCode = code,
+                Body = body
+            },
+            RejectUpload = !isFail,
+            StopUpload = !isFail
+        };
+    }
 }
