@@ -1,14 +1,11 @@
 ﻿using cloudsharpback.Controllers.Base;
-using cloudsharpback.Models;
-using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Models.DTO.Share;
-using cloudsharpback.Models.Ticket;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
-using cloudsharpback.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace cloudsharpback.Controllers
 {
@@ -27,6 +24,8 @@ namespace cloudsharpback.Controllers
             _ticketStore = ticketStore;
         }
 
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "file not found")]
+        [SwaggerResponse(StatusCodes.Status200OK, "success")]
         [HttpPost("share")]
         public async Task<IActionResult> Share(ShareRequestDto req)
         {
@@ -38,6 +37,7 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(List<ShareResponseDto>))]
         [HttpGet("ls")]
         public async Task<IActionResult> GetShares()
         {
@@ -45,6 +45,10 @@ namespace cloudsharpback.Controllers
             return Ok(res);
         }
 
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(ShareResponseDto))]
+        [SwaggerResponse(StatusCodes.Status410Gone, "expired")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "share not found")]
         [AllowAnonymous]
         [HttpGet("get")]
         public async Task<IActionResult> GetShare(string token)
@@ -61,6 +65,11 @@ namespace cloudsharpback.Controllers
             return Ok(res.result);
         }
 
+        
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(string))]
+        [SwaggerResponse(StatusCodes.Status410Gone, "expired")]
+        [SwaggerResponse(StatusCodes.Status403Forbidden, "bad password")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "share not found")]
         [AllowAnonymous]
         [HttpPost("dlTicket")]
         public async Task<IActionResult> GetDownloadTicket(ShareDowonloadRequestDto requestDto, [FromHeader] string? auth)
@@ -80,7 +89,9 @@ namespace cloudsharpback.Controllers
             await _ticketStore.AddTicket(result.ticket);
             return Ok(result.ticket.Token.ToString());
         }
-
+        
+        [SwaggerResponse(StatusCodes.Status200OK)]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "share not found")]
         [HttpPost("close")]
         public async Task<IActionResult> CloseShare(string token)
         {
@@ -91,6 +102,9 @@ namespace cloudsharpback.Controllers
             var err = await _shareService.CloseShareAsync(Member, guidToken);
             return err is null ? Ok() : StatusCode(err.HttpCode, err.Message);
         }
+        
+        [SwaggerResponse(StatusCodes.Status200OK)]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "share not found")]
         [HttpPost("update")]
         public async Task<IActionResult> UpdateShare(string token, [FromBody] ShareUpdateDto dto)
         {
@@ -102,6 +116,9 @@ namespace cloudsharpback.Controllers
             return err is null ? Ok() : StatusCode(err.HttpCode, err.Message);
         }
 
+        
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(bool))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "share not found")]
         [AllowAnonymous]
         [HttpPost("validatePw")]
         public async Task<IActionResult> ValidatePassword(ShareRequestValidatePasswordDto dto)
@@ -118,6 +135,9 @@ namespace cloudsharpback.Controllers
             return Ok(result.result);
         }
 
+        
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(bool))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "share not found")]
         [AllowAnonymous]
         [HttpGet("checkPw")]
         public async Task<IActionResult> CheckPassword(string token)

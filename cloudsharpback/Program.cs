@@ -7,6 +7,7 @@ using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -40,7 +41,16 @@ builder.Services.AddGrpc();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
-builder.Services.AddSwaggerGen(x => x.OperationFilter<AddAuthHeaderOperationFilter>());
+builder.Services.AddSwaggerGen(x =>
+{
+    x.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Cloud# Back End",
+        Version = "v1"
+    });
+    x.OperationFilter<AddAuthHeaderOperationFilter>();
+    x.EnableAnnotations();
+});
 builder.Services.AddCors();
 builder.Services.Configure<FormOptions>(x =>
 {

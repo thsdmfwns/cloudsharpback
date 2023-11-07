@@ -1,11 +1,10 @@
 ﻿using cloudsharpback.Controllers.Base;
-using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.FIle;
-using cloudsharpback.Models.Ticket;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace cloudsharpback.Controllers
 {
@@ -24,7 +23,10 @@ namespace cloudsharpback.Controllers
             this._shareService = shareService;
             _ticketStore = ticketStore;
         }
-
+        
+        /// <response code="404">directory not found</response>
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(List<FileInfoDto>))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "directory not found")]
         [HttpGet("ls")]
         public IActionResult GetFileDtoList(string? path, bool? onlyDir)
         {
@@ -32,7 +34,9 @@ namespace cloudsharpback.Controllers
             return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(files);
         }
 
-        [ProducesResponseType(404)]
+        /// <response code="404">file not found</response>
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(FileInfoDto))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "file not found")]
         [HttpGet("get")]
         public IActionResult GetFileDto(string path)
         {
@@ -40,6 +44,9 @@ namespace cloudsharpback.Controllers
             return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
 
+        /// <response code="404">directory not found</response>
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(string))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "directory not found")]
         [HttpGet("dlTicket")]
         public async Task<IActionResult> GetDownloadTicket(string path)
         {
@@ -52,7 +59,13 @@ namespace cloudsharpback.Controllers
             await _ticketStore.AddTicket(ticket!);
             return Ok(ticket!.Token.ToString());
         }
-
+        
+        
+        /// <response code="404">directory not found</response>
+        /// <response code="415">file can't view</response>
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(string))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "directory not found")]
+        [SwaggerResponse(StatusCodes.Status415UnsupportedMediaType, "file can't view")]
         [HttpGet("viTicket")]
         public async Task<IActionResult> GetViewTicket(string path)
         {
@@ -64,7 +77,12 @@ namespace cloudsharpback.Controllers
             await _ticketStore.AddTicket(ticket!);
             return Ok(ticket!.Token.ToString());
         }
-
+        
+        /// <response code="404">directory not found</response>
+        /// <response code="409">same filename exist</response>
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(string))]
+        [SwaggerResponse(StatusCodes.Status409Conflict, "same filename exist")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "directory not found")]
         [HttpPost("ulTicket")]
         public async Task<IActionResult> GetUploadToken(FileUploadRequestDto requestDto)
         {
@@ -76,7 +94,10 @@ namespace cloudsharpback.Controllers
             await _ticketStore.AddTicket(ticket!);
             return Ok(ticket!.Token.ToString());
         }
-
+        
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(List<FileInfoDto>))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "share not found")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "directory or file not found")]
         [HttpPost("rm")]
         public async Task<IActionResult> DeleteFile(string path)
         {
@@ -93,6 +114,8 @@ namespace cloudsharpback.Controllers
             return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
         
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(List<FileInfoDto>))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "directory not found")]
         [HttpPost("rmdir")]
         public async Task<IActionResult> DeleteDirectory(string path)
         {
@@ -105,7 +128,9 @@ namespace cloudsharpback.Controllers
             return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok(fileDto);
         }
         
-
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(List<FileInfoDto>))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "root directory not found")]
+        [SwaggerResponse(StatusCodes.Status409Conflict, "same directory name exist")]
         [HttpPost("mkdir")]
         public IActionResult MakeDirectory(string? rootDir, string dirName)
         {

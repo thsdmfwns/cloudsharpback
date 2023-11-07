@@ -3,6 +3,7 @@ using cloudsharpback.Models.DTO;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace cloudsharpback.Controllers
 {
@@ -21,6 +22,9 @@ namespace cloudsharpback.Controllers
             this._jwtService = jwtService;
         }
         
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(TokenDto))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "member not found")]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "login fail")]
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto loginDto)
         {
@@ -33,13 +37,16 @@ namespace cloudsharpback.Controllers
             return Ok(res);
         }
         
+        [SwaggerResponse(StatusCodes.Status200OK, "success")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest)]
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto registerDto)
         {
             var err = await _userService.Register(registerDto, 2);
             return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
         }
-        
+
+        [ResponseCache]
         [HttpGet("idCheck")]
         public async Task<IActionResult> IdCheck(string id)
         {

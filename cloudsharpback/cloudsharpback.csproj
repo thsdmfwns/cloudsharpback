@@ -12,6 +12,10 @@
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
@@ -31,6 +35,7 @@
     <PackageReference Include="NRedisStack" Version="0.10.1" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
     <PackageReference Include="Transmission.API.RPC" Version="2.1.2" />
   </ItemGroup>
 

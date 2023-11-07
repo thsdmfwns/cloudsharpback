@@ -1,12 +1,16 @@
-docker build .. --file ./Dockerfile --no-cache -t dev
+docker build .. --file ./Dockerfile -t dev
 
 docker run \
 -d \
 --network cloudsharp \
 --rm \
---name cloudsharp_db \
+--name cs_backend \
+-e MYSQL_SERVER="cs_db" \
+-e MYSQL_PORT=3306 \
 -e MYSQL_USER="cloudsharp" \
 -e MYSQL_PASSWORD="cloudsharp" \
+-e REDIS_SERVER="redis-stack" \
+-e REDIS_PASSWORD="mypassword" \
 dev
 
 <<"End"
@@ -36,6 +40,21 @@ dev
     "Pattern" : null,
     "Default" : null
   }
+  {
+      "Key" : "REDIS_SERVER",
+      "Pattern" : null,
+      "Default" : "cs_redis"
+    },
+    {
+      "Key" : "REDIS_PORT",
+      "Pattern" : null,
+      "Default" : 6379
+    },
+    {
+      "Key" : "REDIS_PASSWORD",
+      "Pattern" : null,
+      "Default" : null
+    }
 ]
 
 End

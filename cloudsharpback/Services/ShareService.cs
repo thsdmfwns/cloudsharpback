@@ -80,7 +80,7 @@ namespace cloudsharpback.Services
         /// 
         /// </summary>
         /// <param name="token"></param>
-        /// <returns>410 : expired share </returns>
+        /// <returns>410 : expired share, 404 : share Not Found </returns>
         /// <exception cref="HttpErrorException"></exception>
         public async Task<(HttpResponseDto? err, ShareResponseDto? result)> GetShareAsync(Guid token)
         {

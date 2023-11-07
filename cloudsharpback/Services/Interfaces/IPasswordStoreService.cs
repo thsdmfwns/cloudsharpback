@@ -24,7 +24,7 @@ public interface IPasswordStoreService
     public Task<HttpResponseDto?> MakeNewValue(MemberDto memberDto, PasswordStoreValueInsertDto dto);
     /// <returns>403, 404</returns>
     public Task<HttpResponseDto?> RemoveValue(MemberDto memberDto, ulong itemId);
-    /// <returns>403, 404/returns>
+    /// <returns>403, 404</returns>
     public Task<HttpResponseDto?> UpdateValue(MemberDto memberDto, ulong itemId, PasswordStoreValueUpdateDto dto);
     /// <returns>404</returns>
     public Task<(PasswordStoreKeyDto? value, HttpResponseDto? err)> GetKey(MemberDto memberDto, ulong itemId);
