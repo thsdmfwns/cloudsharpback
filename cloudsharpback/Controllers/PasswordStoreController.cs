@@ -20,7 +20,6 @@ public class PasswordStoreController : AuthControllerBase
         _passwordStoreService = passwordStoreService;
     }
     
-    
     [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(List<PasswordStoreDirDto>))]
     [HttpGet("dir/ls")]
     public async Task<IActionResult> GetDirList()
@@ -68,7 +67,6 @@ public class PasswordStoreController : AuthControllerBase
     
     
     [SwaggerResponse(StatusCodes.Status200OK, "success")]
-    [SwaggerResponse(StatusCodes.Status403Forbidden)]
     [SwaggerResponse(StatusCodes.Status400BadRequest)]
     [HttpGet("val/ls")]
     public async Task<IActionResult> GetValues(ulong? directoryId, ulong? keyId)
@@ -83,7 +81,6 @@ public class PasswordStoreController : AuthControllerBase
     
 
     [SwaggerResponse(StatusCodes.Status200OK, "success")]
-    [SwaggerResponse(StatusCodes.Status403Forbidden)]
     [SwaggerResponse(StatusCodes.Status404NotFound)]
     [HttpPost("val/new")]
     public async Task<IActionResult> MakeNewValues(PasswordStoreValueInsertDto dto)
@@ -94,7 +91,6 @@ public class PasswordStoreController : AuthControllerBase
     
     [SwaggerResponse(StatusCodes.Status200OK, "success")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "value not found")]
-    [SwaggerResponse(StatusCodes.Status403Forbidden)]
     [HttpPost("val/rm")]
     public async Task<IActionResult> RemoveValue(ulong itemId)
     {
@@ -103,7 +99,6 @@ public class PasswordStoreController : AuthControllerBase
     }
     
     [SwaggerResponse(StatusCodes.Status200OK, "success")]
-    [SwaggerResponse(StatusCodes.Status403Forbidden)]
     [SwaggerResponse(StatusCodes.Status404NotFound, "value not found")]
     [HttpPost("val/edit")]
     public async Task<IActionResult> UpdateValue([FromQuery]ulong itemId, [FromBody]PasswordStoreValueUpdateDto dto)

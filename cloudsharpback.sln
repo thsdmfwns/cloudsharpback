@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cloudsharpback", "cloudshar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cloudsharpback.Test", "cloudsharpback.Test\cloudsharpback.Test.csproj", "{57728CF6-9C71-41C0-9B17-207C063E38EC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "cloudsharpback.E2ETest", "cloudsharpback.E2ETest\cloudsharpback.E2ETest.csproj", "{8CDEF48E-A1C1-4990-AC84-264BCE154CAA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{57728CF6-9C71-41C0-9B17-207C063E38EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57728CF6-9C71-41C0-9B17-207C063E38EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{57728CF6-9C71-41C0-9B17-207C063E38EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CDEF48E-A1C1-4990-AC84-264BCE154CAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CDEF48E-A1C1-4990-AC84-264BCE154CAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CDEF48E-A1C1-4990-AC84-264BCE154CAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CDEF48E-A1C1-4990-AC84-264BCE154CAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

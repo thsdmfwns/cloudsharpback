@@ -13,6 +13,8 @@ docker run \
 -e REDIS_PASSWORD="mypassword" \
 dev
 
+docker network connect bridge cs_backend
+
 <<"End"
 [
   {
