@@ -1,10 +1,12 @@
 namespace cloudsharpback.E2ETest;
 
-public class Tests
+public class UserApiTest : TestBase
 {
     [SetUp]
-    public void Setup()
+    public override async Task SetUp()
     {
+        await base.SetUp();
+        
     }
 
     [Test]
