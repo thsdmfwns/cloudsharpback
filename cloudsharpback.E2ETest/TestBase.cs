@@ -32,8 +32,8 @@ public abstract class TestBase
         if (!volume.Exists)
         {
             Directory.CreateDirectory(volPath);
+            return;
         }
-
         volume.GetDirectories().ToList().ForEach(x => x.Delete(true));
         volume.GetFiles().ToList().ForEach(x => x.Delete());
     }
@@ -86,7 +86,7 @@ public abstract class TestBase
         object? content = null,
         object? qurey = null,
         object? header = null)
-        => await PostAsync(path, (object?)(content is null ? EmptyContent : JsonContent(content)), qurey, header);
+        => await PostAsync(path, content is null ? EmptyContent : JsonContent(content), qurey, header);
 
     public async Task<HttpResponseMessage> PostAsync(
         string path,
