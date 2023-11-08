@@ -11,6 +11,7 @@ docker run \
 -e MYSQL_PASSWORD="cloudsharp" \
 -e REDIS_SERVER="redis-stack" \
 -e REDIS_PASSWORD="mypassword" \
+-v cloudsharp:/var/cloud-sharp \
 dev
 
 docker network connect bridge cs_backend
