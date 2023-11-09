@@ -46,8 +46,9 @@ public class UserApiTest : TestBase
         };
         var loginRes = await PostAsync("/api/User/login", dto);
         Assert.That(loginRes.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var json = await loginRes.Content.ReadAsStringAsync();
         var obj = JObject.Parse(await loginRes.Content.ReadAsStringAsync());
-        Assert.That(obj.GetValue("acessToken"), Is.Not.Null);
+        Assert.That(obj.GetValue("accessToken"), Is.Not.Null);
         Assert.That(obj.GetValue("refreshToken"), Is.Not.Null);
     }
 

@@ -17,7 +17,6 @@ builder.Logging.AddConsole();
 
 builder.Services.AddControllers();
 //scope
-builder.Services.AddScoped<IJWTService, JWTService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMemberFileService, MemberFileService>();
@@ -32,6 +31,7 @@ builder.Services.AddScoped<IPasswordStoreValueRepository, PasswordStoreValueRepo
 builder.Services.AddScoped<IPasswordStoreKeyRepository, PasswordStoreKeyRepository>();
 builder.Services.AddScoped<ITicketStore, TicketStore>();
 //singleton
+builder.Services.AddSingleton<IJWTService, JWTService>();
 builder.Services.AddSingleton<IDBConnectionFactory, DBConnectionFactory>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<IPathStore, PathStore>();

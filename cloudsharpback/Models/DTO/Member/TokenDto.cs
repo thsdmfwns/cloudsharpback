@@ -2,13 +2,13 @@
 {
     public class TokenDto
     {
-        public TokenDto(string acessToken, string refreshToken)
+        public TokenDto(string accessToken, string refreshToken)
         {
-            AcessToken = acessToken;
+            AccessToken = accessToken;
             RefreshToken = refreshToken;
         }
 
-        public string AcessToken { get; set; }
+        public string AccessToken { get; set; }
         public string RefreshToken { get; set; }
     }
 }
