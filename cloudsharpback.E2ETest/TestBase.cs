@@ -1,5 +1,7 @@
+using System.Net;
 using System.Text;
 using System.Web;
+using Bogus;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
@@ -15,14 +17,17 @@ public abstract class TestBase
     protected IDBConnectionFactory _dbConnectionFactory;
     protected IPathStore _path;
     protected IEnvironmentValueStore _environmentValue;
+    protected Faker _faker;
 
     public virtual async Task SetUp()
     {
         _environmentValue = new EnvironmentValueStore();
         _dbConnectionFactory = new DBConnectionFactory(_environmentValue);
+        _faker = new Faker();
         _path = new PathStore(_environmentValue);
         await InitDb();
         InitVolume();
+        await RegisterMaster();
     }
 
     private void InitVolume()
@@ -42,6 +47,22 @@ public abstract class TestBase
     {
         await DeleteMemberTable();
         await DeleteShareTable();
+    }
+    
+    protected const string MasterId = "master";
+    protected const string MasterPw = "master";
+
+    private async Task RegisterMaster()
+    {
+        var regDto = new
+        {
+            id = MasterId,
+            pw = MasterPw,
+            email = _faker.Internet.Email(),
+            nick = _faker.Internet.UserName()
+        };
+        var regRes = await PostAsync("/api/User/register", regDto);
+        Assert.That(regRes.StatusCode, Is.EqualTo(HttpStatusCode.OK));
     }
 
     private async Task DeleteMemberTable()
@@ -117,5 +138,15 @@ public abstract class TestBase
             HttpRequestType.Get => await httpClient.GetAsync(uriBuilder.ToString(), cancellationToken.Token),
             _ => throw new ArgumentOutOfRangeException(nameof(requestType), requestType, null)
         };
+    }
+    
+    public string MakeFakeFileAtDirectory(string dirPath, string? filename = null)
+    {
+        var fileName = filename ??_faker.System.CommonFileName();
+        var fileContent = _faker.Lorem.Paragraphs();
+        Directory.CreateDirectory(dirPath);
+        var path = Path.Combine(dirPath, fileName);
+        File.WriteAllText(path, fileContent);
+        return path;
     }
 }

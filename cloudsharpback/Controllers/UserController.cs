@@ -46,7 +46,7 @@ namespace cloudsharpback.Controllers
             return err is not null ? StatusCode(err.HttpCode, err.Message) : Ok();
         }
 
-        [ResponseCache]
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(bool))]
         [HttpGet("idCheck")]
         public async Task<IActionResult> IdCheck(string id)
         {
