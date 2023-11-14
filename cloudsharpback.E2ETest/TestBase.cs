@@ -1,11 +1,15 @@
+using System.Buffers.Text;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using Bogus;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
+using JsonWebToken;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace cloudsharpback.E2ETest;
@@ -63,6 +67,26 @@ public abstract class TestBase
         };
         var regRes = await PostAsync("/api/User/register", regDto);
         Assert.That(regRes.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+    }
+    
+    protected async Task<(string ac, string rf)> LoginMaster(string? pw = null)
+    {
+        var loginDto = new
+        {
+            id = MasterId,
+            password = pw ?? MasterPw
+        };
+        var loginRes = await PostAsync("/api/User/login", loginDto);
+        Assert.That(loginRes.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var jobject = JObject.Parse(await loginRes.Content.ReadAsStringAsync());
+        var rf = jobject.GetValue("refreshToken");
+        var ac = jobject.GetValue("accessToken");
+        Assert.Multiple(() =>
+        {
+            Assert.That(ac, Is.Not.Null);
+            Assert.That(rf, Is.Not.Null);
+        });
+        return (ac.ToString(), rf.ToString());
     }
 
     private async Task DeleteMemberTable()
@@ -148,5 +172,11 @@ public abstract class TestBase
         var path = Path.Combine(dirPath, fileName);
         File.WriteAllText(path, fileContent);
         return path;
+    }
+    
+    protected string GetHash(byte[] bytes)
+    {
+        var hashValue = SHA256.HashData(bytes);
+        return Convert.ToBase64String(hashValue);
     }
 }

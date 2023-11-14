@@ -29,4 +29,8 @@
       <ProjectReference Include="..\cloudsharpback\cloudsharpback.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="TestData\" />
+    </ItemGroup>
+
 </Project>

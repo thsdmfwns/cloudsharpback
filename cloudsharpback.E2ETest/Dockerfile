@@ -5,6 +5,7 @@ COPY ["cloudsharpback/cloudsharpback.csproj", "cloudsharpback/"]
 RUN dotnet restore "cloudsharpback.E2ETest/cloudsharpback.E2ETest.csproj"
 COPY . .
 COPY ["cloudsharpback.E2ETest/EntryPoint.sh", "cloudsharpback.E2ETest/"]
+COPY ["cloudsharpback.E2ETest/TestData", "/TestData"]
 COPY ["tools", "tools"]
 ENV PATH="$PATH:/src/tools"
 ENV TOOLPATH="/src/tools"

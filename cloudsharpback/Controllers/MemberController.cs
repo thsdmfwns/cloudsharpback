@@ -48,6 +48,7 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("get")]
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(MemberDto))]
         public IActionResult GetMember()
         {
             return Ok(Member);
