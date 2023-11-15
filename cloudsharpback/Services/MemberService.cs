@@ -193,7 +193,7 @@ namespace cloudsharpback.Services
                 }
                 if (!checkresult.result)
                 {
-                    return new HttpResponseDto() { HttpCode = 400, Message = "check password" };
+                    return new HttpResponseDto() { HttpCode = 400, Message = "wrong password" };
                 }
                 
                 var password = PasswordEncrypt.EncryptPassword(requset.ChangeTo);

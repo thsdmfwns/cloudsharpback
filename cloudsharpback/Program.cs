@@ -7,6 +7,7 @@ using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
@@ -16,7 +17,6 @@ builder.Logging.AddConsole();
 
 builder.Services.AddControllers();
 //scope
-builder.Services.AddScoped<IJWTService, JWTService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMemberFileService, MemberFileService>();
@@ -31,6 +31,7 @@ builder.Services.AddScoped<IPasswordStoreValueRepository, PasswordStoreValueRepo
 builder.Services.AddScoped<IPasswordStoreKeyRepository, PasswordStoreKeyRepository>();
 builder.Services.AddScoped<ITicketStore, TicketStore>();
 //singleton
+builder.Services.AddSingleton<IJWTService, JWTService>();
 builder.Services.AddSingleton<IDBConnectionFactory, DBConnectionFactory>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<IPathStore, PathStore>();
@@ -40,7 +41,16 @@ builder.Services.AddGrpc();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
-builder.Services.AddSwaggerGen(x => x.OperationFilter<AddAuthHeaderOperationFilter>());
+builder.Services.AddSwaggerGen(x =>
+{
+    x.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Cloud# Back End",
+        Version = "v1"
+    });
+    x.OperationFilter<AddAuthHeaderOperationFilter>();
+    x.EnableAnnotations();
+});
 builder.Services.AddCors();
 builder.Services.Configure<FormOptions>(x =>
 {

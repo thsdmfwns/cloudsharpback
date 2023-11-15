@@ -1,12 +1,14 @@
 ﻿using cloudsharpback.Controllers.Base;
 using cloudsharpback.Models;
 using cloudsharpback.Models.DTO;
+using cloudsharpback.Models.DTO.FIle;
 using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Models.Ticket;
 using cloudsharpback.Repository.Interface;
 using cloudsharpback.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace cloudsharpback.Controllers
 {
@@ -25,6 +27,8 @@ namespace cloudsharpback.Controllers
             _ticketStore = ticketStore;
         }
 
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(string))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "fail to login")]
         [AllowAnonymous]
         [HttpPost("token")]
         public async Task<IActionResult> GetAccessToken([FromHeader] string auth)
@@ -44,11 +48,17 @@ namespace cloudsharpback.Controllers
         }
 
         [HttpGet("get")]
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(MemberDto))]
         public IActionResult GetMember()
         {
             return Ok(Member);
         }
 
+        
+        [SwaggerResponse(StatusCodes.Status200OK, "success")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "member not found")]
+        [SwaggerResponse(StatusCodes.Status409Conflict, "try again")]
+        [SwaggerResponse(StatusCodes.Status415UnsupportedMediaType, "bad type")]
         [HttpPost("updateProfile")]
         public async Task<IActionResult> UploadProfileImage(IFormFile image)
         {
@@ -61,6 +71,9 @@ namespace cloudsharpback.Controllers
         }
 
         [AllowAnonymous]
+        
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(FileStreamResult))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "file not found")]
         [HttpGet("profile/{image}")]
         public IActionResult DownloadProfileImage(string image)
         {
@@ -77,6 +90,8 @@ namespace cloudsharpback.Controllers
         }
 
 
+        [SwaggerResponse(StatusCodes.Status200OK, "success")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "member not found")]
         [HttpPost("updateNick")]
         public async Task<IActionResult> UpdateNickName(string nickname)
         {
@@ -88,6 +103,9 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
+        [SwaggerResponse(StatusCodes.Status200OK, "success")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "member not found")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "bad email")]
         [HttpPost("updateEmail")]
         public async Task<IActionResult> UpdateEmail(string email)
         {
@@ -99,6 +117,9 @@ namespace cloudsharpback.Controllers
             return Ok();
         }
 
+        
+        [SwaggerResponse(StatusCodes.Status200OK, "success", Type = typeof(bool))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "member not found")]
         [HttpPost("checkPw")]
         public async Task<IActionResult> CheckPassword([FromBody]string password)
         {
@@ -110,6 +131,9 @@ namespace cloudsharpback.Controllers
             return Ok(result.result);
         }
 
+        [SwaggerResponse(StatusCodes.Status200OK, "success")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "member not found")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "bad password")]
         [HttpPost("updatePw")]
         public async Task<IActionResult> UpdatePassword(UpadtePasswordDto dto)
         {

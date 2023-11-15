@@ -6,5 +6,6 @@ namespace cloudsharpback.Services.Interfaces;
 
 public interface IFileStreamService
 {
+    /// <returns> 404 => file notfound</returns>
     HttpResponseDto? GetFileStream(DownloadTicket downloadToken, out FileStream? fileStream);
 }
