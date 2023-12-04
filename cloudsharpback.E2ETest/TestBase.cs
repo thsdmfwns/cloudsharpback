@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using Bogus;
+using cloudsharpback.Models.DTO.Member;
 using cloudsharpback.Services;
 using cloudsharpback.Services.Interfaces;
 using Dapper;
@@ -22,6 +23,7 @@ public abstract class TestBase
     protected IPathStore _path;
     protected IEnvironmentValueStore _environmentValue;
     protected Faker _faker;
+    protected const string TestImage1Path = "/TestData/testImage1.png";
 
     public virtual async Task SetUp()
     {
@@ -87,6 +89,15 @@ public abstract class TestBase
             Assert.That(rf, Is.Not.Null);
         });
         return (ac.ToString(), rf.ToString());
+    }
+
+    protected async Task<object> GetAuthHeader((string ac, string rf)? token = null)
+    {
+        var accessToken = token?.ac ?? (await LoginMaster()).ac;
+        return new
+        {
+            auth = accessToken
+        };
     }
 
     private async Task DeleteMemberTable()
@@ -164,9 +175,9 @@ public abstract class TestBase
         };
     }
     
-    public string MakeFakeFileAtDirectory(string dirPath, string? filename = null)
+    public string MakeFakeFileAtDirectory(string dirPath, string? ext = null, string? filename = null)
     {
-        var fileName = filename ??_faker.System.CommonFileName();
+        var fileName = filename ??_faker.System.CommonFileName(ext);
         var fileContent = _faker.Lorem.Paragraphs();
         Directory.CreateDirectory(dirPath);
         var path = Path.Combine(dirPath, fileName);
@@ -174,9 +185,32 @@ public abstract class TestBase
         return path;
     }
     
+    public string MakeFakeFileInMemberDir(string memberDirId, string? fileDir, string? ext = null, bool fullPath = false)
+    {
+        var memberDir = _path.MemberDirectory(memberDirId);
+        var dirPath = Path.Combine(memberDir, fileDir ?? string.Empty);
+        var filePath = MakeFakeFileAtDirectory(dirPath, ext);
+        var path = filePath.Remove(0, memberDir.Length);
+        return fullPath ? filePath : path.TrimStart('/');
+    }
+    
     protected string GetHash(byte[] bytes)
     {
         var hashValue = SHA256.HashData(bytes);
         return Convert.ToBase64String(hashValue);
+    }
+    
+    protected async ValueTask<(MemberDto master, string ac, string rf)> GetMaster()
+    {
+        var token = await LoginMaster();
+        var header = new
+        {
+            auth = token.ac
+        };
+        using var res = await GetAsync("/api/Member/get", header: header);
+        var content = await res.Content.ReadAsStringAsync();
+        Assert.That(res.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(string.IsNullOrEmpty(await res.Content.ReadAsStringAsync()), Is.False);
+        return (JsonConvert.DeserializeObject<MemberDto>(content)!, token.ac, token.rf);
     }
 }
