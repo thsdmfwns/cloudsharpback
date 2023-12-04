@@ -9,7 +9,7 @@ syntax = "proto3";
 
 option csharp_namespace = "cloudsharpback.Tusd.Protos";
 
-package TusdHook;
+package proto;
 
 // HookRequest contains the information about the hook type, the involved upload,
 // and causing HTTP request.
