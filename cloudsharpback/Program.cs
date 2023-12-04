@@ -1,5 +1,4 @@
 using cloudsharpback.Filter;
-using cloudsharpback.Hubs;
 using cloudsharpback.Middleware;
 using cloudsharpback.Repository;
 using cloudsharpback.Repository.Interface;
@@ -12,16 +11,16 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.WebHost.UseUrls("http://localhost:80", "http://localhost:8080");
 
 // Add services to the container.
-
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    ;
 //scope
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IMemberFileService, MemberFileService>();
 builder.Services.AddScoped<IShareService, ShareService>();
-builder.Services.AddScoped<IYoutubeDlService, YoutubeDlService>();
 builder.Services.AddScoped<IFileStreamService, FileStreamService>();
 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 builder.Services.AddScoped<IShareRepository, ShareRepository>();
@@ -37,7 +36,10 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddSingleton<IPathStore, PathStore>();
 builder.Services.AddSingleton<IEnvironmentValueStore, EnvironmentValueStore>(); ;
 //grpc
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(opt =>
+{
+    opt.EnableDetailedErrors = true;
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSignalR();
@@ -80,10 +82,6 @@ app.UseMiddleware<HttpErrorMiddleware>();
 
 app.MapGrpcService<TusdHookService>();
 
-app.UseAuthorization();
-
 app.MapControllers();
-
-app.MapHub<YoutubeDlHub>("/ytdl");
 
 app.Run();
