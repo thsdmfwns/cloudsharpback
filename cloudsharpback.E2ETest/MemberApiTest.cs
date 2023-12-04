@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using Newtonsoft.Json.Linq;
 
 namespace cloudsharpback.E2ETest;
@@ -132,6 +133,18 @@ public class MemberApiTest : TestBase
         {
             auth = token.ac
         };
+    }
+
+    [Test]
+    public async Task CheckPassword()
+    {
+        var pw = new StringContent($"\"{MasterPw}\"", MediaTypeHeaderValue.Parse("application/json"));
+        var auth = await GetAuthHeader();
+        var res = await PostAsync("/api/Member/CheckPw", pw, header: auth);
+        Assert.That(res.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        var result = bool.TryParse(await res.Content.ReadAsStringAsync(), out var actual);
+        Assert.That(result, Is.True);
+        Assert.That(actual, Is.True);
     }
     
     
